@@ -8,11 +8,11 @@ import { Building2, Users, Target, TrendingUp, Settings, MessageSquare, FolderOp
 const DivisionPage = () => {
   const { companyId, divisionId } = useParams();
   
-  // Mock data structure matching the sidebar
+  // Mock data structure matching the sidebar - updated with real company UUIDs
   const mockData = {
     companies: [
       {
-        id: "comp1",
+        id: "550e8400-e29b-41d4-a716-446655440000",
         name: "Acme Corporation",
         divisions: [
           {
@@ -38,7 +38,7 @@ const DivisionPage = () => {
         ]
       },
       {
-        id: "comp2",
+        id: "550e8400-e29b-41d4-a716-446655440001",
         name: "TechStart Inc",
         divisions: [
           {
