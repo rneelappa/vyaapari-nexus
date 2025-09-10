@@ -96,16 +96,25 @@ export default function StockItemsPage() {
   }, [user]);
 
   const fetchStockItems = async () => {
+    if (!user) {
+      console.log('StockItemsPage: No user authenticated, skipping data fetch');
+      setLoading(false);
+      setStockItems(mockStockItems);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
       
+      console.log('StockItemsPage: Fetching stock items for authenticated user:', user.id);
       const { data, error } = await supabase
         .from('mst_stock_item')
         .select('*')
         .order('name');
       
       if (error) {
+        console.error('StockItemsPage: Database error:', error);
         throw error;
       }
       

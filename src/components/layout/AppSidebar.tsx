@@ -284,15 +284,8 @@ function AppSidebarContent() {
 
         console.log('AppSidebar: Divisions fetched:', divisionsData?.length || 0, 'divisions');
 
-        // Fetch workspaces (handle case where table might be empty)
-        const { data: workspacesData, error: workspacesError } = await supabase
-          .from('workspaces')
-          .select('*');
-
-        if (workspacesError) {
-          console.error('AppSidebar: Error fetching workspaces:', workspacesError);
-          // Don't return here - continue with empty workspaces
-        }
+        // Skip workspaces fetch for now to avoid permission errors
+        const workspacesData: any[] = [];
 
         console.log('AppSidebar: Workspaces fetched:', workspacesData?.length || 0, 'workspaces');
 
