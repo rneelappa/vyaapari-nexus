@@ -234,10 +234,8 @@ export type Database = {
           _uom: string
           attendance_period: string
           attendance_type: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           name: string
           parent: string
@@ -248,10 +246,8 @@ export type Database = {
           _uom?: string
           attendance_period?: string
           attendance_type?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           name?: string
           parent?: string
@@ -262,10 +258,8 @@ export type Database = {
           _uom?: string
           attendance_period?: string
           attendance_type?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           name?: string
           parent?: string
@@ -273,18 +267,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_attendance_type_company_id_fkey"
+            foreignKeyName: "fk_mst_attendance_type_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_attendance_type_division_id_fkey"
+            foreignKeyName: "fk_mst_attendance_type_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -313,47 +307,41 @@ export type Database = {
         Row: {
           allocate_non_revenue: number | null
           allocate_revenue: number | null
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           name: string
         }
         Insert: {
           allocate_non_revenue?: number | null
           allocate_revenue?: number | null
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           name?: string
         }
         Update: {
           allocate_non_revenue?: number | null
           allocate_revenue?: number | null
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           name?: string
         }
         Relationships: [
           {
-            foreignKeyName: "mst_cost_category_company_id_fkey"
+            foreignKeyName: "fk_mst_cost_category_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_cost_category_division_id_fkey"
+            foreignKeyName: "fk_mst_cost_category_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -361,10 +349,8 @@ export type Database = {
         Row: {
           _parent: string
           category: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           name: string
           parent: string
@@ -372,10 +358,8 @@ export type Database = {
         Insert: {
           _parent?: string
           category?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           name?: string
           parent?: string
@@ -383,28 +367,26 @@ export type Database = {
         Update: {
           _parent?: string
           category?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           name?: string
           parent?: string
         }
         Relationships: [
           {
-            foreignKeyName: "mst_cost_centre_company_id_fkey"
+            foreignKeyName: "fk_mst_cost_centre_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_cost_centre_division_id_fkey"
+            foreignKeyName: "fk_mst_cost_centre_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -449,14 +431,12 @@ export type Database = {
           aadhar: string
           address: string
           blood_group: string
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           date_of_birth: string | null
           date_of_joining: string | null
           date_of_release: string | null
           designation: string
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           email: string
           father_mother_name: string
           function_role: string
@@ -480,14 +460,12 @@ export type Database = {
           aadhar?: string
           address?: string
           blood_group?: string
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           date_of_birth?: string | null
           date_of_joining?: string | null
           date_of_release?: string | null
           designation?: string
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           email?: string
           father_mother_name?: string
           function_role?: string
@@ -511,14 +489,12 @@ export type Database = {
           aadhar?: string
           address?: string
           blood_group?: string
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           date_of_birth?: string | null
           date_of_joining?: string | null
           date_of_release?: string | null
           designation?: string
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           email?: string
           father_mother_name?: string
           function_role?: string
@@ -539,18 +515,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_employee_company_id_fkey"
+            foreignKeyName: "fk_mst_employee_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_employee_division_id_fkey"
+            foreignKeyName: "fk_mst_employee_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -558,10 +534,8 @@ export type Database = {
         Row: {
           _parent: string
           address: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           name: string
           parent: string
@@ -569,10 +543,8 @@ export type Database = {
         Insert: {
           _parent?: string
           address?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           name?: string
           parent?: string
@@ -580,28 +552,26 @@ export type Database = {
         Update: {
           _parent?: string
           address?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           name?: string
           parent?: string
         }
         Relationships: [
           {
-            foreignKeyName: "mst_godown_company_id_fkey"
+            foreignKeyName: "fk_mst_godown_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_godown_division_id_fkey"
+            foreignKeyName: "fk_mst_godown_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -609,10 +579,8 @@ export type Database = {
         Row: {
           _parent: string
           affects_gross_profit: number | null
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           is_deemedpositive: number | null
           is_reserved: number | null
@@ -625,10 +593,8 @@ export type Database = {
         Insert: {
           _parent?: string
           affects_gross_profit?: number | null
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           is_deemedpositive?: number | null
           is_reserved?: number | null
@@ -641,10 +607,8 @@ export type Database = {
         Update: {
           _parent?: string
           affects_gross_profit?: number | null
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           is_deemedpositive?: number | null
           is_reserved?: number | null
@@ -656,18 +620,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_group_company_id_fkey"
+            foreignKeyName: "fk_mst_group_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_group_division_id_fkey"
+            foreignKeyName: "fk_mst_group_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -675,10 +639,8 @@ export type Database = {
         Row: {
           _item: string
           applicable_from: string | null
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           hsn_code: string
           hsn_description: string
           is_rcm_applicable: number | null
@@ -692,10 +654,8 @@ export type Database = {
         Insert: {
           _item?: string
           applicable_from?: string | null
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           hsn_code?: string
           hsn_description?: string
           is_rcm_applicable?: number | null
@@ -709,10 +669,8 @@ export type Database = {
         Update: {
           _item?: string
           applicable_from?: string | null
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           hsn_code?: string
           hsn_description?: string
           is_rcm_applicable?: number | null
@@ -725,18 +683,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_gst_effective_rate_company_id_fkey"
+            foreignKeyName: "fk_mst_gst_effective_rate_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_gst_effective_rate_division_id_fkey"
+            foreignKeyName: "fk_mst_gst_effective_rate_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -752,11 +710,9 @@ export type Database = {
           bank_swift: string
           bill_credit_period: number
           closing_balance: number | null
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           description: string
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           email: string
           gst_duty_head: string
           gst_registration_type: string
@@ -788,11 +744,9 @@ export type Database = {
           bank_swift?: string
           bill_credit_period?: number
           closing_balance?: number | null
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           description?: string
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           email?: string
           gst_duty_head?: string
           gst_registration_type?: string
@@ -824,11 +778,9 @@ export type Database = {
           bank_swift?: string
           bill_credit_period?: number
           closing_balance?: number | null
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           description?: string
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           email?: string
           gst_duty_head?: string
           gst_registration_type?: string
@@ -851,18 +803,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_ledger_company_id_fkey"
+            foreignKeyName: "fk_mst_ledger_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_ledger_division_id_fkey"
+            foreignKeyName: "fk_mst_ledger_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -870,10 +822,8 @@ export type Database = {
         Row: {
           _godown: string
           _item: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           godown: string
           item: string
           manufactured_on: string | null
@@ -885,10 +835,8 @@ export type Database = {
         Insert: {
           _godown?: string
           _item?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           godown?: string
           item?: string
           manufactured_on?: string | null
@@ -900,10 +848,8 @@ export type Database = {
         Update: {
           _godown?: string
           _item?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           godown?: string
           item?: string
           manufactured_on?: string | null
@@ -914,18 +860,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_opening_batch_allocation_company_id_fkey"
+            foreignKeyName: "fk_mst_opening_batch_allocation_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_opening_batch_allocation_division_id_fkey"
+            foreignKeyName: "fk_mst_opening_batch_allocation_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -934,10 +880,8 @@ export type Database = {
           _ledger: string
           bill_credit_period: number
           bill_date: string | null
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           is_advance: number | null
           ledger: string
           name: string
@@ -947,10 +891,8 @@ export type Database = {
           _ledger?: string
           bill_credit_period?: number
           bill_date?: string | null
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           is_advance?: number | null
           ledger?: string
           name?: string
@@ -960,10 +902,8 @@ export type Database = {
           _ledger?: string
           bill_credit_period?: number
           bill_date?: string | null
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           is_advance?: number | null
           ledger?: string
           name?: string
@@ -971,18 +911,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_opening_bill_allocation_company_id_fkey"
+            foreignKeyName: "fk_mst_opening_bill_allocation_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_opening_bill_allocation_division_id_fkey"
+            foreignKeyName: "fk_mst_opening_bill_allocation_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -991,10 +931,8 @@ export type Database = {
           _parent: string
           calculation_period: string
           calculation_type: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           income_type: string
           leave_type: string
@@ -1007,10 +945,8 @@ export type Database = {
           _parent?: string
           calculation_period?: string
           calculation_type?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           income_type?: string
           leave_type?: string
@@ -1023,10 +959,8 @@ export type Database = {
           _parent?: string
           calculation_period?: string
           calculation_type?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           income_type?: string
           leave_type?: string
@@ -1037,66 +971,60 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_payhead_company_id_fkey"
+            foreignKeyName: "fk_mst_payhead_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_payhead_division_id_fkey"
+            foreignKeyName: "fk_mst_payhead_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
       mst_stock_group: {
         Row: {
           _parent: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           name: string
           parent: string
         }
         Insert: {
           _parent?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           name?: string
           parent?: string
         }
         Update: {
           _parent?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           name?: string
           parent?: string
         }
         Relationships: [
           {
-            foreignKeyName: "mst_stock_group_company_id_fkey"
+            foreignKeyName: "fk_mst_stock_group_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_stock_group_division_id_fkey"
+            foreignKeyName: "fk_mst_stock_group_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1110,13 +1038,11 @@ export type Database = {
           closing_balance: number | null
           closing_rate: number | null
           closing_value: number | null
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           conversion: number
           costing_method: string
           description: string
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           gst_hsn_code: string | null
           gst_hsn_description: string | null
           gst_rate: number | null
@@ -1141,13 +1067,11 @@ export type Database = {
           closing_balance?: number | null
           closing_rate?: number | null
           closing_value?: number | null
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           conversion?: number
           costing_method?: string
           description?: string
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           gst_hsn_code?: string | null
           gst_hsn_description?: string | null
           gst_rate?: number | null
@@ -1172,13 +1096,11 @@ export type Database = {
           closing_balance?: number | null
           closing_rate?: number | null
           closing_value?: number | null
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           conversion?: number
           costing_method?: string
           description?: string
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           gst_hsn_code?: string | null
           gst_hsn_description?: string | null
           gst_rate?: number | null
@@ -1196,114 +1118,102 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_stock_item_company_id_fkey"
+            foreignKeyName: "fk_mst_stock_item_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_stock_item_division_id_fkey"
+            foreignKeyName: "fk_mst_stock_item_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
       mst_stockitem_standard_cost: {
         Row: {
           _item: string
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           date: string | null
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           item: string
           rate: number | null
         }
         Insert: {
           _item?: string
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           date?: string | null
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           item?: string
           rate?: number | null
         }
         Update: {
           _item?: string
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           date?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           item?: string
           rate?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "mst_stockitem_standard_cost_company_id_fkey"
+            foreignKeyName: "fk_mst_stockitem_standard_cost_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_stockitem_standard_cost_division_id_fkey"
+            foreignKeyName: "fk_mst_stockitem_standard_cost_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
       mst_stockitem_standard_price: {
         Row: {
           _item: string
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           date: string | null
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           item: string
           rate: number | null
         }
         Insert: {
           _item?: string
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           date?: string | null
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           item?: string
           rate?: number | null
         }
         Update: {
           _item?: string
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           date?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           item?: string
           rate?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "mst_stockitem_standard_price_company_id_fkey"
+            foreignKeyName: "fk_mst_stockitem_standard_price_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_stockitem_standard_price_division_id_fkey"
+            foreignKeyName: "fk_mst_stockitem_standard_price_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1311,11 +1221,9 @@ export type Database = {
         Row: {
           additional_units: string
           base_units: string
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           conversion: number
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           formalname: string
           guid: string
           is_simple_unit: number
@@ -1324,11 +1232,9 @@ export type Database = {
         Insert: {
           additional_units: string
           base_units: string
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           conversion: number
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           formalname?: string
           guid: string
           is_simple_unit: number
@@ -1337,11 +1243,9 @@ export type Database = {
         Update: {
           additional_units?: string
           base_units?: string
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           conversion?: number
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           formalname?: string
           guid?: string
           is_simple_unit?: number
@@ -1349,18 +1253,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_uom_company_id_fkey"
+            foreignKeyName: "fk_mst_uom_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_uom_division_id_fkey"
+            foreignKeyName: "fk_mst_uom_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1368,10 +1272,8 @@ export type Database = {
         Row: {
           _parent: string
           affects_stock: number | null
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           is_deemedpositive: number | null
           name: string
@@ -1381,10 +1283,8 @@ export type Database = {
         Insert: {
           _parent?: string
           affects_stock?: number | null
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid: string
           is_deemedpositive?: number | null
           name?: string
@@ -1394,10 +1294,8 @@ export type Database = {
         Update: {
           _parent?: string
           affects_stock?: number | null
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           is_deemedpositive?: number | null
           name?: string
@@ -1406,18 +1304,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "mst_vouchertype_company_id_fkey"
+            foreignKeyName: "fk_mst_vouchertype_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "mst_vouchertype_division_id_fkey"
+            foreignKeyName: "fk_mst_vouchertype_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1476,11 +1374,9 @@ export type Database = {
         Row: {
           _parent: string
           affects_gross_profit: number | null
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           created_at: string | null
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           is_deemedpositive: number | null
           is_reserved: number | null
@@ -1493,11 +1389,9 @@ export type Database = {
         Insert: {
           _parent?: string
           affects_gross_profit?: number | null
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid: string
           is_deemedpositive?: number | null
           is_reserved?: number | null
@@ -1510,11 +1404,9 @@ export type Database = {
         Update: {
           _parent?: string
           affects_gross_profit?: number | null
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           is_deemedpositive?: number | null
           is_reserved?: number | null
@@ -1524,16 +1416,29 @@ export type Database = {
           primary_group?: string
           sort_position?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_tally_mst_group_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_mst_group_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tally_mst_ledger: {
         Row: {
           closing_balance: number | null
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           created_at: string | null
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           name: string
           opening_balance: number | null
@@ -1541,11 +1446,9 @@ export type Database = {
         }
         Insert: {
           closing_balance?: number | null
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid: string
           name: string
           opening_balance?: number | null
@@ -1553,92 +1456,123 @@ export type Database = {
         }
         Update: {
           closing_balance?: number | null
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           name?: string
           opening_balance?: number | null
           parent?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_tally_mst_ledger_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_mst_ledger_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tally_mst_stock_item: {
         Row: {
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           created_at: string | null
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           name: string
           parent: string
           unit: string | null
         }
         Insert: {
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid: string
           name: string
           parent?: string
           unit?: string | null
         }
         Update: {
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           name?: string
           parent?: string
           unit?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_tally_mst_stock_item_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_mst_stock_item_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tally_trn_voucher: {
         Row: {
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           created_at: string | null
           date: string | null
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           narration: string | null
           voucher_number: string | null
           voucher_type: string | null
         }
         Insert: {
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
           date?: string | null
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid: string
           narration?: string | null
           voucher_number?: string | null
           voucher_type?: string | null
         }
         Update: {
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           created_at?: string | null
           date?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           narration?: string | null
           voucher_number?: string | null
           voucher_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_tally_trn_voucher_company"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_trn_voucher_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tasks: {
         Row: {
@@ -1701,11 +1635,9 @@ export type Database = {
           _ledger: string
           amount: number
           amount_forex: number
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           currency: string
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           ledger: string
         }
@@ -1713,11 +1645,9 @@ export type Database = {
           _ledger?: string
           amount?: number
           amount_forex?: number
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           currency?: string
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
         }
@@ -1725,28 +1655,26 @@ export type Database = {
           _ledger?: string
           amount?: number
           amount_forex?: number
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           currency?: string
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
         }
         Relationships: [
           {
-            foreignKeyName: "trn_accounting_company_id_fkey"
+            foreignKeyName: "fk_trn_accounting_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_accounting_division_id_fkey"
+            foreignKeyName: "fk_trn_accounting_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1755,10 +1683,8 @@ export type Database = {
           _attendancetype_name: string
           _employee_name: string
           attendancetype_name: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           employee_name: string
           guid: string
           time_value: number
@@ -1768,10 +1694,8 @@ export type Database = {
           _attendancetype_name?: string
           _employee_name?: string
           attendancetype_name?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           employee_name?: string
           guid?: string
           time_value?: number
@@ -1781,10 +1705,8 @@ export type Database = {
           _attendancetype_name?: string
           _employee_name?: string
           attendancetype_name?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           employee_name?: string
           guid?: string
           time_value?: number
@@ -1792,18 +1714,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "trn_attendance_company_id_fkey"
+            foreignKeyName: "fk_trn_attendance_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_attendance_division_id_fkey"
+            foreignKeyName: "fk_trn_attendance_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1813,10 +1735,8 @@ export type Database = {
           amount: number
           bank_name: string
           bankers_date: string | null
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           instrument_date: string | null
           instrument_number: string
@@ -1828,10 +1748,8 @@ export type Database = {
           amount?: number
           bank_name?: string
           bankers_date?: string | null
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           instrument_date?: string | null
           instrument_number?: string
@@ -1843,10 +1761,8 @@ export type Database = {
           amount?: number
           bank_name?: string
           bankers_date?: string | null
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           instrument_date?: string | null
           instrument_number?: string
@@ -1855,18 +1771,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "trn_bank_company_id_fkey"
+            foreignKeyName: "fk_trn_bank_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_bank_division_id_fkey"
+            foreignKeyName: "fk_trn_bank_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1876,11 +1792,9 @@ export type Database = {
           _godown: string
           _item: string
           amount: number
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           destination_godown: string | null
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           godown: string | null
           guid: string
           item: string
@@ -1893,11 +1807,9 @@ export type Database = {
           _godown?: string
           _item?: string
           amount?: number
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           destination_godown?: string | null
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           godown?: string | null
           guid?: string
           item?: string
@@ -1910,11 +1822,9 @@ export type Database = {
           _godown?: string
           _item?: string
           amount?: number
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           destination_godown?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           godown?: string | null
           guid?: string
           item?: string
@@ -1924,18 +1834,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "trn_batch_company_id_fkey"
+            foreignKeyName: "fk_trn_batch_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_batch_division_id_fkey"
+            foreignKeyName: "fk_trn_batch_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1945,10 +1855,8 @@ export type Database = {
           amount: number
           bill_credit_period: number
           billtype: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           guid: string
           ledger: string
           name: string
@@ -1958,10 +1866,8 @@ export type Database = {
           amount?: number
           bill_credit_period?: number
           billtype?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
           name?: string
@@ -1971,76 +1877,68 @@ export type Database = {
           amount?: number
           bill_credit_period?: number
           billtype?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
           name?: string
         }
         Relationships: [
           {
-            foreignKeyName: "trn_bill_company_id_fkey"
+            foreignKeyName: "fk_trn_bill_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_bill_division_id_fkey"
+            foreignKeyName: "fk_trn_bill_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
       trn_closingstock_ledger: {
         Row: {
           _ledger: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           ledger: string
           stock_date: string | null
           stock_value: number
         }
         Insert: {
           _ledger?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           ledger?: string
           stock_date?: string | null
           stock_value?: number
         }
         Update: {
           _ledger?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           ledger?: string
           stock_date?: string | null
           stock_value?: number
         }
         Relationships: [
           {
-            foreignKeyName: "trn_closingstock_ledger_company_id_fkey"
+            foreignKeyName: "fk_trn_closingstock_ledger_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_closingstock_ledger_division_id_fkey"
+            foreignKeyName: "fk_trn_closingstock_ledger_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2050,12 +1948,10 @@ export type Database = {
           _costcentre: string
           _ledger: string
           amount: number
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           costcategory: string
           costcentre: string
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           ledger: string
         }
@@ -2064,12 +1960,10 @@ export type Database = {
           _costcentre?: string
           _ledger?: string
           amount?: number
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           costcategory?: string
           costcentre?: string
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
         }
@@ -2078,29 +1972,27 @@ export type Database = {
           _costcentre?: string
           _ledger?: string
           amount?: number
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           costcategory?: string
           costcentre?: string
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
         }
         Relationships: [
           {
-            foreignKeyName: "trn_cost_category_centre_company_id_fkey"
+            foreignKeyName: "fk_trn_cost_category_centre_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_cost_category_centre_division_id_fkey"
+            foreignKeyName: "fk_trn_cost_category_centre_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2109,11 +2001,9 @@ export type Database = {
           _costcentre: string
           _ledger: string
           amount: number
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           costcentre: string
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           ledger: string
         }
@@ -2121,11 +2011,9 @@ export type Database = {
           _costcentre?: string
           _ledger?: string
           amount?: number
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           costcentre?: string
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
         }
@@ -2133,28 +2021,26 @@ export type Database = {
           _costcentre?: string
           _ledger?: string
           amount?: number
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           costcentre?: string
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           ledger?: string
         }
         Relationships: [
           {
-            foreignKeyName: "trn_cost_centre_company_id_fkey"
+            foreignKeyName: "fk_trn_cost_centre_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_cost_centre_division_id_fkey"
+            foreignKeyName: "fk_trn_cost_centre_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2165,12 +2051,10 @@ export type Database = {
           _item: string
           _ledger: string
           amount: number
-          company_id: string
-          company_uuid: string | null
+          company_id: string | null
           costcategory: string
           costcentre: string
-          division_id: string
-          division_uuid: string | null
+          division_id: string | null
           guid: string
           item: string
           ledger: string
@@ -2181,12 +2065,10 @@ export type Database = {
           _item?: string
           _ledger?: string
           amount?: number
-          company_id: string
-          company_uuid?: string | null
+          company_id?: string | null
           costcategory?: string
           costcentre?: string
-          division_id: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           item?: string
           ledger?: string
@@ -2197,30 +2079,28 @@ export type Database = {
           _item?: string
           _ledger?: string
           amount?: number
-          company_id?: string
-          company_uuid?: string | null
+          company_id?: string | null
           costcategory?: string
           costcentre?: string
-          division_id?: string
-          division_uuid?: string | null
+          division_id?: string | null
           guid?: string
           item?: string
           ledger?: string
         }
         Relationships: [
           {
-            foreignKeyName: "trn_cost_inventory_category_centre_company_id_fkey"
+            foreignKeyName: "fk_trn_cost_inventory_category_centre_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_cost_inventory_category_centre_division_id_fkey"
+            foreignKeyName: "fk_trn_cost_inventory_category_centre_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2230,10 +2110,8 @@ export type Database = {
           _employee_name: string
           amount: number
           category: string
-          company_id: string
-          company_uuid: string | null
-          division_id: string
-          division_uuid: string | null
+          company_id: string | null
+          division_id: string | null
           employee_name: string
           employee_sort_order: number
           guid: string
@@ -2243,10 +2121,8 @@ export type Database = {
           _employee_name?: string
           amount?: number
           category?: string
-          company_id: string
-          company_uuid?: string | null
-          division_id: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           employee_name?: string
           employee_sort_order?: number
           guid?: string
@@ -2256,28 +2132,26 @@ export type Database = {
           _employee_name?: string
           amount?: number
           category?: string
-          company_id?: string
-          company_uuid?: string | null
-          division_id?: string
-          division_uuid?: string | null
+          company_id?: string | null
+          division_id?: string | null
           employee_name?: string
           employee_sort_order?: number
           guid?: string
         }
         Relationships: [
           {
-            foreignKeyName: "trn_employee_company_id_fkey"
+            foreignKeyName: "fk_trn_employee_company"
             columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "trn_employee_division_id_fkey"
+            foreignKeyName: "fk_trn_employee_division"
             columns: ["division_id"]
             isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
         ]
       }
