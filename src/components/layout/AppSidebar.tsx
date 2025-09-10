@@ -104,7 +104,7 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
   };
 
   return (
-    <div>
+    <div className="list-none">
       <SidebarMenuItem>
         <SidebarMenuButton asChild>
           <div
@@ -259,11 +259,11 @@ export function AppSidebar() {
             <div className="text-xs font-semibold text-muted-foreground px-3 mb-2">
               Organization Hierarchy
             </div>
-            <div>
+            <SidebarMenu className="list-none">
               {mockData.companies.map((company) => (
                 <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
               ))}
-            </div>
+            </SidebarMenu>
           </div>
 
           <WorkspaceModules workspaceId={currentWorkspaceId} />
