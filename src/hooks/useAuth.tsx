@@ -31,17 +31,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('AuthProvider: Setting up auth state listener');
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('AuthProvider: Auth state change event:', event, 'session:', !!session, 'user:', session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log('AuthProvider: Setting loading to false (signed in/refreshed)');
           setLoading(false);
         }
         
         if (event === 'SIGNED_OUT') {
+          console.log('AuthProvider: Setting loading to false (signed out)');
           setLoading(false);
         }
       }
@@ -50,12 +54,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // THEN check for existing session
     const getInitialSession = async () => {
       try {
+        console.log('AuthProvider: Getting initial session');
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('AuthProvider: Initial session:', !!session, 'user:', session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
       } catch (error) {
-        console.error('Error getting session:', error);
+        console.error('AuthProvider: Error getting session:', error);
       } finally {
+        console.log('AuthProvider: Setting loading to false (initial session check complete)');
         setLoading(false);
       }
     };

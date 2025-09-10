@@ -11,8 +11,12 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  console.log('AuthGuard: user =', user?.id, 'loading =', loading);
+
   useEffect(() => {
+    console.log('AuthGuard: Effect running, user =', user?.id, 'loading =', loading);
     if (!loading && !user) {
+      console.log('AuthGuard: Redirecting to auth page');
       // Save the attempted URL to redirect back after login
       navigate('/auth', { 
         state: { from: location },
