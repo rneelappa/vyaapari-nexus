@@ -116,6 +116,7 @@ interface DivisionHierarchyItemProps {
 }
 
 function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
+  console.log('[TallyHierarchy] DivisionHierarchyItem rendering for division:', division.id);
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
   const { state } = useSidebar();
@@ -190,6 +191,7 @@ interface TallyMenuSectionProps {
 }
 
 function TallyMenuSection({ section, level }: TallyMenuSectionProps) {
+  console.log('[TallyHierarchy] TallyMenuSection rendering for section:', section.name);
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
   const { state } = useSidebar();
@@ -267,27 +269,33 @@ function TallyMenuSection({ section, level }: TallyMenuSectionProps) {
 }
 
 export function TallyHierarchyRebuilt() {
+  console.log('[TallyHierarchy] TallyHierarchyRebuilt rendering');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
 
   const fetchTallyData = useCallback(async () => {
+    console.log('[TallyHierarchy] fetchTallyData called');
     try {
+      console.log('[TallyHierarchy] Setting loading to true, calling service');
       setLoading(true);
       setError(null);
       
       const tallyData = await sidebarDataService.fetchTallyHierarchy();
+      console.log('[TallyHierarchy] Tally data received:', tallyData?.length || 0, 'companies');
       setCompanies(tallyData);
     } catch (err) {
-      console.error('Error fetching Tally hierarchy:', err);
+      console.error('[TallyHierarchy] Error fetching Tally hierarchy:', err);
       setError(err instanceof Error ? err.message : 'Failed to load Tally data');
     } finally {
+      console.log('[TallyHierarchy] Setting loading to false');
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    console.log('[TallyHierarchy] useEffect triggered, calling fetchTallyData');
     fetchTallyData();
   }, [fetchTallyData]);
 

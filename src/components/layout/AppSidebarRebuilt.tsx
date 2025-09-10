@@ -177,34 +177,45 @@ function SidebarSkeleton() {
 interface AppSidebarContentProps {}
 
 function AppSidebarContent({}: AppSidebarContentProps) {
+  console.log('[AppSidebar] AppSidebarContent rendering');
   const { user } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  
+  console.log('[AppSidebar] Current user:', user?.id, 'collapsed:', collapsed, 'location:', location.pathname);
   
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!user?.id) return;
+    console.log('[AppSidebar] fetchData called, user ID:', user?.id);
+    if (!user?.id) {
+      console.log('[AppSidebar] No user ID, returning early');
+      return;
+    }
 
     try {
+      console.log('[AppSidebar] Setting loading to true, calling service');
       setLoading(true);
       setError(null);
       
       const organizationData = await sidebarDataService.fetchOrganizationData(user.id);
+      console.log('[AppSidebar] Organization data received:', organizationData?.length || 0, 'companies');
       setCompanies(organizationData);
     } catch (err) {
-      console.error('Error fetching sidebar data:', err);
+      console.error('[AppSidebar] Error fetching sidebar data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load sidebar data');
     } finally {
+      console.log('[AppSidebar] Setting loading to false');
       setLoading(false);
     }
   }, [user?.id]);
 
   // Initial data fetch
   useEffect(() => {
+    console.log('[AppSidebar] useEffect triggered for fetchData');
     fetchData();
   }, [fetchData]);
 
