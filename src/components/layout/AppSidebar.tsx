@@ -133,7 +133,7 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
       </SidebarMenuItem>
 
       {hasChildren && isExpanded && (
-        <div className="mt-1">
+        <div className="mt-1 ml-6 border-l border-border/30 pl-4">
           {type === "company" && item.divisions?.map((division: any) => (
             <HierarchyItemContainer key={division.id} item={division} type="division" level={level + 1} />
           ))}
@@ -387,12 +387,9 @@ function AppSidebarContent() {
               </div>
             ) : (
               <SidebarMenu className="list-none">
-                {companies.map((company) => {
-                  console.log('AppSidebar: Rendering company:', company.name, 'with', company.divisions.length, 'divisions');
-                  return (
-                    <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
-                  );
-                })}
+                {companies.map((company) => (
+                  <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
+                ))}
               </SidebarMenu>
             )}
           </div>
