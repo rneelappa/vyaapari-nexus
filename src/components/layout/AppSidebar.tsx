@@ -64,7 +64,7 @@ interface HierarchyItemProps {
 
 const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyItemProps) => {
   const location = useLocation();
-  const hasChildren = (type === "company" && item.divisions?.length) || (type === "division" && item.workspaces?.length);
+  const hasChildren = (type === "company" && item.divisions?.length > 0) || (type === "division" && item.workspaces?.length > 0);
   const RoleIcon = roleIcons[item.role as keyof typeof roleIcons] || Users;
 
   const getIcon = () => {
@@ -134,10 +134,10 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
 
       {hasChildren && isExpanded && (
         <div className="mt-1 ml-6 border-l border-border/30 pl-4">
-          {type === "company" && item.divisions?.map((division: any) => (
+          {type === "company" && item.divisions?.length > 0 && item.divisions.map((division: any) => (
             <HierarchyItemContainer key={division.id} item={division} type="division" level={level + 1} />
           ))}
-          {type === "division" && item.workspaces?.map((workspace: any) => (
+          {type === "division" && item.workspaces?.length > 0 && item.workspaces.map((workspace: any) => (
             <HierarchyItem key={workspace.id} item={workspace} type="workspace" level={level + 1} />
           ))}
         </div>
@@ -304,9 +304,9 @@ function AppSidebarContent() {
               id: division.id,
               name: division.name,
               description: division.description,
-              role: "Division Admin", // Remove tally_enabled check for now
+              role: "Division Admin",
               company_id: company.id,
-              tally_enabled: false, // Default to false for now
+              tally_enabled: division.tally_enabled || false,
               workspaces: (workspacesData || [])
                 .filter(workspace => workspace.division_id === division.id)
                 .map(workspace => ({
