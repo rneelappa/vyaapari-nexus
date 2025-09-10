@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronDown, ChevronRight, Building, Building2, Database, Users, BookOpen, Package, Warehouse, Target, FileSignature, TrendingUp, Calculator, FileText, BarChart3, PieChart, FileBarChart, Activity, Settings } from "lucide-react";
+import { ChevronDown, ChevronRight, Building, Building2, Database, Users, BookOpen, Package, Warehouse, Target, FileSignature, TrendingUp, Calculator, FileText, BarChart3, PieChart, FileBarChart, Activity, Settings, Scale } from "lucide-react";
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import TallyMenuItemContainer from "./TallyMenuItem";
@@ -35,6 +35,22 @@ const tallyMenuStructure = {
       name: "Voucher Types",
       icon: FileSignature,
       path: "/tally/masters/voucher-types"
+    }, {
+      name: "Employees",
+      icon: Users,
+      path: "/tally/masters/employees"
+    }, {
+      name: "UOM",
+      icon: Scale,
+      path: "/tally/masters/uom"
+    }, {
+      name: "Cost Categories",
+      icon: Target,
+      path: "/tally/masters/cost-categories"
+    }, {
+      name: "Payheads",
+      icon: Calculator,
+      path: "/tally/masters/payheads"
     }]
   },
   transactions: {

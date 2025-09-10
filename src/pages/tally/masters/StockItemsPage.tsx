@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, Package, Scale, TrendingUp, MapPin } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Package, Scale, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface StockItem {
   guid: string;
@@ -95,12 +96,39 @@ export default function StockItemsPage() {
       setLoading(true);
       setError(null);
       
-      // Using mock data until Tally tables are created
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
-      setStockItems(mockStockItems);
+      const { data, error } = await supabase
+        .from('mst_stock_item')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform data to match interface
+      const transformedData: StockItem[] = (data || []).map(item => ({
+        guid: item.guid,
+        name: item.name,
+        parent: item.parent,
+        alias: item.alias,
+        part_number: item.part_number,
+        uom: item.uom,
+        costing_method: item.costing_method || 'FIFO',
+        opening_balance: item.opening_balance || 0,
+        closing_balance: item.closing_balance || 0,
+        opening_rate: item.opening_rate || 0,
+        closing_rate: item.closing_rate || 0,
+        opening_value: item.opening_value || 0,
+        closing_value: item.closing_value || 0,
+        gst_hsn_code: item.gst_hsn_code || '',
+        gst_rate: item.gst_rate || 0,
+      }));
+      
+      setStockItems(transformedData);
     } catch (err) {
       console.error('Error fetching stock items:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch stock items');
+      setStockItems([]);
     } finally {
       setLoading(false);
     }
@@ -138,10 +166,16 @@ export default function StockItemsPage() {
             Manage inventory items, their specifications and stock levels
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Stock Item
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchStockItems} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Stock Item
+          </Button>
+        </div>
       </div>
 
       <Card>

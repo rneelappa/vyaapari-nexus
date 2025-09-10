@@ -28,6 +28,10 @@ import StockItemsPage from "@/pages/tally/masters/StockItemsPage";
 import GodownsPage from "@/pages/tally/masters/GodownsPage";
 import CostCentersPage from "@/pages/tally/masters/CostCentersPage";
 import VoucherTypesPage from "@/pages/tally/masters/VoucherTypesPage";
+import EmployeesPage from "@/pages/tally/masters/EmployeesPage";
+import UOMPage from "@/pages/tally/masters/UOMPage";
+import CostCategoriesPage from "@/pages/tally/masters/CostCategoriesPage";
+import PayheadsPage from "@/pages/tally/masters/PayheadsPage";
 import AccountingPage from "@/pages/tally/transactions/AccountingPage";
 import NonAccountingPage from "@/pages/tally/transactions/NonAccountingPage";
 import InventoryPage from "@/pages/tally/transactions/InventoryPage";
@@ -158,13 +162,45 @@ function App() {
                 </AuthGuard>
               } />
               
-              <Route path="/tally/masters/voucher-types" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <VoucherTypesPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
+               <Route path="/tally/masters/voucher-types" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <VoucherTypesPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/masters/employees" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <EmployeesPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/masters/uom" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <UOMPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/masters/cost-categories" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <CostCategoriesPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/masters/payheads" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <PayheadsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
               
               <Route path="/tally/transactions/accounting" element={
                 <AuthGuard>
