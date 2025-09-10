@@ -29,6 +29,23 @@ async function debugAuth() {
   if (!user?.user) {
     console.error('[DEBUG] LedgersPage - No user found - user not authenticated');
   }
+  
+  // Test a simple query with explicit auth header
+  if (session?.session?.access_token) {
+    try {
+      console.log('[DEBUG] Testing authenticated query...');
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${session.session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Accept-Profile': 'public'
+        }
+      });
+      console.log('[DEBUG] Test query response:', response.status, await response.text());
+    } catch (error) {
+      console.error('[DEBUG] Test query failed:', error);
+    }
+  }
 }
 
 // Run debug immediately
