@@ -13,6 +13,47 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Edit, Trash2, Users, TrendingUp, TrendingDown, RefreshCw, TreePine, ChevronRight, ChevronDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+// TEMPORARY DEBUG CODE - Remove after testing
+async function debugAuth() {
+  console.log('[DEBUG] Checking authentication status...');
+  
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  console.log('[DEBUG] Session:', session, 'Error:', sessionError);
+  
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  console.log('[DEBUG] User:', user, 'Error:', userError);
+  
+  if (!session?.session) {
+    console.error('[DEBUG] No session found - user not authenticated');
+  } else {
+    console.log('[DEBUG] Access token:', session.session.access_token?.substring(0, 20) + '...');
+  }
+  
+  if (!user?.user) {
+    console.error('[DEBUG] No user found - user not authenticated');
+  }
+  
+  // Test a simple query with explicit auth header
+  if (session?.session?.access_token) {
+    try {
+      console.log('[DEBUG] Testing authenticated query...');
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${session.session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Accept-Profile': 'public'
+        }
+      });
+      console.log('[DEBUG] Test query response:', response.status, await response.text());
+    } catch (error) {
+      console.error('[DEBUG] Test query failed:', error);
+    }
+  }
+}
+
+// Run debug immediately
+debugAuth();
 import { useAuth } from "@/hooks/useAuth";
 import TallyApiService, { TallyGroup } from "@/services/tally-api";
 import { useForm } from "react-hook-form";
