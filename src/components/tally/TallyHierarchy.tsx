@@ -175,8 +175,12 @@ const DivisionHierarchyItem = ({
         </SidebarMenuButton>
       </SidebarMenuItem>
 
-      {isExpanded && <div className="ml-6 mt-1 border-l border-border/30 pl-4">
-          {Object.values(tallyMenuStructure).map(category => <TallyMenuItemContainer key={category.name} item={category} level={0} />)}
+      {isExpanded && <div className="mt-2 -mx-3">
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-l-4 border-primary py-3 px-4 shadow-soft">
+            <div className="space-y-1">
+              {Object.values(tallyMenuStructure).map(category => <TallyMenuItemContainer key={category.name} item={category} level={0} />)}
+            </div>
+          </div>
         </div>}
     </div>;
 };
