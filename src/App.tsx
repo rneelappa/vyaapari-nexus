@@ -41,7 +41,7 @@ import FinancialStatementsPage from "@/pages/tally/display/FinancialStatementsPa
 import ReportsPage from "@/pages/tally/display/ReportsPage";
 import ConfigurationPage from "@/pages/tally/utilities/ConfigurationPage";
 import TestApiPage from "@/pages/tally/TestApiPage";
-import CRUDTestPage from "@/pages/tests/CRUDTestPage";
+
 
 const queryClient = new QueryClient();
 
@@ -275,13 +275,6 @@ function App() {
                  </AuthGuard>
                } />
                
-               <Route path="/tests/crud" element={
-                 <AuthGuard>
-                   <MainLayout>
-                     <CRUDTestPage />
-                   </MainLayout>
-                 </AuthGuard>
-               } />
                
                <Route path="*" element={<NotFound />} />
             </Routes>
