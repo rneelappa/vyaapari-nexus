@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Building2, Users, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck, Building, LogOut } from "lucide-react";
 import { NavLink, useLocation, Link } from "react-router-dom";
 import {
@@ -16,51 +16,27 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import TallyHierarchy from "@/components/tally/TallyHierarchy";
 import { UserProfile } from "./UserProfile";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data structure - updated with real company UUIDs from database
-const mockData = {
-  companies: [
-    {
-      id: "550e8400-e29b-41d4-a716-446655440000",
-      name: "Acme Corporation",
-      role: "Company Admin",
-      divisions: [
-        {
-          id: "div1",
-          name: "Engineering",
-          role: "Division Admin",
-          workspaces: [
-            { id: "ws1", name: "Web Development", role: "Workspace Admin" },
-            { id: "ws2", name: "Mobile Apps", role: "User" },
-          ]
-        },
-        {
-          id: "div2",
-          name: "Marketing",
-          role: "User",
-          workspaces: [
-            { id: "ws3", name: "Digital Campaigns", role: "User" },
-          ]
-        }
-      ]
-    },
-    {
-      id: "550e8400-e29b-41d4-a716-446655440001",
-      name: "TechStart Inc",
-      role: "User",
-      divisions: [
-        {
-          id: "div3",
-          name: "Product",
-          role: "User",
-          workspaces: [
-            { id: "ws4", name: "Design System", role: "User" },
-          ]
-        }
-      ]
-    }
-  ]
-};
+interface CompanyData {
+  id: string;
+  name: string;
+  role: string;
+  divisions: DivisionData[];
+}
+
+interface DivisionData {
+  id: string;
+  name: string;
+  role: string;
+  workspaces: WorkspaceData[];
+}
+
+interface WorkspaceData {
+  id: string;
+  name: string;
+  role: string;
+}
 
 const roleIcons = {
   "Super Admin": Crown,
@@ -98,9 +74,7 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
   const getNavigationPath = () => {
     if (type === "company") return `/company/${item.id}`;
     if (type === "division") {
-      // Find parent company ID for division
-      const company = mockData.companies.find(c => c.divisions.some(d => d.id === item.id));
-      return company ? `/company/${company.id}/division/${item.id}` : "#";
+      return `/company/${item.company_id}/division/${item.id}`;
     }
     if (type === "workspace") return `/workspace/${item.id}`;
     return "#";
@@ -219,10 +193,83 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const isCollapsed = state === "collapsed";
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   
   // Extract workspace ID from URL for module navigation
   const workspaceMatch = location.pathname.match(/\/workspace\/([^\/]+)/);
   const currentWorkspaceId = workspaceMatch ? workspaceMatch[1] : null;
+
+  useEffect(() => {
+    const fetchOrganizationData = async () => {
+      if (!user) return;
+      
+      try {
+        // Fetch companies
+        const { data: companiesData, error: companiesError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('is_active', true);
+
+        if (companiesError) {
+          console.error('Error fetching companies:', companiesError);
+          return;
+        }
+
+        // Fetch divisions
+        const { data: divisionsData, error: divisionsError } = await supabase
+          .from('divisions')
+          .select('*')
+          .eq('is_active', true);
+
+        if (divisionsError) {
+          console.error('Error fetching divisions:', divisionsError);
+          return;
+        }
+
+        // Fetch workspaces
+        const { data: workspacesData, error: workspacesError } = await supabase
+          .from('workspaces')
+          .select('*');
+
+        if (workspacesError) {
+          console.error('Error fetching workspaces:', workspacesError);
+          return;
+        }
+
+        // Structure the data
+        const structuredCompanies: CompanyData[] = companiesData.map(company => ({
+          id: company.id,
+          name: company.name,
+          role: "Super Admin", // For now, all roles are Super Admin since user is super admin
+          divisions: divisionsData
+            .filter(division => division.company_id === company.id)
+            .map(division => ({
+              id: division.id,
+              name: division.name,
+              role: "Division Admin",
+              company_id: company.id,
+              workspaces: workspacesData
+                .filter(workspace => workspace.division_id === division.id)
+                .map(workspace => ({
+                  id: workspace.id,
+                  name: workspace.name,
+                  role: "Workspace Admin"
+                }))
+            }))
+        }));
+
+        setCompanies(structuredCompanies);
+      } catch (error) {
+        console.error('Error fetching organization data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizationData();
+  }, [user]);
 
   if (isCollapsed) {
     return (
@@ -231,7 +278,7 @@ export function AppSidebar() {
           <div className="flex flex-col items-center gap-2">
             <Building2 size={24} className="text-primary" />
             <div className="w-8 h-px bg-border" />
-            {mockData.companies.map((company) => (
+            {companies.map((company) => (
               <div key={company.id} className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
                 <Building2 size={16} />
               </div>
@@ -262,11 +309,15 @@ export function AppSidebar() {
             <div className="text-xs font-semibold text-muted-foreground px-3 mb-2">
               Organization Hierarchy
             </div>
-            <SidebarMenu className="list-none">
-              {mockData.companies.map((company) => (
-                <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
-              ))}
-            </SidebarMenu>
+            {loading ? (
+              <div className="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
+            ) : (
+              <SidebarMenu className="list-none">
+                {companies.map((company) => (
+                  <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
+                ))}
+              </SidebarMenu>
+            )}
           </div>
 
           <WorkspaceModules workspaceId={currentWorkspaceId} />
