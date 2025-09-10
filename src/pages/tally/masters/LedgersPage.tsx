@@ -33,7 +33,10 @@ const mockLedgers: Ledger[] = [
     gstn: "29AABCL1234A1Z5",
     email: "accounts@lsimech.com",
     mailing_address: "123 Industrial Area, Bangalore",
-    bank_account_number: "1234567890"
+    bank_account_number: "1234567890",
+    company_id: "COMPANY001",
+    division_id: "DIV001",
+    created_at: "2024-01-01T00:00:00Z"
   },
   {
     guid: "2",
@@ -47,7 +50,10 @@ const mockLedgers: Ledger[] = [
     gstn: "",
     email: "",
     mailing_address: "",
-    bank_account_number: ""
+    bank_account_number: "",
+    company_id: "COMPANY001",
+    division_id: "DIV001",
+    created_at: "2024-01-01T00:00:00Z"
   },
   {
     guid: "3",
@@ -61,7 +67,10 @@ const mockLedgers: Ledger[] = [
     gstn: "",
     email: "",
     mailing_address: "",
-    bank_account_number: ""
+    bank_account_number: "",
+    company_id: "COMPANY001",
+    division_id: "DIV001",
+    created_at: "2024-01-01T00:00:00Z"
   }
 ];
 
