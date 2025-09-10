@@ -255,15 +255,14 @@ export function AppSidebar() {
 
         console.log('AppSidebar: Divisions fetched:', divisionsData?.length || 0, 'divisions');
 
-        // Fetch workspaces
+        // Fetch workspaces (handle case where table might be empty)
         const { data: workspacesData, error: workspacesError } = await supabase
           .from('workspaces')
           .select('*');
 
         if (workspacesError) {
           console.error('AppSidebar: Error fetching workspaces:', workspacesError);
-          setLoading(false);
-          return;
+          // Don't return here - continue with empty workspaces
         }
 
         console.log('AppSidebar: Workspaces fetched:', workspacesData?.length || 0, 'workspaces');
@@ -276,9 +275,9 @@ export function AppSidebar() {
               id: division.id,
               name: division.name,
               description: division.description,
-              role: division.tally_enabled ? "Tally Admin" : "Division Admin",
+              role: "Division Admin", // Remove tally_enabled check for now
               company_id: company.id,
-              tally_enabled: division.tally_enabled || false,
+              tally_enabled: false, // Default to false for now
               workspaces: (workspacesData || [])
                 .filter(workspace => workspace.division_id === division.id)
                 .map(workspace => ({

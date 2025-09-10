@@ -57,9 +57,18 @@ interface Company {
 interface Division {
   id: string;
   name: string;
-  tally_enabled: boolean;
-  tally_url: string | null;
+  description: string | null;
   company_id: string;
+  manager_name: string | null;
+  status: string | null;
+  budget: number | null;
+  employee_count: number | null;
+  performance_score: number | null;
+  parent_division_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
 }
 
 interface CompanyHierarchyItemProps {
@@ -70,7 +79,7 @@ interface CompanyHierarchyItemProps {
 
 const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarchyItemProps) => {
   // Filter to only show tally-enabled divisions
-  const tallyEnabledDivisions = company.divisions.filter((division: Division) => division.tally_enabled);
+  const tallyEnabledDivisions = company.divisions; // Show all divisions for now
   
   if (tallyEnabledDivisions.length === 0) {
     return null; // Don't show company if no tally-enabled divisions
@@ -176,7 +185,7 @@ const TallyHierarchy = () => {
         const { data: divisionsData, error: divisionsError } = await supabase
           .from('divisions')
           .select('*')
-          .eq('tally_enabled', true);
+          .eq('is_active', true);
 
         if (divisionsError) {
           console.error('Error fetching divisions:', divisionsError);
