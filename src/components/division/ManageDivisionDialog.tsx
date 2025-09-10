@@ -41,21 +41,19 @@ interface ManageDivisionDialogProps {
 const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }: ManageDivisionDialogProps) => {
   const [formData, setFormData] = useState({
     name: division.name,
-    description: division.description,
-    manager_name: division.manager_name || division.manager,
-    budget: division.budget,
   });
   
   const [tallyEnabled, setTallyEnabled] = useState(division.tally_enabled || false);
   const [tallyUrl, setTallyUrl] = useState(division.tally_url || "");
-  const [tallyCompanyId, setTallyCompanyId] = useState(division.tally_company_id || "");
   const { toast } = useToast();
 
   // Update state when division prop changes
   useEffect(() => {
+    setFormData({
+      name: division.name,
+    });
     setTallyEnabled(division.tally_enabled || false);
     setTallyUrl(division.tally_url || "");
-    setTallyCompanyId(division.tally_company_id || "");
   }, [division]);
 
   const handleSave = async () => {
@@ -70,35 +68,10 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
         return;
       }
 
-      // Safely parse budget - handle both string and number inputs
-      let budgetValue = null;
-      if (formData.budget) {
-        const budgetStr = formData.budget.toString();
-        if (budgetStr.trim()) {
-          // Remove currency symbols and convert to number
-          const numericBudget = budgetStr.replace(/[₹,\s]/g, '');
-          if (numericBudget) {
-            budgetValue = parseFloat(numericBudget);
-            if (isNaN(budgetValue)) {
-              toast({
-                title: "Error",
-                description: "Please enter a valid budget amount.",
-                variant: "destructive",
-              });
-              return;
-            }
-          }
-        }
-      }
-
       console.log('Saving division with data:', {
         name: formData.name,
-        description: formData.description || null,
-        manager_name: formData.manager_name || null,
-        budget: budgetValue,
         tally_enabled: tallyEnabled,
         tally_url: tallyEnabled ? tallyUrl : null,
-        tally_company_id: tallyEnabled ? tallyCompanyId : null,
       });
 
       // Update division basic information in database
@@ -106,12 +79,8 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
         .from('divisions')
         .update({
           name: formData.name,
-          description: formData.description || null,
-          manager_name: formData.manager_name || null,
-          budget: budgetValue,
           tally_enabled: tallyEnabled,
           tally_url: tallyEnabled ? tallyUrl : null,
-          tally_company_id: tallyEnabled ? tallyCompanyId : null,
         })
         .eq('id', division.id)
         .select()
@@ -129,7 +98,6 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
         ...formData,
         tally_enabled: tallyEnabled,
         tally_url: tallyEnabled ? tallyUrl : null,
-        tally_company_id: tallyEnabled ? tallyCompanyId : null,
       };
       
       onDivisionUpdate(updatedDivision);
@@ -203,38 +171,6 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Enter division description"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="manager">Manager Name</Label>
-                  <Input
-                    id="manager"
-                    value={formData.manager_name}
-                    onChange={(e) => setFormData({ ...formData, manager_name: e.target.value })}
-                    placeholder="Enter manager name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="budget">Budget</Label>
-                  <Input
-                    id="budget"
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    placeholder="e.g., ₹2.5 Cr"
-                  />
-                </div>
-              </div>
             </CardContent>
           </Card>
 
@@ -287,19 +223,6 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Enter the URL of your Tally server (e.g., http://localhost:9000)
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tallyCompanyId">Tally Company ID</Label>
-                    <Input
-                      id="tallyCompanyId"
-                      value={tallyCompanyId}
-                      onChange={(e) => setTallyCompanyId(e.target.value)}
-                      placeholder="Enter Tally Company ID (e.g., bc90d453-0c64-4f6f-8bbe-dca32aba40d1)"
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Unique identifier for the company in Tally
                     </p>
                   </div>
 
