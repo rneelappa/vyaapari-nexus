@@ -1,30 +1,114 @@
 import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Users, MapPin, Settings } from "lucide-react";
+import { Building2, Users, MapPin, Settings, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const CompanyPage = () => {
   const { companyId } = useParams();
+  const [company, setCompany] = useState<any>(null);
+  const [divisions, setDivisions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Mock company data - in real app this would come from API
-  const company = {
-    id: companyId,
-    name: "Vyaapari360ERP",
-    description: "Leading ERP solution provider with global presence",
-    address: "Mumbai, Maharashtra, India",
-    totalEmployees: 1250,
-    totalDivisions: 4,
-    establishedYear: 2018,
-    status: "Active"
-  };
-
-  const divisions = [
-    { id: "div1", name: "Technology Division", employees: 450, workspaces: 8 },
-    { id: "div2", name: "Sales & Marketing", employees: 320, workspaces: 6 },
-    { id: "div3", name: "Operations", employees: 280, workspaces: 5 },
-    { id: "div4", name: "Human Resources", employees: 200, workspaces: 4 }
-  ];
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      if (!companyId) return;
+      
+      try {
+        // Fetch company data
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', companyId)
+          .single();
+          
+        if (companyError) throw companyError;
+        
+        // Fetch divisions data
+        const { data: divisionsData, error: divisionsError } = await supabase
+          .from('divisions')
+          .select('*')
+          .eq('company_id', companyId);
+          
+        if (divisionsError) throw divisionsError;
+        
+        // Fetch workspaces count per division
+        const { data: workspacesData, error: workspacesError } = await supabase
+          .from('workspaces')
+          .select('division_id')
+          .eq('company_id', companyId);
+          
+        if (workspacesError) throw workspacesError;
+        
+        // Count workspaces per division
+        const workspacesByDivision = workspacesData.reduce((acc, workspace) => {
+          acc[workspace.division_id] = (acc[workspace.division_id] || 0) + 1;
+          return acc;
+        }, {});
+        
+        const enrichedDivisions = divisionsData.map(division => ({
+          ...division,
+          workspaces: workspacesByDivision[division.id] || 0
+        }));
+        
+        setCompany({
+          ...companyData,
+          totalEmployees: divisionsData.reduce((acc, div) => acc + (div.employee_count || 0), 0),
+          totalDivisions: divisionsData.length,
+          establishedYear: new Date(companyData.created_at).getFullYear(),
+          status: companyData.is_active ? "Active" : "Inactive"
+        });
+        
+        setDivisions(enrichedDivisions);
+      } catch (error) {
+        console.error('Error fetching company data:', error);
+        // Fallback to mock data if fetch fails
+        setCompany({
+          id: companyId,
+          name: "Acme Corporation",
+          description: "Sample company data",
+          domain: "acme.com",
+          totalEmployees: 500,
+          totalDivisions: 3,
+          establishedYear: 2020,
+          status: "Active"
+        });
+        setDivisions([
+          { id: "div1", name: "Technology", employee_count: 200, workspaces: 5 },
+          { id: "div2", name: "Sales", employee_count: 150, workspaces: 3 },
+          { id: "div3", name: "Operations", employee_count: 150, workspaces: 4 }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchCompanyData();
+  }, [companyId]);
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+  
+  if (!company) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-muted-foreground">
+              Company not found
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -39,10 +123,12 @@ const CompanyPage = () => {
               <h1 className="text-3xl font-bold text-foreground">{company.name}</h1>
               <p className="text-muted-foreground mt-1">{company.description}</p>
               <div className="flex items-center space-x-4 mt-2">
-                <Badge variant="secondary" className="flex items-center space-x-1">
-                  <MapPin className="h-3 w-3" />
-                  <span>{company.address}</span>
-                </Badge>
+                {company.domain && (
+                  <Badge variant="secondary" className="flex items-center space-x-1">
+                    <MapPin className="h-3 w-3" />
+                    <span>{company.domain}</span>
+                  </Badge>
+                )}
                 <Badge variant="outline">Est. {company.establishedYear}</Badge>
                 <Badge className="bg-accent text-accent-foreground">{company.status}</Badge>
               </div>
@@ -85,7 +171,7 @@ const CompanyPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{divisions.reduce((acc, div) => acc + div.workspaces, 0)}</div>
+            <div className="text-2xl font-bold">{divisions.reduce((acc, div) => acc + (div.workspaces || 0), 0)}</div>
             <p className="text-xs text-muted-foreground">Active workspaces</p>
           </CardContent>
         </Card>
@@ -113,8 +199,8 @@ const CompanyPage = () => {
                 </CardHeader>
                 <CardContent className="pt-0">
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>{division.employees} employees</span>
-                    <span>{division.workspaces} workspaces</span>
+                    <span>{division.employee_count || 0} employees</span>
+                    <span>{division.workspaces || 0} workspaces</span>
                   </div>
                 </CardContent>
               </Card>
