@@ -264,13 +264,22 @@ const TallyWorkspaceItem = ({ item, level, isExpanded, onToggle }: {
   const hasChildren = item.children && item.children.length > 0;
   const indent = level * 12;
 
+  // Check if current item is active - exact path match only
+  const isActive = item.path && location.pathname === item.path;
+  
+  // Check if any child is active (for parent highlighting)
+  const hasActiveChild = hasChildren && item.children?.some((child: any) => 
+    child.path && location.pathname === child.path
+  );
+
   return (
     <div className="list-none">
       <SidebarMenuItem>
         <SidebarMenuButton asChild>
           <div
             className={`flex items-center w-full rounded-lg transition-smooth
-              ${location.pathname.includes(item.path || '') ? 'bg-accent text-accent-foreground shadow-soft' : 'hover:bg-muted/50'}
+              ${isActive ? 'bg-primary text-primary-foreground shadow-soft' : 
+                hasActiveChild ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/50'}
             `}
             style={{ paddingLeft: `${12 + indent}px` }}
           >
@@ -316,7 +325,21 @@ const TallyWorkspaceItem = ({ item, level, isExpanded, onToggle }: {
 };
 
 const TallyWorkspaceContainer = ({ item, level }: { item: any; level: number }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const location = useLocation();
+  
+  // Check if any child is active to auto-expand
+  const hasActiveChild = item.children?.some((child: any) => 
+    child.path && location.pathname === child.path
+  );
+  
+  const [isExpanded, setIsExpanded] = useState(hasActiveChild);
+  
+  // Update expansion state when route changes
+  useState(() => {
+    if (hasActiveChild && !isExpanded) {
+      setIsExpanded(true);
+    }
+  });
   
   return (
     <TallyWorkspaceItem
