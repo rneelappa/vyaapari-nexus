@@ -21,7 +21,7 @@ interface BulkImportRequest {
   batch_size?: number;
   tables: {
     table_name: string;
-    operation: 'replace' | 'upsert' | 'append';
+    operation: 'replace' | 'upsert' | 'append' | 'insert';
     data: any[];
   }[];
 }
@@ -182,6 +182,7 @@ async function processTable(
         switch (operation) {
           case 'replace':
           case 'append':
+          case 'insert':
             result = await supabase.from(tableName).insert(enrichedBatch);
             break;
             
