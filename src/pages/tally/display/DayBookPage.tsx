@@ -1,95 +1,106 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Download, Filter, Calendar, FileText, Calculator, Package } from "lucide-react";
+import { Search, Download, Filter, Calendar, FileText, Calculator, Package, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DayBookEntry {
-  date: string;
-  voucher_type: string;
-  voucher_number: string;
-  party_name: string;
-  narration: string;
-  debit_amount: number;
-  credit_amount: number;
-  balance: number;
+  guid: string;
+  date: string | null;
+  ledger: string;
+  amount: number;
+  amount_forex: number;
+  currency: string;
+  company_id: string | null;
+  division_id: string | null;
 }
 
-const mockDayBookEntries: DayBookEntry[] = [
-  {
-    date: "2025-01-15",
-    voucher_type: "Sales",
-    voucher_number: "2800236/25-26",
-    party_name: "LSI-MECH ENGINEERS PRIVATE LIMITED",
-    narration: "Sales of finished goods",
-    debit_amount: 150000,
-    credit_amount: 0,
-    balance: 150000
-  },
-  {
-    date: "2025-01-15",
-    voucher_type: "Sales",
-    voucher_number: "2800236/25-26",
-    party_name: "LSI-MECH ENGINEERS PRIVATE LIMITED",
-    narration: "Sales of finished goods",
-    debit_amount: 0,
-    credit_amount: 150000,
-    balance: 0
-  },
-  {
-    date: "2025-01-14",
-    voucher_type: "Purchase",
-    voucher_number: "2800235/25-26",
-    party_name: "Steel Supplier Ltd",
-    narration: "Purchase of raw materials",
-    debit_amount: 50000,
-    credit_amount: 0,
-    balance: 50000
-  },
-  {
-    date: "2025-01-14",
-    voucher_type: "Purchase",
-    voucher_number: "2800235/25-26",
-    party_name: "Steel Supplier Ltd",
-    narration: "Purchase of raw materials",
-    debit_amount: 0,
-    credit_amount: 50000,
-    balance: 0
-  },
-  {
-    date: "2025-01-13",
-    voucher_type: "Payment",
-    voucher_number: "PAY-001",
-    party_name: "Electricity Board",
-    narration: "Monthly electricity bill payment",
-    debit_amount: 15000,
-    credit_amount: 0,
-    balance: 15000
-  },
-  {
-    date: "2025-01-13",
-    voucher_type: "Payment",
-    voucher_number: "PAY-001",
-    party_name: "Electricity Board",
-    narration: "Monthly electricity bill payment",
-    debit_amount: 0,
-    credit_amount: 15000,
-    balance: 0
-  }
-];
+interface VoucherEntry {
+  guid: string;
+  date: string | null;
+  voucher_type: string | null;
+  voucher_number: string | null;
+  narration: string | null;
+}
 
 export default function DayBookPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [dayBookEntries] = useState<DayBookEntry[]>(mockDayBookEntries);
+  const [accountingEntries, setAccountingEntries] = useState<DayBookEntry[]>([]);
+  const [voucherEntries, setVoucherEntries] = useState<VoucherEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  const filteredEntries = dayBookEntries.filter(entry =>
-    entry.voucher_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.voucher_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.party_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.narration.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    fetchDayBookData();
+  }, [selectedDate]);
+
+  const fetchDayBookData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch accounting entries
+      const { data: accountingData, error: accountingError } = await supabase
+        .from('trn_accounting')
+        .select('*')
+        .order('guid')
+        .limit(50);
+
+      if (accountingError) throw accountingError;
+
+      // Fetch voucher entries for additional context
+      const { data: voucherData, error: voucherError } = await supabase
+        .from('tally_trn_voucher')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(50);
+
+      if (voucherError) throw voucherError;
+
+      const transformedAccounting: DayBookEntry[] = (accountingData || []).map(item => ({
+        guid: item.guid,
+        date: null, // trn_accounting doesn't have date field
+        ledger: item.ledger,
+        amount: item.amount || 0,
+        amount_forex: item.amount_forex || 0,
+        currency: item.currency || 'INR',
+        company_id: item.company_id,
+        division_id: item.division_id,
+      }));
+
+      const transformedVouchers: VoucherEntry[] = (voucherData || []).map(item => ({
+        guid: item.guid,
+        date: item.date,
+        voucher_type: item.voucher_type,
+        voucher_number: item.voucher_number,
+        narration: item.narration,
+      }));
+
+      setAccountingEntries(transformedAccounting);
+      setVoucherEntries(transformedVouchers);
+    } catch (err) {
+      console.error('Error fetching day book data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch day book data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredAccountingEntries = accountingEntries.filter(entry =>
+    entry.ledger.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    entry.currency.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredVoucherEntries = voucherEntries.filter(entry =>
+    (entry.voucher_type && entry.voucher_type.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (entry.voucher_number && entry.voucher_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (entry.narration && entry.narration.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const formatCurrency = (amount: number) => {
@@ -97,24 +108,22 @@ export default function DayBookPage() {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     }).format(amount);
   };
 
-  const getVoucherTypeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'sales':
-        return <Package className="h-4 w-4 text-blue-600" />;
-      case 'purchase':
-        return <Package className="h-4 w-4 text-green-600" />;
-      case 'payment':
-        return <Calculator className="h-4 w-4 text-red-600" />;
-      case 'receipt':
-        return <Calculator className="h-4 w-4 text-green-600" />;
-      default:
-        return <FileText className="h-4 w-4 text-muted-foreground" />;
-    }
+  const calculateTotals = () => {
+    const totalDebits = filteredAccountingEntries
+      .filter(entry => entry.amount > 0)
+      .reduce((sum, entry) => sum + entry.amount, 0);
+    
+    const totalCredits = filteredAccountingEntries
+      .filter(entry => entry.amount < 0)
+      .reduce((sum, entry) => sum + Math.abs(entry.amount), 0);
+
+    return { totalDebits, totalCredits };
   };
+
+  const { totalDebits, totalCredits } = calculateTotals();
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -122,10 +131,14 @@ export default function DayBookPage() {
         <div>
           <h1 className="text-3xl font-bold">Day Book</h1>
           <p className="text-muted-foreground">
-            Chronological record of all accounting transactions
+            Daily transaction summary and accounting entries
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchDayBookData} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Button variant="outline">
             <Filter className="h-4 w-4 mr-2" />
             Filter
@@ -137,11 +150,55 @@ export default function DayBookPage() {
         </div>
       </div>
 
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Debits</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(totalDebits)}</div>
+            <p className="text-xs text-muted-foreground">
+              {filteredAccountingEntries.filter(e => e.amount > 0).length} entries
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{formatCurrency(totalCredits)}</div>
+            <p className="text-xs text-muted-foreground">
+              {filteredAccountingEntries.filter(e => e.amount < 0).length} entries
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Balance</CardTitle>
+            <Calculator className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${totalDebits - totalCredits >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(Math.abs(totalDebits - totalCredits))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {totalDebits - totalCredits >= 0 ? 'Debit Balance' : 'Credit Balance'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Day Book Entries</CardTitle>
+          <CardTitle>Transaction Entries</CardTitle>
           <CardDescription>
-            Complete chronological listing of all accounting transactions with running balance
+            Detailed view of all accounting and voucher entries
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -149,109 +206,143 @@ export default function DayBookPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search day book entries..."
+                placeholder="Search transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
               />
             </div>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="date"
-                className="w-40"
-                defaultValue="2025-01-01"
-              />
-              <span className="text-sm text-muted-foreground">to</span>
-              <Input
-                type="date"
-                className="w-40"
-                defaultValue="2025-01-31"
-              />
-            </div>
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-40"
+            />
           </div>
 
-          <Tabs defaultValue="all" className="w-full">
+          <Tabs defaultValue="accounting" className="w-full">
             <TabsList>
-              <TabsTrigger value="all">All Transactions</TabsTrigger>
-              <TabsTrigger value="sales">Sales</TabsTrigger>
-              <TabsTrigger value="purchase">Purchase</TabsTrigger>
-              <TabsTrigger value="payment">Payment</TabsTrigger>
-              <TabsTrigger value="receipt">Receipt</TabsTrigger>
+              <TabsTrigger value="accounting">Accounting Entries</TabsTrigger>
+              <TabsTrigger value="vouchers">Voucher Entries</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="all" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Voucher Type</TableHead>
-                    <TableHead>Voucher Number</TableHead>
-                    <TableHead>Party Name</TableHead>
-                    <TableHead>Narration</TableHead>
-                    <TableHead className="text-right">Debit Amount</TableHead>
-                    <TableHead className="text-right">Credit Amount</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEntries.map((entry, index) => (
-                    <TableRow key={`${entry.date}-${entry.voucher_number}-${index}`}>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">
-                            {new Date(entry.date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {getVoucherTypeIcon(entry.voucher_type)}
-                          <Badge variant="outline">{entry.voucher_type}</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <code className="text-sm bg-muted px-2 py-1 rounded">
-                          {entry.voucher_number}
-                        </code>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{entry.party_name}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground max-w-48 truncate block">
-                          {entry.narration}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {entry.debit_amount > 0 ? (
-                          <span className="font-medium text-green-600">
-                            {formatCurrency(entry.debit_amount)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {entry.credit_amount > 0 ? (
-                          <span className="font-medium text-red-600">
-                            {formatCurrency(entry.credit_amount)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className={`font-medium ${
-                          entry.balance >= 0 ? "text-green-600" : "text-red-600"
-                        }`}>
-                          {formatCurrency(entry.balance)}
-                        </span>
-                      </TableCell>
+            <TabsContent value="accounting" className="mt-4">
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <div className="text-destructive mb-2">Error: {error}</div>
+                  <Button onClick={fetchDayBookData} variant="outline">
+                    Try Again
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ledger</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Currency</TableHead>
+                        <TableHead>Running Balance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAccountingEntries.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                            No accounting entries found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredAccountingEntries.map((entry, index) => {
+                          const runningBalance = filteredAccountingEntries
+                            .slice(0, index + 1)
+                            .reduce((sum, e) => sum + e.amount, 0);
+                          
+                          return (
+                            <TableRow key={entry.guid}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center space-x-2">
+                                  <Calculator className="h-4 w-4 text-muted-foreground" />
+                                  {entry.ledger}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={entry.amount >= 0 ? "default" : "secondary"}>
+                                  {entry.amount >= 0 ? "Debit" : "Credit"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className={`font-medium ${entry.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(Math.abs(entry.amount))}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{entry.currency}</Badge>
+                              </TableCell>
+                              <TableCell className={`font-medium ${runningBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(Math.abs(runningBalance))}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="vouchers" className="mt-4">
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Voucher Type</TableHead>
+                      <TableHead>Voucher Number</TableHead>
+                      <TableHead>Narration</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVoucherEntries.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                          No voucher entries found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredVoucherEntries.map((entry) => (
+                        <TableRow key={entry.guid}>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {entry.date ? new Date(entry.date).toLocaleDateString() : '-'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {entry.voucher_type || 'Unknown'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {entry.voucher_number || '-'}
+                          </TableCell>
+                          <TableCell className="max-w-md">
+                            <span className="text-sm text-muted-foreground line-clamp-2">
+                              {entry.narration || 'No narration'}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>

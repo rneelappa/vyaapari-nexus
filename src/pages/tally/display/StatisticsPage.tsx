@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +12,13 @@ import {
   Calendar,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
+  RefreshCw,
+  Building,
+  Warehouse
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StatCard {
   title: string;
@@ -21,66 +26,161 @@ interface StatCard {
   change: number;
   icon: React.ComponentType<any>;
   color: string;
+  loading?: boolean;
 }
 
-const mockStats: StatCard[] = [
-  {
-    title: "Total Sales",
-    value: "₹2,450,000",
-    change: 12.5,
-    icon: TrendingUp,
-    color: "text-green-600"
-  },
-  {
-    title: "Total Purchases",
-    value: "₹1,850,000",
-    change: -5.2,
-    icon: TrendingDown,
-    color: "text-red-600"
-  },
-  {
-    title: "Net Profit",
-    value: "₹600,000",
-    change: 8.3,
-    icon: DollarSign,
-    color: "text-blue-600"
-  },
-  {
-    title: "Stock Value",
-    value: "₹1,200,000",
-    change: 3.1,
-    icon: Package,
-    color: "text-purple-600"
-  }
-];
-
-const mockTopCustomers = [
-  { name: "LSI-MECH ENGINEERS PRIVATE LIMITED", amount: 450000, percentage: 18.4 },
-  { name: "ABC Manufacturing Ltd", amount: 320000, percentage: 13.1 },
-  { name: "XYZ Industries", amount: 280000, percentage: 11.4 },
-  { name: "DEF Corporation", amount: 250000, percentage: 10.2 },
-  { name: "GHI Enterprises", amount: 200000, percentage: 8.2 }
-];
-
-const mockTopItems = [
-  { name: "Finished Product A", quantity: 150, value: 375000 },
-  { name: "Steel Rod 12mm", quantity: 5000, value: 325000 },
-  { name: "Packaging Material", quantity: 2000, value: 30000 },
-  { name: "Finished Product B", quantity: 80, value: 200000 },
-  { name: "Raw Material X", quantity: 1000, value: 150000 }
-];
+interface StatisticsData {
+  totalLedgers: number;
+  totalStockItems: number;
+  totalEmployees: number;
+  totalGodowns: number;
+  totalCompanies: number;
+  totalDivisions: number;
+  accountingEntries: number;
+  inventoryTransactions: number;
+}
 
 export default function StatisticsPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [stats, setStats] = useState<StatCard[]>([]);
+  const [statisticsData, setStatisticsData] = useState<StatisticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  useEffect(() => {
+    fetchStatistics();
+  }, []);
+
+  const fetchStatistics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch counts from various tables
+      const [
+        { count: ledgerCount },
+        { count: stockCount },
+        { count: employeeCount },
+        { count: godownCount },
+        { count: companyCount },
+        { count: divisionCount },
+        { count: accountingCount },
+        { count: inventoryCount }
+      ] = await Promise.all([
+        supabase.from('mst_ledger').select('*', { count: 'exact', head: true }),
+        supabase.from('mst_stock_item').select('*', { count: 'exact', head: true }),
+        supabase.from('mst_employee').select('*', { count: 'exact', head: true }),
+        supabase.from('mst_godown').select('*', { count: 'exact', head: true }),
+        supabase.from('companies').select('*', { count: 'exact', head: true }),
+        supabase.from('divisions').select('*', { count: 'exact', head: true }),
+        supabase.from('trn_accounting').select('*', { count: 'exact', head: true }),
+        supabase.from('trn_batch').select('*', { count: 'exact', head: true })
+      ]);
+
+      const data: StatisticsData = {
+        totalLedgers: ledgerCount || 0,
+        totalStockItems: stockCount || 0,
+        totalEmployees: employeeCount || 0,
+        totalGodowns: godownCount || 0,
+        totalCompanies: companyCount || 0,
+        totalDivisions: divisionCount || 0,
+        accountingEntries: accountingCount || 0,
+        inventoryTransactions: inventoryCount || 0,
+      };
+
+      setStatisticsData(data);
+
+      // Create stat cards with real data
+      const statCards: StatCard[] = [
+        {
+          title: "Total Ledgers",
+          value: data.totalLedgers.toLocaleString(),
+          change: 0, // Could calculate from historical data
+          icon: BarChart3,
+          color: "text-blue-600"
+        },
+        {
+          title: "Stock Items",
+          value: data.totalStockItems.toLocaleString(),
+          change: 0,
+          icon: Package,
+          color: "text-green-600"
+        },
+        {
+          title: "Employees",
+          value: data.totalEmployees.toLocaleString(),
+          change: 0,
+          icon: Users,
+          color: "text-purple-600"
+        },
+        {
+          title: "Godowns",
+          value: data.totalGodowns.toLocaleString(),
+          change: 0,
+          icon: Warehouse,
+          color: "text-orange-600"
+        },
+        {
+          title: "Companies",
+          value: data.totalCompanies.toLocaleString(),
+          change: 0,
+          icon: Building,
+          color: "text-indigo-600"
+        },
+        {
+          title: "Divisions",
+          value: data.totalDivisions.toLocaleString(),
+          change: 0,
+          icon: Activity,
+          color: "text-cyan-600"
+        },
+        {
+          title: "Accounting Entries",
+          value: data.accountingEntries.toLocaleString(),
+          change: 0,
+          icon: DollarSign,
+          color: "text-emerald-600"
+        },
+        {
+          title: "Inventory Transactions",
+          value: data.inventoryTransactions.toLocaleString(),
+          change: 0,
+          icon: TrendingUp,
+          color: "text-rose-600"
+        }
+      ];
+
+      setStats(statCards);
+    } catch (err) {
+      console.error('Error fetching statistics:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch statistics');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const StatCard = ({ stat }: { stat: StatCard }) => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+        <stat.icon className={`h-4 w-4 ${stat.color}`} />
+      </CardHeader>
+      <CardContent>
+        <div className={`text-2xl font-bold ${stat.color}`}>
+          {loading ? '...' : stat.value}
+        </div>
+        {stat.change !== 0 && (
+          <p className="text-xs text-muted-foreground flex items-center">
+            {stat.change > 0 ? (
+              <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+            ) : (
+              <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
+            )}
+            {Math.abs(stat.change)}% from last month
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -88,199 +188,188 @@ export default function StatisticsPage() {
         <div>
           <h1 className="text-3xl font-bold">Statistics Dashboard</h1>
           <p className="text-muted-foreground">
-            Key performance indicators and business analytics
+            Overview of your Tally data and key performance indicators
           </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Last Month
-          </Button>
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Last Quarter
-          </Button>
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Last Year
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchStatistics} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {mockStats.map((stat, index) => (
-          <Card key={index}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <div className="flex items-center mt-2">
-                    <stat.icon className={`h-4 w-4 mr-1 ${stat.color}`} />
-                    <span className={`text-sm ${stat.color}`}>
-                      {stat.change > 0 ? '+' : ''}{stat.change}%
-                    </span>
-                    <span className="text-sm text-muted-foreground ml-1">
-                      vs last period
-                    </span>
-                  </div>
-                </div>
-                <div className={`p-3 rounded-full bg-muted ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-destructive mb-2">Error: {error}</div>
+              <Button onClick={fetchStatistics} variant="outline">
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="customers">Top Customers</TabsTrigger>
-          <TabsTrigger value="products">Top Products</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
+          <TabsTrigger value="masters">Masters Data</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="organization">Organization</TabsTrigger>
         </TabsList>
-
+        
         <TabsContent value="overview" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <BarChart3 className="h-5 w-5" />
-                  <span>Sales vs Purchases</span>
-                </CardTitle>
-                <CardDescription>
-                  Monthly comparison of sales and purchase amounts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground">Chart visualization would go here</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <PieChart className="h-5 w-5" />
-                  <span>Revenue Distribution</span>
-                </CardTitle>
-                <CardDescription>
-                  Breakdown of revenue by product categories
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
-                  <div className="text-center">
-                    <PieChart className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground">Pie chart visualization would go here</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <StatCard key={index} stat={stat} />
+            ))}
           </div>
         </TabsContent>
 
-        <TabsContent value="customers" className="mt-6">
-          <Card>
+        <TabsContent value="masters" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stats.slice(0, 4).map((stat, index) => (
+              <StatCard key={index} stat={stat} />
+            ))}
+          </div>
+          
+          <Card className="mt-6">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Users className="h-5 w-5" />
-                <span>Top Customers by Sales</span>
-              </CardTitle>
+              <CardTitle>Master Data Summary</CardTitle>
               <CardDescription>
-                Customers with highest sales volume this period
+                Breakdown of master data entities in your Tally system
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {mockTopCustomers.map((customer, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{customer.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {customer.percentage}% of total sales
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(customer.amount)}</p>
-                      <Badge variant="outline">{customer.percentage}%</Badge>
-                    </div>
+              {statisticsData && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <BarChart3 className="h-4 w-4 text-blue-600" />
+                      <span>Ledger Accounts</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.totalLedgers}</Badge>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="products" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Package className="h-5 w-5" />
-                <span>Top Products by Sales</span>
-              </CardTitle>
-              <CardDescription>
-                Best performing products by quantity and value
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockTopItems.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.quantity.toLocaleString()} units sold
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(item.value)}</p>
-                      <Badge variant="outline">{item.quantity} units</Badge>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <Package className="h-4 w-4 text-green-600" />
+                      <span>Stock Items</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.totalStockItems}</Badge>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trends" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Activity className="h-5 w-5" />
-                <span>Business Trends</span>
-              </CardTitle>
-              <CardDescription>
-                Performance trends over time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted rounded-lg">
-                <div className="text-center">
-                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">Trend analysis chart would go here</p>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-purple-600" />
+                      <span>Employee Records</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.totalEmployees}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <Warehouse className="h-4 w-4 text-orange-600" />
+                      <span>Storage Locations</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.totalGodowns}</Badge>
+                  </div>
                 </div>
-              </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="transactions" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {stats.slice(6, 8).map((stat, index) => (
+              <StatCard key={index} stat={stat} />
+            ))}
+          </div>
+          
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Transaction Analysis</CardTitle>
+              <CardDescription>
+                Overview of transaction volumes and patterns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {statisticsData && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <DollarSign className="h-4 w-4 text-emerald-600" />
+                      <span>Accounting Transactions</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.accountingEntries}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <TrendingUp className="h-4 w-4 text-rose-600" />
+                      <span>Inventory Movements</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.inventoryTransactions}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <Activity className="h-4 w-4 text-blue-600" />
+                      <span>Total Transactions</span>
+                    </span>
+                    <Badge variant="default">
+                      {(statisticsData.accountingEntries + statisticsData.inventoryTransactions).toLocaleString()}
+                    </Badge>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="organization" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {stats.slice(4, 6).map((stat, index) => (
+              <StatCard key={index} stat={stat} />
+            ))}
+          </div>
+          
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Organizational Structure</CardTitle>
+              <CardDescription>
+                Company and division hierarchy overview
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {statisticsData && (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <Building className="h-4 w-4 text-indigo-600" />
+                      <span>Companies</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.totalCompanies}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <Activity className="h-4 w-4 text-cyan-600" />
+                      <span>Divisions</span>
+                    </span>
+                    <Badge variant="outline">{statisticsData.totalDivisions}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-purple-600" />
+                      <span>Avg. Employees per Division</span>
+                    </span>
+                    <Badge variant="default">
+                      {statisticsData.totalDivisions > 0 
+                        ? Math.round(statisticsData.totalEmployees / statisticsData.totalDivisions)
+                        : 0
+                      }
+                    </Badge>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
