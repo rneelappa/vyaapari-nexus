@@ -236,35 +236,48 @@ function AppSidebarContent() {
   const isCollapsed = state === "collapsed";
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   
   // Extract workspace ID from URL for module navigation
   const workspaceMatch = location.pathname.match(/\/workspace\/([^\/]+)/);
   const currentWorkspaceId = workspaceMatch ? workspaceMatch[1] : null;
 
-  // Add circuit breaker to prevent infinite calls
-  const [hasFetched, setHasFetched] = useState(false);
+  // Circuit breaker to prevent infinite loops
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchUserId, setLastFetchUserId] = useState<string | null>(null);
+  const MAX_FETCH_ATTEMPTS = 3;
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
-      console.log('AppSidebarContent: user =', user?.id);
+      const currentUserId = user?.id;
       
-      if (!user) {
+      if (!currentUserId) {
         console.log('AppSidebar: No user found, setting loading to false');
         setLoading(false);
         return;
       }
-      
-      // Prevent infinite calls - only fetch once per user session
-      if (hasFetched) {
-        console.log('AppSidebar: Already fetched data, skipping');
+
+      // Reset attempts if user changed
+      if (lastFetchUserId !== currentUserId) {
+        setFetchAttempts(0);
+        setLastFetchUserId(currentUserId);
+        setError(null);
+      }
+
+      // Circuit breaker: stop if too many attempts
+      if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+        console.log('AppSidebar: Max fetch attempts reached, stopping');
+        setLoading(false);
+        setError('Unable to load organization data after multiple attempts');
         return;
       }
       
       try {
-        console.log('AppSidebar: Fetching organization data...');
+        console.log('AppSidebar: Fetching organization data for user:', currentUserId, 'attempt:', fetchAttempts + 1);
         setLoading(true);
-        setHasFetched(true);
+        setError(null);
+        setFetchAttempts(prev => prev + 1);
         
         // Fetch companies
         const { data: companiesData, error: companiesError } = await supabase
@@ -336,15 +349,16 @@ function AppSidebarContent() {
         setLoading(false);
       } catch (error) {
         console.error('AppSidebar: Error fetching organization data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load organization data');
         setLoading(false);
       }
     };
 
-    // Only fetch if user exists and we haven't fetched yet
-    if (user && !hasFetched) {
+    // Only fetch if user changed or we haven't fetched for this user yet
+    if (user?.id && lastFetchUserId !== user.id) {
       fetchOrganizationData();
     }
-  }, [user, hasFetched]);
+  }, [user?.id, fetchAttempts, lastFetchUserId]);
 
   if (isCollapsed) {
     return (
@@ -386,6 +400,24 @@ function AppSidebarContent() {
             </div>
             {loading ? (
               <div className="px-3 py-2 text-sm text-muted-foreground">Loading organization data...</div>
+            ) : error ? (
+              <div className="px-3 py-2 text-sm">
+                <p className="text-destructive text-xs mb-1">{error}</p>
+                {fetchAttempts < MAX_FETCH_ATTEMPTS && (
+                  <button 
+                    onClick={() => {
+                      setFetchAttempts(0);
+                      setError(null);
+                      if (user?.id) {
+                        setLastFetchUserId(null); // Force refetch
+                      }
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    Try again
+                  </button>
+                )}
+              </div>
             ) : companies.length === 0 ? (
               <div className="px-3 py-2 text-sm text-muted-foreground">
                 No organizations found
