@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Search, Settings } from "lucide-react";
+import { Bell, Search, Settings, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,18 +40,14 @@ export function MainLayout({ children }: MainLayoutProps) {
                     </div>
                   </Button>
                   
+                  <Button variant="ghost" size="icon" className="hover:bg-primary/10">
+                    <Bot size={18} className="text-primary" />
+                  </Button>
+                  
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="flex items-center gap-2 px-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                            JD
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="hidden md:block text-left">
-                          <p className="text-sm font-medium">John Doe</p>
-                          <p className="text-xs text-muted-foreground">Super Admin</p>
-                        </div>
+                      <Button variant="ghost" size="icon">
+                        <Settings size={18} />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
