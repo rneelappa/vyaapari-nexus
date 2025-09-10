@@ -17,10 +17,13 @@ interface Division {
   id: string;
   name: string;
   description: string;
-  manager_name: string;
-  employee_count: number;
+  manager_name?: string;
+  manager?: string; // For compatibility with mock data
+  employee_count?: number;
+  employees?: number; // For compatibility with mock data
   budget: string;
-  performance_score: number;
+  performance_score?: number;
+  performance?: number; // For compatibility with mock data
   status: string;
   tally_enabled?: boolean;
   tally_url?: string;
@@ -39,7 +42,7 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
   const [formData, setFormData] = useState({
     name: division.name,
     description: division.description,
-    manager_name: division.manager_name,
+    manager_name: division.manager_name || division.manager,
     budget: division.budget,
   });
   

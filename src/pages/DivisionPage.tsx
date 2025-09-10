@@ -20,8 +20,8 @@ const DivisionPage = () => {
         name: "Acme Corporation",
         divisions: [
           {
-            id: "div1",
-            name: "Engineering",
+            id: "650e8400-e29b-41d4-a716-446655440000",
+            name: "Engineering", 
             description: "Building innovative software solutions and maintaining technical excellence",
             manager: "Sarah Johnson",
             employees: 450,
@@ -30,12 +30,12 @@ const DivisionPage = () => {
             status: "Active"
           },
           {
-            id: "div2", 
+            id: "650e8400-e29b-41d4-a716-446655440001",
             name: "Marketing",
-            description: "Driving brand awareness and customer engagement through strategic campaigns",
+            description: "Driving brand awareness and customer engagement through strategic campaigns", 
             manager: "Michael Chen",
             employees: 125,
-            budget: "₹1.2 Cr", 
+            budget: "₹1.2 Cr",
             performance: 87,
             status: "Active"
           }
@@ -46,10 +46,10 @@ const DivisionPage = () => {
         name: "TechStart Inc",
         divisions: [
           {
-            id: "div3",
+            id: "650e8400-e29b-41d4-a716-446655440002",
             name: "Product",
             description: "Designing and developing cutting-edge products for market success",
-            manager: "Emily Rodriguez",
+            manager: "Emily Rodriguez", 
             employees: 280,
             budget: "₹3.1 Cr",
             performance: 91,
