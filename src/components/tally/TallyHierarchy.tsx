@@ -30,8 +30,8 @@ const mockTallyData = {
         {
           id: "div3",
           name: "Product",
-          tallyEnabled: true,
-          tallyUrl: "http://localhost:9001"
+          tallyEnabled: false, // Not tally enabled
+          tallyUrl: null
         }
       ]
     }
