@@ -23,7 +23,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <span className="text-lg font-semibold text-white">Vyaapari360</span>
               </div>
               <SidebarTrigger className="text-white hover:bg-white/10" />
-              <div className="hidden md:flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 w-96">
+              <div className="hidden md:flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1 w-96 ml-64">
                 <Search size={16} className="text-white/70" />
                 <Input
                   placeholder="Search across organization..."
