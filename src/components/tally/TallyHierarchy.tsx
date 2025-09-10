@@ -79,7 +79,11 @@ interface CompanyHierarchyItemProps {
 
 const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarchyItemProps) => {
   // Filter to only show tally-enabled divisions
-  const tallyEnabledDivisions = company.divisions; // Show all divisions for now
+  const tallyEnabledDivisions = company.divisions.filter(division => {
+    // For now, check if division has any Tally data or is active
+    // You can later add a tally_enabled column to divisions table
+    return division.is_active;
+  });
   
   if (tallyEnabledDivisions.length === 0) {
     return null; // Don't show company if no tally-enabled divisions
@@ -192,11 +196,13 @@ const TallyHierarchy = () => {
           return;
         }
 
-        // Group divisions by company
+        // Group divisions by company and filter for Tally-enabled divisions
         const companiesWithDivisions: Company[] = companiesData
           .map(company => ({
             ...company,
-            divisions: divisionsData.filter(division => division.company_id === company.id)
+            divisions: divisionsData.filter(division => 
+              division.company_id === company.id && division.is_active
+            )
           }))
           .filter(company => company.divisions.length > 0); // Only include companies with tally-enabled divisions
 
