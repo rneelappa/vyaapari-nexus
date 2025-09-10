@@ -1,96 +1,86 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, Package, Warehouse, TrendingUp, TrendingDown, Calendar, FileText } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Package, Warehouse, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InventoryEntry {
   guid: string;
-  date: string;
-  voucher_type: string;
-  voucher_number: string;
+  company_id: string | null;
+  division_id: string | null;
   item: string;
+  _item: string;
   quantity: number;
-  rate: number;
   amount: number;
-  godown: string;
-  tracking_number: string;
-  order_number: string;
-  order_duedate: string;
+  godown: string | null;
+  destination_godown: string | null;
+  _godown: string;
+  _destination_godown: string;
+  tracking_number: string | null;
+  name: string;
 }
-
-const mockInventoryEntries: InventoryEntry[] = [
-  {
-    guid: "1",
-    date: "2025-01-15",
-    voucher_type: "Sales",
-    voucher_number: "2800236/25-26",
-    item: "Finished Product A",
-    quantity: -10,
-    rate: 15000,
-    amount: -150000,
-    godown: "Finished Goods Store",
-    tracking_number: "TRK-001",
-    order_number: "SO-2025-001",
-    order_duedate: "2025-01-20"
-  },
-  {
-    guid: "2",
-    date: "2025-01-14",
-    voucher_type: "Purchase",
-    voucher_number: "2800235/25-26",
-    item: "Steel Rod 12mm",
-    quantity: 1000,
-    rate: 65.50,
-    amount: 65500,
-    godown: "Raw Material Store",
-    tracking_number: "TRK-002",
-    order_number: "PO-2025-001",
-    order_duedate: "2025-01-15"
-  },
-  {
-    guid: "3",
-    date: "2025-01-13",
-    voucher_type: "Stock Journal",
-    voucher_number: "SJ-001",
-    item: "Packaging Material",
-    quantity: -50,
-    rate: 15.00,
-    amount: -750,
-    godown: "Main Warehouse",
-    tracking_number: "TRK-003",
-    order_number: "",
-    order_duedate: ""
-  },
-  {
-    guid: "3",
-    date: "2025-01-13",
-    voucher_type: "Stock Journal",
-    voucher_number: "SJ-001",
-    item: "Packaging Material",
-    quantity: 50,
-    rate: 15.00,
-    amount: 750,
-    godown: "Finished Goods Store",
-    tracking_number: "TRK-003",
-    order_number: "",
-    order_duedate: ""
-  }
-];
 
 export default function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [inventoryEntries] = useState<InventoryEntry[]>(mockInventoryEntries);
+  const [inventoryEntries, setInventoryEntries] = useState<InventoryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchInventoryEntries();
+  }, []);
+
+  const fetchInventoryEntries = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('trn_batch')
+        .select('*')
+        .order('guid')
+        .limit(100);
+      
+      if (error) {
+        throw error;
+      }
+      
+      const transformedData: InventoryEntry[] = (data || []).map(item => ({
+        guid: item.guid,
+        company_id: item.company_id,
+        division_id: item.division_id,
+        item: item.item,
+        _item: item._item,
+        quantity: item.quantity || 0,
+        amount: item.amount || 0,
+        godown: item.godown,
+        destination_godown: item.destination_godown,
+        _godown: item._godown,
+        _destination_godown: item._destination_godown,
+        tracking_number: item.tracking_number,
+        name: item.name,
+      }));
+      
+      setInventoryEntries(transformedData);
+    } catch (err) {
+      console.error('Error fetching inventory entries:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch inventory entries');
+      setInventoryEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredEntries = inventoryEntries.filter(entry =>
     entry.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.voucher_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.voucher_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.godown.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.tracking_number.toLowerCase().includes(searchTerm.toLowerCase())
+    entry.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (entry.godown && entry.godown.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (entry.tracking_number && entry.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const formatCurrency = (amount: number) => {
@@ -98,11 +88,10 @@ export default function InventoryPage() {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     }).format(amount);
   };
 
-  const formatNumber = (num: number, decimals: number = 2) => {
+  const formatNumber = (num: number, decimals = 2) => {
     return new Intl.NumberFormat('en-IN', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
@@ -110,18 +99,14 @@ export default function InventoryPage() {
   };
 
   const getMovementIcon = (quantity: number) => {
-    return quantity >= 0 ? (
-      <TrendingUp className="h-4 w-4 text-green-600" />
-    ) : (
-      <TrendingDown className="h-4 w-4 text-red-600" />
-    );
+    return quantity >= 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-red-600" />;
   };
 
   const getMovementBadge = (quantity: number) => {
     return quantity >= 0 ? (
-      <Badge variant="default">In</Badge>
+      <Badge variant="default" className="bg-green-100 text-green-800">In</Badge>
     ) : (
-      <Badge variant="secondary">Out</Badge>
+      <Badge variant="secondary" className="bg-red-100 text-red-800">Out</Badge>
     );
   };
 
@@ -131,20 +116,26 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-3xl font-bold">Inventory Transactions</h1>
           <p className="text-muted-foreground">
-            View and manage stock movement transactions
+            Track stock movements, batch allocations, and inventory transfers
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Transaction
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchInventoryEntries} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Transaction
+          </Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Stock Movement Entries</CardTitle>
+          <CardTitle>Inventory Movements</CardTitle>
           <CardDescription>
-            Inventory transactions showing stock in/out movements with quantities and values
+            Batch-wise inventory transactions and stock transfers
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -152,7 +143,7 @@ export default function InventoryPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search inventory entries..."
+                placeholder="Search inventory transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
@@ -163,120 +154,108 @@ export default function InventoryPage() {
           <Tabs defaultValue="all" className="w-full">
             <TabsList>
               <TabsTrigger value="all">All Movements</TabsTrigger>
-              <TabsTrigger value="sales">Sales</TabsTrigger>
-              <TabsTrigger value="purchase">Purchase</TabsTrigger>
-              <TabsTrigger value="stock-journal">Stock Journal</TabsTrigger>
+              <TabsTrigger value="inward">Inward</TabsTrigger>
+              <TabsTrigger value="outward">Outward</TabsTrigger>
               <TabsTrigger value="transfers">Transfers</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Voucher</TableHead>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Movement</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Rate</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Godown</TableHead>
-                    <TableHead>Tracking</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEntries.map((entry, index) => (
-                    <TableRow key={`${entry.guid}-${index}`}>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">
-                            {new Date(entry.date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-1">
-                            <FileText className="h-3 w-3 text-muted-foreground" />
-                            <Badge variant="outline">{entry.voucher_type}</Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {entry.voucher_number}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <Package className="h-4 w-4 text-muted-foreground" />
-                          {entry.item}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          {getMovementIcon(entry.quantity)}
-                          {getMovementBadge(entry.quantity)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className={`font-medium ${
-                          entry.quantity >= 0 ? "text-green-600" : "text-red-600"
-                        }`}>
-                          {formatNumber(Math.abs(entry.quantity), 0)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-medium">
-                          {formatCurrency(entry.rate)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className={`font-medium ${
-                          entry.amount >= 0 ? "text-green-600" : "text-red-600"
-                        }`}>
-                          {formatCurrency(entry.amount)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Warehouse className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">{entry.godown}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          {entry.tracking_number && (
-                            <div className="text-sm font-medium">
-                              {entry.tracking_number}
-                            </div>
-                          )}
-                          {entry.order_number && (
-                            <div className="text-xs text-muted-foreground">
-                              Order: {entry.order_number}
-                            </div>
-                          )}
-                          {entry.order_duedate && (
-                            <div className="text-xs text-muted-foreground">
-                              Due: {new Date(entry.order_duedate).toLocaleDateString()}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <div className="text-destructive mb-2">Error: {error}</div>
+                  <Button onClick={fetchInventoryEntries} variant="outline">
+                    Try Again
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Item</TableHead>
+                        <TableHead>Batch Name</TableHead>
+                        <TableHead>Movement</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>From Godown</TableHead>
+                        <TableHead>To Godown</TableHead>
+                        <TableHead>Tracking</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredEntries.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                            No inventory transactions found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredEntries.map((entry) => (
+                          <TableRow key={entry.guid}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <Package className="h-4 w-4 text-muted-foreground" />
+                                {entry.item}
+                              </div>
+                            </TableCell>
+                            <TableCell>{entry.name || '-'}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                {getMovementIcon(entry.quantity)}
+                                {getMovementBadge(entry.quantity)}
+                              </div>
+                            </TableCell>
+                            <TableCell className={`font-medium ${entry.quantity >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatNumber(Math.abs(entry.quantity), 3)}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(entry.amount)}
+                            </TableCell>
+                            <TableCell>
+                              {entry.godown ? (
+                                <div className="flex items-center space-x-1">
+                                  <Warehouse className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-sm">{entry.godown}</span>
+                                </div>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {entry.destination_godown ? (
+                                <div className="flex items-center space-x-1">
+                                  <Warehouse className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-sm">{entry.destination_godown}</span>
+                                </div>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {entry.tracking_number ? (
+                                <Badge variant="outline" className="text-xs">
+                                  {entry.tracking_number}
+                                </Badge>
+                              ) : '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

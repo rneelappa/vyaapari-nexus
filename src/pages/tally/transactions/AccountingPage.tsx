@@ -1,85 +1,75 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, Calculator, TrendingUp, TrendingDown, Calendar, FileText } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Calculator, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AccountingEntry {
   guid: string;
-  date: string;
-  voucher_type: string;
-  voucher_number: string;
+  company_id: string | null;
+  division_id: string | null;
   ledger: string;
+  _ledger: string;
   amount: number;
   amount_forex: number;
   currency: string;
-  narration: string;
-  party_name: string;
 }
-
-const mockAccountingEntries: AccountingEntry[] = [
-  {
-    guid: "1",
-    date: "2025-01-15",
-    voucher_type: "Sales",
-    voucher_number: "2800236/25-26",
-    ledger: "LSI-MECH ENGINEERS PRIVATE LIMITED",
-    amount: 150000,
-    amount_forex: 0,
-    currency: "INR",
-    narration: "Sales of finished goods",
-    party_name: "LSI-MECH ENGINEERS PRIVATE LIMITED"
-  },
-  {
-    guid: "1",
-    date: "2025-01-15",
-    voucher_type: "Sales",
-    voucher_number: "2800236/25-26",
-    ledger: "Sales",
-    amount: -150000,
-    amount_forex: 0,
-    currency: "INR",
-    narration: "Sales of finished goods",
-    party_name: "LSI-MECH ENGINEERS PRIVATE LIMITED"
-  },
-  {
-    guid: "2",
-    date: "2025-01-14",
-    voucher_type: "Purchase",
-    voucher_number: "2800235/25-26",
-    ledger: "Steel Rod 12mm",
-    amount: 50000,
-    amount_forex: 0,
-    currency: "INR",
-    narration: "Purchase of raw materials",
-    party_name: "Steel Supplier Ltd"
-  },
-  {
-    guid: "2",
-    date: "2025-01-14",
-    voucher_type: "Purchase",
-    voucher_number: "2800235/25-26",
-    ledger: "Cash",
-    amount: -50000,
-    amount_forex: 0,
-    currency: "INR",
-    narration: "Purchase of raw materials",
-    party_name: "Steel Supplier Ltd"
-  }
-];
 
 export default function AccountingPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [accountingEntries] = useState<AccountingEntry[]>(mockAccountingEntries);
+  const [accountingEntries, setAccountingEntries] = useState<AccountingEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchAccountingEntries();
+  }, []);
+
+  const fetchAccountingEntries = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('trn_accounting')
+        .select('*')
+        .order('guid')
+        .limit(100);
+      
+      if (error) {
+        throw error;
+      }
+      
+      const transformedData: AccountingEntry[] = (data || []).map(item => ({
+        guid: item.guid,
+        company_id: item.company_id,
+        division_id: item.division_id,
+        ledger: item.ledger,
+        _ledger: item._ledger,
+        amount: item.amount || 0,
+        amount_forex: item.amount_forex || 0,
+        currency: item.currency || 'INR',
+      }));
+      
+      setAccountingEntries(transformedData);
+    } catch (err) {
+      console.error('Error fetching accounting entries:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch accounting entries');
+      setAccountingEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredEntries = accountingEntries.filter(entry =>
     entry.ledger.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.voucher_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.voucher_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.party_name.toLowerCase().includes(searchTerm.toLowerCase())
+    entry._ledger.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    entry.currency.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatCurrency = (amount: number) => {
@@ -87,23 +77,18 @@ export default function AccountingPage() {
       style: 'currency',
       currency: 'INR',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     }).format(amount);
   };
 
   const getDebitCreditIcon = (amount: number) => {
-    return amount >= 0 ? (
-      <TrendingUp className="h-4 w-4 text-green-600" />
-    ) : (
-      <TrendingDown className="h-4 w-4 text-red-600" />
-    );
+    return amount >= 0 ? <TrendingUp className="h-4 w-4 text-green-600" /> : <TrendingDown className="h-4 w-4 text-red-600" />;
   };
 
   const getDebitCreditBadge = (amount: number) => {
     return amount >= 0 ? (
-      <Badge variant="default">Debit</Badge>
+      <Badge variant="default" className="bg-green-100 text-green-800">Debit</Badge>
     ) : (
-      <Badge variant="secondary">Credit</Badge>
+      <Badge variant="secondary" className="bg-red-100 text-red-800">Credit</Badge>
     );
   };
 
@@ -113,20 +98,26 @@ export default function AccountingPage() {
         <div>
           <h1 className="text-3xl font-bold">Accounting Transactions</h1>
           <p className="text-muted-foreground">
-            View and manage double-entry accounting transactions
+            View and manage accounting ledger entries and transactions
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Transaction
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchAccountingEntries} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Transaction
+          </Button>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Accounting Entries</CardTitle>
           <CardDescription>
-            Double-entry bookkeeping transactions with debit and credit entries
+            Ledger-wise accounting transactions and journal entries
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,7 +125,7 @@ export default function AccountingPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search accounting entries..."
+                placeholder="Search transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
@@ -145,94 +136,84 @@ export default function AccountingPage() {
           <Tabs defaultValue="all" className="w-full">
             <TabsList>
               <TabsTrigger value="all">All Entries</TabsTrigger>
-              <TabsTrigger value="sales">Sales</TabsTrigger>
-              <TabsTrigger value="purchase">Purchase</TabsTrigger>
-              <TabsTrigger value="payment">Payment</TabsTrigger>
-              <TabsTrigger value="receipt">Receipt</TabsTrigger>
+              <TabsTrigger value="debit">Debit Entries</TabsTrigger>
+              <TabsTrigger value="credit">Credit Entries</TabsTrigger>
+              <TabsTrigger value="forex">Foreign Exchange</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Voucher</TableHead>
-                    <TableHead>Ledger</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Party</TableHead>
-                    <TableHead>Narration</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEntries.map((entry, index) => (
-                    <TableRow key={`${entry.guid}-${index}`}>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">
-                            {new Date(entry.date).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-1">
-                            <FileText className="h-3 w-3 text-muted-foreground" />
-                            <Badge variant="outline">{entry.voucher_type}</Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {entry.voucher_number}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <Calculator className="h-4 w-4 text-muted-foreground" />
-                          {entry.ledger}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          {getDebitCreditIcon(entry.amount)}
-                          {getDebitCreditBadge(entry.amount)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className={`font-medium ${
-                          entry.amount >= 0 ? "text-green-600" : "text-red-600"
-                        }`}>
-                          {formatCurrency(entry.amount)}
-                        </span>
-                        {entry.amount_forex > 0 && (
-                          <div className="text-sm text-muted-foreground">
-                            {formatCurrency(entry.amount_forex)} {entry.currency}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm">{entry.party_name}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground max-w-48 truncate block">
-                          {entry.narration}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <div className="text-destructive mb-2">Error: {error}</div>
+                  <Button onClick={fetchAccountingEntries} variant="outline">
+                    Try Again
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ledger</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Currency</TableHead>
+                        <TableHead>Foreign Amount</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredEntries.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            No accounting entries found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredEntries.map((entry) => (
+                          <TableRow key={entry.guid}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center space-x-2">
+                                <Calculator className="h-4 w-4 text-muted-foreground" />
+                                {entry.ledger}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                {getDebitCreditIcon(entry.amount)}
+                                {getDebitCreditBadge(entry.amount)}
+                              </div>
+                            </TableCell>
+                            <TableCell className={`font-medium ${entry.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(Math.abs(entry.amount))}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{entry.currency}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {entry.amount_forex !== 0 ? formatCurrency(entry.amount_forex) : '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button variant="ghost" size="sm">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
