@@ -11,49 +11,85 @@ const tallyMenuStructure = {
   masters: {
     name: "Masters",
     icon: Database,
-    children: [
-      { name: "Groups", icon: Users, path: "/tally/masters/groups" },
-      { name: "Ledgers", icon: BookOpen, path: "/tally/masters/ledgers" },
-      { name: "Stock Items", icon: Package, path: "/tally/masters/stock-items" },
-      { name: "Godowns", icon: Warehouse, path: "/tally/masters/godowns" },
-      { name: "Cost Centers", icon: Target, path: "/tally/masters/cost-centers" },
-      { name: "Voucher Types", icon: FileSignature, path: "/tally/masters/voucher-types" },
-    ]
+    children: [{
+      name: "Groups",
+      icon: Users,
+      path: "/tally/masters/groups"
+    }, {
+      name: "Ledgers",
+      icon: BookOpen,
+      path: "/tally/masters/ledgers"
+    }, {
+      name: "Stock Items",
+      icon: Package,
+      path: "/tally/masters/stock-items"
+    }, {
+      name: "Godowns",
+      icon: Warehouse,
+      path: "/tally/masters/godowns"
+    }, {
+      name: "Cost Centers",
+      icon: Target,
+      path: "/tally/masters/cost-centers"
+    }, {
+      name: "Voucher Types",
+      icon: FileSignature,
+      path: "/tally/masters/voucher-types"
+    }]
   },
   transactions: {
     name: "Transactions",
     icon: TrendingUp,
-    children: [
-      { name: "Accounting", icon: Calculator, path: "/tally/transactions/accounting" },
-      { name: "Non-Accounting", icon: FileText, path: "/tally/transactions/non-accounting" },
-      { name: "Inventory", icon: Package, path: "/tally/transactions/inventory" },
-    ]
+    children: [{
+      name: "Accounting",
+      icon: Calculator,
+      path: "/tally/transactions/accounting"
+    }, {
+      name: "Non-Accounting",
+      icon: FileText,
+      path: "/tally/transactions/non-accounting"
+    }, {
+      name: "Inventory",
+      icon: Package,
+      path: "/tally/transactions/inventory"
+    }]
   },
   display: {
     name: "Display",
     icon: BarChart3,
-    children: [
-      { name: "DayBook", icon: BookOpen, path: "/tally/display/daybook" },
-      { name: "Statistics", icon: PieChart, path: "/tally/display/statistics" },
-      { name: "Financial Statements", icon: FileBarChart, path: "/tally/display/financial-statements" },
-      { name: "Reports", icon: Activity, path: "/tally/display/reports" },
-    ]
+    children: [{
+      name: "DayBook",
+      icon: BookOpen,
+      path: "/tally/display/daybook"
+    }, {
+      name: "Statistics",
+      icon: PieChart,
+      path: "/tally/display/statistics"
+    }, {
+      name: "Financial Statements",
+      icon: FileBarChart,
+      path: "/tally/display/financial-statements"
+    }, {
+      name: "Reports",
+      icon: Activity,
+      path: "/tally/display/reports"
+    }]
   },
   utilities: {
     name: "Utilities",
     icon: Settings,
-    children: [
-      { name: "Tally Configuration", icon: Settings, path: "/tally/utilities/configuration" },
-    ]
+    children: [{
+      name: "Tally Configuration",
+      icon: Settings,
+      path: "/tally/utilities/configuration"
+    }]
   }
 };
-
 interface Company {
   id: string;
   name: string;
   divisions: Division[];
 }
-
 interface Division {
   id: string;
   name: string;
@@ -71,36 +107,32 @@ interface Division {
   updated_at: string;
   created_by: string | null;
 }
-
 interface CompanyHierarchyItemProps {
   company: Company;
   isExpanded: boolean;
   onToggle: () => void;
 }
-
-const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarchyItemProps) => {
+const CompanyHierarchyItem = ({
+  company,
+  isExpanded,
+  onToggle
+}: CompanyHierarchyItemProps) => {
   // Filter to only show tally-enabled divisions
   const tallyEnabledDivisions = company.divisions.filter(division => {
     return division.is_active && division.tally_enabled;
   });
-  
   if (tallyEnabledDivisions.length === 0) {
     return null; // Don't show company if no tally-enabled divisions
   }
-
-  return (
-    <div className="mb-3">
+  return <div className="mb-3">
       <SidebarMenuItem>
         <SidebarMenuButton asChild>
           <div className="flex items-center w-full rounded-lg hover:bg-muted/50 transition-smooth">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onToggle();
-              }}
-              className="mr-1 p-1 rounded hover:bg-accent/20 transition-smooth"
-            >
+            <button onClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle();
+          }} className="mr-1 p-1 rounded hover:bg-accent/20 transition-smooth">
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
             <div className="flex items-center flex-1 p-2">
@@ -111,43 +143,30 @@ const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarch
         </SidebarMenuButton>
       </SidebarMenuItem>
 
-      {isExpanded && (
-        <div className="ml-6 mt-1 border-l border-border/30 pl-4">
-          {tallyEnabledDivisions.map((division: Division) => (
-            <DivisionHierarchyItem key={division.id} division={division} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+      {isExpanded && <div className="ml-6 mt-1 border-l border-border/30 pl-4">
+          {tallyEnabledDivisions.map((division: Division) => <DivisionHierarchyItem key={division.id} division={division} />)}
+        </div>}
+    </div>;
 };
-
 interface DivisionHierarchyItemProps {
   division: Division;
 }
-
-const DivisionHierarchyItem = ({ division }: DivisionHierarchyItemProps) => {
+const DivisionHierarchyItem = ({
+  division
+}: DivisionHierarchyItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  return (
-    <div className="mb-2">
+  return <div className="mb-2">
       <SidebarMenuItem>
         <SidebarMenuButton asChild>
           <div className="flex items-center w-full rounded-lg hover:bg-muted/50 transition-smooth">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsExpanded(!isExpanded);
-              }}
-              className="mr-1 p-1 rounded hover:bg-accent/20 transition-smooth"
-            >
+            <button onClick={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }} className="mr-1 p-1 rounded hover:bg-accent/20 transition-smooth">
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
-            <Link 
-              to={`/company/${division.company_id}/division/${division.id}`}
-              className="flex items-center flex-1 p-2 hover:bg-accent/10 rounded transition-smooth"
-            >
+            <Link to={`/company/${division.company_id}/division/${division.id}`} className="flex items-center flex-1 p-2 hover:bg-accent/10 rounded transition-smooth">
               <Building2 size={16} className="mr-2 flex-shrink-0" />
               <span className="flex-1 truncate text-sm font-medium">{division.name}</span>
               <div className="w-2 h-2 rounded-full bg-green-500 ml-2" title="Tally Enabled" />
@@ -156,55 +175,41 @@ const DivisionHierarchyItem = ({ division }: DivisionHierarchyItemProps) => {
         </SidebarMenuButton>
       </SidebarMenuItem>
 
-      {isExpanded && (
-        <div className="ml-6 mt-1 border-l border-border/30 pl-4">
-          {Object.values(tallyMenuStructure).map((category) => (
-            <TallyMenuItemContainer key={category.name} item={category} level={0} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+      {isExpanded && <div className="ml-6 mt-1 border-l border-border/30 pl-4">
+          {Object.values(tallyMenuStructure).map(category => <TallyMenuItemContainer key={category.name} item={category} level={0} />)}
+        </div>}
+    </div>;
 };
-
 const TallyHierarchy = () => {
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetchTallyEnabledData = async () => {
       try {
         // Fetch companies with their tally-enabled divisions
-        const { data: companiesData, error: companiesError } = await supabase
-          .from('companies')
-          .select('*');
-
+        const {
+          data: companiesData,
+          error: companiesError
+        } = await supabase.from('companies').select('*');
         if (companiesError) {
           console.error('Error fetching companies:', companiesError);
           return;
         }
-
-        const { data: divisionsData, error: divisionsError } = await supabase
-          .from('divisions')
-          .select('*')
-          .eq('is_active', true)
-          .eq('tally_enabled', true);
-
+        const {
+          data: divisionsData,
+          error: divisionsError
+        } = await supabase.from('divisions').select('*').eq('is_active', true).eq('tally_enabled', true);
         if (divisionsError) {
           console.error('Error fetching divisions:', divisionsError);
           return;
         }
 
         // Group divisions by company and filter for Tally-enabled divisions
-        const companiesWithDivisions: Company[] = companiesData
-          .map(company => ({
-            ...company,
-            divisions: divisionsData.filter(division => 
-              division.company_id === company.id && division.is_active && division.tally_enabled
-            )
-          }))
-          .filter(company => company.divisions.length > 0); // Only include companies with tally-enabled divisions
+        const companiesWithDivisions: Company[] = companiesData.map(company => ({
+          ...company,
+          divisions: divisionsData.filter(division => division.company_id === company.id && division.is_active && division.tally_enabled)
+        })).filter(company => company.divisions.length > 0); // Only include companies with tally-enabled divisions
 
         setCompanies(companiesWithDivisions);
       } catch (error) {
@@ -213,10 +218,8 @@ const TallyHierarchy = () => {
         setLoading(false);
       }
     };
-
     fetchTallyEnabledData();
   }, []);
-
   const toggleCompany = (companyId: string) => {
     const newExpanded = new Set(expandedCompanies);
     if (newExpanded.has(companyId)) {
@@ -226,10 +229,8 @@ const TallyHierarchy = () => {
     }
     setExpandedCompanies(newExpanded);
   };
-
   if (loading) {
-    return (
-      <SidebarGroup>
+    return <SidebarGroup>
         <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
           Tally Workspaces
         </SidebarGroupLabel>
@@ -238,13 +239,10 @@ const TallyHierarchy = () => {
             Loading...
           </div>
         </SidebarGroupContent>
-      </SidebarGroup>
-    );
+      </SidebarGroup>;
   }
-
   if (companies.length === 0) {
-    return (
-      <SidebarGroup>
+    return <SidebarGroup>
         <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
           Tally Workspaces
         </SidebarGroupLabel>
@@ -253,34 +251,20 @@ const TallyHierarchy = () => {
             No Tally-enabled divisions found
           </div>
         </SidebarGroupContent>
-      </SidebarGroup>
-    );
+      </SidebarGroup>;
   }
-
-  return (
-    <SidebarGroup>
+  return <SidebarGroup>
       <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
         Tally Workspaces
       </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className="list-none">
-          {companies.map((company) => (
-            <CompanyHierarchyItem
-              key={company.id}
-              company={company}
-              isExpanded={expandedCompanies.has(company.id)}
-              onToggle={() => toggleCompany(company.id)}
-            />
-          ))}
+          {companies.map(company => <CompanyHierarchyItem key={company.id} company={company} isExpanded={expandedCompanies.has(company.id)} onToggle={() => toggleCompany(company.id)} />)}
         </SidebarMenu>
       </SidebarGroupContent>
       
       {/* API Test Component */}
-      <div className="p-4">
-        <TallyApiTest />
-      </div>
-    </SidebarGroup>
-  );
+      
+    </SidebarGroup>;
 };
-
 export default TallyHierarchy;
