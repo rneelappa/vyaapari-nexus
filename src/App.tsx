@@ -12,6 +12,7 @@ import Index from "@/pages/Index";
 import AuthPage from "@/pages/AuthPage";
 import CompanyPage from "@/pages/CompanyPage";
 import DivisionPage from "@/pages/DivisionPage";
+import WorkspaceListPage from "@/pages/WorkspaceListPage";
 import WorkspacePage from "@/pages/WorkspacePage";
 import NotFound from "@/pages/NotFound";
 
@@ -71,6 +72,14 @@ function App() {
                 <AuthGuard>
                   <MainLayout>
                     <DivisionPage />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/workspaces" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <WorkspaceListPage />
                   </MainLayout>
                 </AuthGuard>
               } />

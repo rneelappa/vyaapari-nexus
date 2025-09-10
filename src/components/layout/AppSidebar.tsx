@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface CompanyData {
   id: string;
   name: string;
+  description?: string;
   role: string;
   divisions: DivisionData[];
 }
@@ -28,20 +29,26 @@ interface CompanyData {
 interface DivisionData {
   id: string;
   name: string;
+  description?: string;
   role: string;
+  company_id: string;
+  tally_enabled: boolean;
   workspaces: WorkspaceData[];
 }
 
 interface WorkspaceData {
   id: string;
   name: string;
+  description?: string;
   role: string;
+  is_default: boolean;
 }
 
 const roleIcons = {
   "Super Admin": Crown,
   "Company Admin": Shield,
   "Division Admin": UserCheck,
+  "Tally Admin": Settings,
   "Workspace Admin": Settings,
   "User": Users,
 };
@@ -110,7 +117,12 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
               <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
               <div className="flex items-center gap-1 ml-2">
                 <RoleIcon size={12} className="text-muted-foreground" />
-                {item.role === "Company Admin" || item.role === "Division Admin" || item.role === "Workspace Admin" ? (
+                {item.tally_enabled && (
+                  <Badge variant="outline" className="text-xs py-0 px-1 bg-green-50 text-green-700 border-green-200">
+                    Tally
+                  </Badge>
+                )}
+                {(item.role === "Company Admin" || item.role === "Division Admin" || item.role === "Workspace Admin" || item.role === "Tally Admin") ? (
                   <Badge variant="secondary" className="text-xs py-0 px-1">Admin</Badge>
                 ) : null}
               </div>
@@ -206,6 +218,8 @@ export function AppSidebar() {
       if (!user) return;
       
       try {
+        console.log('Fetching organization data...');
+        
         // Fetch companies
         const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
@@ -214,8 +228,11 @@ export function AppSidebar() {
 
         if (companiesError) {
           console.error('Error fetching companies:', companiesError);
+          setLoading(false);
           return;
         }
+
+        console.log('Companies fetched:', companiesData);
 
         // Fetch divisions
         const { data: divisionsData, error: divisionsError } = await supabase
@@ -225,8 +242,11 @@ export function AppSidebar() {
 
         if (divisionsError) {
           console.error('Error fetching divisions:', divisionsError);
+          setLoading(false);
           return;
         }
+
+        console.log('Divisions fetched:', divisionsData);
 
         // Fetch workspaces
         const { data: workspacesData, error: workspacesError } = await supabase
@@ -235,31 +255,40 @@ export function AppSidebar() {
 
         if (workspacesError) {
           console.error('Error fetching workspaces:', workspacesError);
+          setLoading(false);
           return;
         }
+
+        console.log('Workspaces fetched:', workspacesData);
 
         // Structure the data
         const structuredCompanies: CompanyData[] = companiesData.map(company => ({
           id: company.id,
           name: company.name,
+          description: company.description,
           role: "Super Admin", // For now, all roles are Super Admin since user is super admin
           divisions: divisionsData
             .filter(division => division.company_id === company.id)
             .map(division => ({
               id: division.id,
               name: division.name,
-              role: "Division Admin",
+              description: division.description,
+              role: division.tally_enabled ? "Tally Admin" : "Division Admin",
               company_id: company.id,
+              tally_enabled: division.tally_enabled || false,
               workspaces: workspacesData
                 .filter(workspace => workspace.division_id === division.id)
                 .map(workspace => ({
                   id: workspace.id,
                   name: workspace.name,
-                  role: "Workspace Admin"
+                  description: workspace.description,
+                  role: "Workspace Admin",
+                  is_default: workspace.is_default || false
                 }))
             }))
         }));
 
+        console.log('Structured companies:', structuredCompanies);
         setCompanies(structuredCompanies);
       } catch (error) {
         console.error('Error fetching organization data:', error);
