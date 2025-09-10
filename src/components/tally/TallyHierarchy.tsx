@@ -74,6 +74,10 @@ const tallyMenuStructure = {
     name: "Display",
     icon: BarChart3,
     children: [{
+      name: "Analytics Dashboard",
+      icon: BarChart3,
+      path: "/tally/analytics/dashboard"
+    }, {
       name: "DayBook",
       icon: BookOpen,
       path: "/tally/display/daybook"
@@ -98,6 +102,10 @@ const tallyMenuStructure = {
       name: "Tally Configuration",
       icon: Settings,
       path: "/tally/utilities/configuration"
+    }, {
+      name: "Data Management",
+      icon: Database,
+      path: "/tally/data/management"
     }, {
       name: "Test API",
       icon: Activity,

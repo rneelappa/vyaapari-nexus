@@ -42,6 +42,8 @@ import ReportsPage from "@/pages/tally/display/ReportsPage";
 import ConfigurationPage from "@/pages/tally/utilities/ConfigurationPage";
 import TestApiPage from "@/pages/tally/TestApiPage";
 import CRUDTestPage from "@/pages/tests/CRUDTestPage";
+import DataManagementPage from "@/pages/tally/data/DataManagementPage";
+import AnalyticsDashboard from "@/pages/tally/analytics/AnalyticsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -279,6 +281,22 @@ function App() {
                  <AuthGuard>
                    <MainLayout>
                      <CRUDTestPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/data/management" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <DataManagementPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/analytics/dashboard" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <AnalyticsDashboard />
                    </MainLayout>
                  </AuthGuard>
                } />
