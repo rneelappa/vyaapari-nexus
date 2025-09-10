@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ChevronDown, ChevronRight, Building, Building2, Database, Users, BookOpen, Package, Warehouse, Target, FileSignature, TrendingUp, Calculator, FileText, BarChart3, PieChart, FileBarChart, Activity, Settings } from "lucide-react";
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,11 +131,14 @@ const DivisionHierarchyItem = ({ division }: DivisionHierarchyItemProps) => {
             >
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
-            <div className="flex items-center flex-1 p-2">
+            <Link 
+              to={`/company/${division.company_id}/division/${division.id}`}
+              className="flex items-center flex-1 p-2 hover:bg-accent/10 rounded transition-smooth"
+            >
               <Building2 size={16} className="mr-2 flex-shrink-0" />
               <span className="flex-1 truncate text-sm font-medium">{division.name}</span>
               <div className="w-2 h-2 rounded-full bg-green-500 ml-2" title="Tally Enabled" />
-            </div>
+            </Link>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
