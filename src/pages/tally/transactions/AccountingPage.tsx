@@ -41,10 +41,10 @@ async function debugAuth() {
   if (session?.session?.access_token) {
     try {
       console.log('[DEBUG] Testing authenticated query...');
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
+      const response = await fetch(`https://hycyhnjsldiokfkpqzoz.supabase.co/rest/v1/companies?select=id,name&limit=1`, {
         headers: {
           'Authorization': `Bearer ${session.session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5Y3lobmpzbGRpb2tma3Bxem96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NzQyMzksImV4cCI6MjA3MzA1MDIzOX0.pYalSrD_FP8tRY-bPCfFGbXavUq0eGwRmQUCIPnPxNk',
           'Accept-Profile': 'public'
         }
       });
@@ -80,6 +80,7 @@ interface AccountingEntry {
 }
 
 export default function AccountingPage() {
+  console.log('[DEBUG] AccountingPage component rendering...');
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [accountingEntries, setAccountingEntries] = useState<AccountingEntry[]>([]);
@@ -90,7 +91,9 @@ export default function AccountingPage() {
   const [selectedEntry, setSelectedEntry] = useState<AccountingEntry | null>(null);
   const [availableLedgers, setAvailableLedgers] = useState<string[]>([]);
 
-  const addForm = useForm<AccountingFormData>({
+  console.log('[DEBUG] Creating form instances...');
+  
+  const addFormInstance = useForm<AccountingFormData>({
     resolver: zodResolver(accountingFormSchema),
     defaultValues: {
       ledger: "",
@@ -100,7 +103,9 @@ export default function AccountingPage() {
     },
   });
 
-  const editForm = useForm<AccountingFormData>({
+  console.log('[DEBUG] addFormInstance created:', addFormInstance);
+
+  const editFormInstance = useForm<AccountingFormData>({
     resolver: zodResolver(accountingFormSchema),
     defaultValues: {
       ledger: "",
@@ -109,13 +114,15 @@ export default function AccountingPage() {
       currency: "INR",
     },
   });
+
+  console.log('[DEBUG] editFormInstance created:', editFormInstance);
   // Add circuit breaker state
   const [fetchAttempts, setFetchAttempts] = useState(0);
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const MAX_FETCH_ATTEMPTS = 3;
   const FETCH_COOLDOWN = 5000; // 5 seconds
 
-  // Fetch available ledgers for the form
+  // Fetch available ledgers for the forms
   useEffect(() => {
     const fetchLedgers = async () => {
       try {
@@ -248,7 +255,7 @@ export default function AccountingPage() {
       });
 
       setIsAddDialogOpen(false);
-      addForm.reset();
+      addFormInstance.reset();
       fetchAccountingEntries();
     } catch (err) {
       toast({
@@ -283,7 +290,7 @@ export default function AccountingPage() {
 
       setIsEditDialogOpen(false);
       setSelectedEntry(null);
-      editForm.reset();
+      editFormInstance.reset();
       fetchAccountingEntries();
     } catch (err) {
       toast({
@@ -319,10 +326,12 @@ export default function AccountingPage() {
   };
 
   const openEditDialog = (entry: AccountingEntry) => {
+    console.log('[DEBUG] openEditDialog called with entry:', entry);
+    console.log('[DEBUG] editFormInstance available:', !!editFormInstance);
     setSelectedEntry(entry);
-    editForm.reset({
+    editFormInstance.reset({
       ledger: entry.ledger,
-      amount: Math.abs(entry.amount), // Always positive in form, sign is handled separately
+      amount: Math.abs(entry.amount), // Always positive in forms, sign is handled separately
       amount_forex: entry.amount_forex,
       currency: entry.currency,
     });
@@ -393,10 +402,10 @@ export default function AccountingPage() {
                   Create a new accounting entry. Enter the ledger details and amount.
                 </DialogDescription>
               </DialogHeader>
-          <Form {...addForm}>
-            <form onSubmit={addForm.handleSubmit(handleAddEntry)} className="space-y-4">
-              <FormField
-                control={addForm.control}
+              <Form {...addFormInstance}>
+                <form onSubmit={addFormInstance.handleSubmit(handleAddEntry)} className="space-y-4">
+                  <FormField
+                    control={addFormInstance.control}
                     name="ledger"
                     render={({ field }) => (
                       <FormItem>
@@ -407,20 +416,20 @@ export default function AccountingPage() {
                               <SelectValue placeholder="Select ledger" />
                             </SelectTrigger>
                           </FormControl>
-                      <SelectContent>
-                        {availableLedgers.map((ledger, index) => (
-                          <SelectItem key={`add-ledger-${index}-${ledger}`} value={ledger}>
-                            {ledger}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                          <SelectContent>
+                            {availableLedgers.map((ledger, index) => (
+                              <SelectItem key={`add-ledger-${index}-${ledger}`} value={ledger}>
+                                {ledger}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                control={addForm.control}
+                    control={addFormInstance.control}
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
@@ -439,7 +448,7 @@ export default function AccountingPage() {
                     )}
                   />
                   <FormField
-                control={addForm.control}
+                    control={addFormInstance.control}
                     name="currency"
                     render={({ field }) => (
                       <FormItem>
@@ -462,7 +471,7 @@ export default function AccountingPage() {
                     )}
                   />
                   <FormField
-                control={addForm.control}
+                    control={addFormInstance.control}
                     name="amount_forex"
                     render={({ field }) => (
                       <FormItem>
@@ -626,10 +635,10 @@ export default function AccountingPage() {
               Update the accounting entry details.
             </DialogDescription>
           </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(handleEditEntry)} className="space-y-4">
+          <Form {...editFormInstance}>
+            <form onSubmit={editFormInstance.handleSubmit(handleEditEntry)} className="space-y-4">
               <FormField
-                control={editForm.control}
+                control={editFormInstance.control}
                 name="ledger"
                 render={({ field }) => (
                   <FormItem>
@@ -653,7 +662,7 @@ export default function AccountingPage() {
                 )}
               />
               <FormField
-                control={editForm.control}
+                control={editFormInstance.control}
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
@@ -672,7 +681,7 @@ export default function AccountingPage() {
                 )}
               />
               <FormField
-                control={editForm.control}
+                control={editFormInstance.control}
                 name="currency"
                 render={({ field }) => (
                   <FormItem>
@@ -695,7 +704,7 @@ export default function AccountingPage() {
                 )}
               />
               <FormField
-                control={editForm.control}
+                control={editFormInstance.control}
                 name="amount_forex"
                 render={({ field }) => (
                   <FormItem>
