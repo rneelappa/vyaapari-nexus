@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,70 +6,84 @@ import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Building2, Users, Target, TrendingUp, Settings, MessageSquare, FolderOpen, CheckSquare } from "lucide-react";
 import ManageDivisionDialog from "@/components/division/ManageDivisionDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const DivisionPage = () => {
   const { companyId, divisionId } = useParams();
   const [manageDivisionOpen, setManageDivisionOpen] = useState(false);
   const [divisionData, setDivisionData] = useState<any>(null);
-  
-  // Mock data structure matching the sidebar - updated with real company UUIDs
-  const mockData = {
-    companies: [
-      {
-        id: "550e8400-e29b-41d4-a716-446655440000",
-        name: "Acme Corporation",
-        divisions: [
-          {
-            id: "650e8400-e29b-41d4-a716-446655440000",
-            name: "Engineering", 
-            description: "Building innovative software solutions and maintaining technical excellence",
-            manager: "Sarah Johnson",
-            employees: 450,
-            budget: "₹2.5 Cr",
-            performance: 94,
-            status: "Active"
-          },
-          {
-            id: "650e8400-e29b-41d4-a716-446655440001",
-            name: "Marketing",
-            description: "Driving brand awareness and customer engagement through strategic campaigns", 
-            manager: "Michael Chen",
-            employees: 125,
-            budget: "₹1.2 Cr",
-            performance: 87,
-            status: "Active"
-          }
-        ]
-      },
-      {
-        id: "550e8400-e29b-41d4-a716-446655440001",
-        name: "TechStart Inc",
-        divisions: [
-          {
-            id: "650e8400-e29b-41d4-a716-446655440002",
-            name: "Product",
-            description: "Designing and developing cutting-edge products for market success",
-            manager: "Emily Rodriguez", 
-            employees: 280,
-            budget: "₹3.1 Cr",
-            performance: 91,
-            status: "Active"
-          }
-        ]
+  const [company, setCompany] = useState<any>(null);
+  const [division, setDivision] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch company data
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', companyId)
+          .single();
+
+        if (companyError) {
+          console.error('Error fetching company:', companyError);
+          return;
+        }
+
+        // Fetch division data
+        const { data: divisionData, error: divisionError } = await supabase
+          .from('divisions')
+          .select('*')
+          .eq('id', divisionId)
+          .eq('company_id', companyId)
+          .single();
+
+        if (divisionError) {
+          console.error('Error fetching division:', divisionError);
+          return;
+        }
+
+        setCompany(companyData);
+        setDivision(divisionData);
+        setDivisionData(divisionData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
-    ]
-  };
+    };
 
-  // Find the specific division based on companyId and divisionId
-  const company = mockData.companies.find(c => c.id === companyId);
-  const division = company?.divisions.find(d => d.id === divisionId);
+    if (companyId && divisionId) {
+      fetchData();
+    }
+  }, [companyId, divisionId]);
 
-  // Default fallback if division not found
-  if (!division) {
-    return <div className="p-6">Division not found</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4">Loading division...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Use current division data or fall back to mock data
+  if (!company || !division) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-muted-foreground">Division not found</h2>
+          <p className="text-muted-foreground mt-2">The requested division could not be found.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Use current division data or fall back to fetched data
   const currentDivision = divisionData || division;
 
   const handleDivisionUpdate = (updatedDivision: any) => {
@@ -130,12 +144,12 @@ const DivisionPage = () => {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link to={`/company/${companyId}`}>Company</Link>
+              <Link to={`/company/${companyId}`}>{company.name}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{division.name}</BreadcrumbPage>
+            <BreadcrumbPage>{currentDivision.name}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -178,7 +192,7 @@ const DivisionPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentDivision.employees || currentDivision.employee_count}</div>
+            <div className="text-2xl font-bold">{currentDivision.employee_count || currentDivision.employees}</div>
             <p className="text-xs text-muted-foreground">Active employees</p>
           </CardContent>
         </Card>
@@ -189,7 +203,7 @@ const DivisionPage = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentDivision.budget}</div>
+            <div className="text-2xl font-bold">₹{(currentDivision.budget / 10000000).toFixed(1)} Cr</div>
             <p className="text-xs text-muted-foreground">Current fiscal year</p>
           </CardContent>
         </Card>
@@ -200,7 +214,7 @@ const DivisionPage = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentDivision.performance || currentDivision.performance_score}%</div>
+            <div className="text-2xl font-bold">{(currentDivision.performance_score * 10).toFixed(1) || currentDivision.performance}%</div>
             <p className="text-xs text-muted-foreground">Above target</p>
           </CardContent>
         </Card>
