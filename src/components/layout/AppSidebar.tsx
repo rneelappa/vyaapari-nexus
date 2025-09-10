@@ -201,8 +201,8 @@ export function AppSidebar() {
 
   if (isCollapsed) {
     return (
-      <Sidebar className="w-16">
-        <SidebarContent className="p-2">
+      <div className="w-16 border-r border-border bg-sidebar flex-shrink-0">
+        <div className="p-2 h-full">
           <div className="flex flex-col items-center gap-2">
             <Building2 size={24} className="text-primary" />
             <div className="w-8 h-px bg-border" />
@@ -212,14 +212,14 @@ export function AppSidebar() {
               </div>
             ))}
           </div>
-        </SidebarContent>
-      </Sidebar>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Sidebar className="w-80">
-      <SidebarContent className="gradient-subtle">
+    <div className="w-80 border-r border-border bg-sidebar flex-shrink-0 h-full">
+      <div className="gradient-subtle h-full flex flex-col">
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -232,19 +232,17 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <div className="flex-1 p-2">
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3 mb-2">
+        <div className="flex-1 p-2 overflow-y-auto">
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-muted-foreground px-3 mb-2">
               Organization Hierarchy
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {mockData.companies.map((company) => (
-                  <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+            </div>
+            <div>
+              {mockData.companies.map((company) => (
+                <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
+              ))}
+            </div>
+          </div>
 
           <WorkspaceModules workspaceId={currentWorkspaceId} />
         </div>
@@ -261,7 +259,7 @@ export function AppSidebar() {
             <Settings size={16} className="text-muted-foreground cursor-pointer hover:text-foreground transition-fast" />
           </div>
         </div>
-      </SidebarContent>
-    </Sidebar>
+      </div>
+    </div>
   );
 }
