@@ -7,8 +7,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard, RefreshCw, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
 
 // TEMPORARY DEBUG CODE - Remove after testing
 async function debugAuth() {
@@ -50,6 +48,10 @@ async function debugAuth() {
 
 // Run debug immediately
 debugAuth();
+
+// Import useAuth and toast after debugAuth function
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 interface Ledger {
   guid: string;
