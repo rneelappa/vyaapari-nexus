@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Building2, Users, Briefcase, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { ChevronDown, ChevronRight, Building2, Users, Briefcase, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck, Building } from "lucide-react";
+import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -82,8 +82,8 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
 
   const getIcon = () => {
     switch (type) {
-      case "company": return Building2;
-      case "division": return Briefcase;
+      case "company": return Building;
+      case "division": return Building2;
       case "workspace": return Users;
       default: return Users;
     }
@@ -92,31 +92,63 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
   const Icon = getIcon();
   const indent = level * 12;
 
+  const getNavigationPath = () => {
+    if (type === "company") return `/company/${item.id}`;
+    if (type === "division") {
+      // Find parent company ID for division
+      const company = mockData.companies.find(c => c.divisions.some(d => d.id === item.id));
+      return company ? `/company/${company.id}/division/${item.id}` : "#";
+    }
+    if (type === "workspace") return `/workspace/${item.id}`;
+    return "#";
+  };
+
+  const shouldToggleOnClick = hasChildren;
+
   return (
     <div>
       <SidebarMenuItem>
         <SidebarMenuButton asChild>
-          <div
-            className={`flex items-center w-full p-2 rounded-lg transition-smooth cursor-pointer
-              ${location.pathname.includes(item.id) ? 'bg-accent text-accent-foreground shadow-soft' : 'hover:bg-muted/50'}
-            `}
-            style={{ paddingLeft: `${12 + indent}px` }}
-            onClick={onToggle}
-          >
-            {hasChildren && (
-              <div className="mr-1">
-                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {shouldToggleOnClick ? (
+            <div
+              className={`flex items-center w-full p-2 rounded-lg transition-smooth cursor-pointer
+                ${location.pathname.includes(item.id) ? 'bg-accent text-accent-foreground shadow-soft' : 'hover:bg-muted/50'}
+              `}
+              style={{ paddingLeft: `${12 + indent}px` }}
+              onClick={onToggle}
+            >
+              {hasChildren && (
+                <div className="mr-1">
+                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </div>
+              )}
+              <Icon size={16} className="mr-2 flex-shrink-0" />
+              <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
+              <div className="flex items-center gap-1 ml-2">
+                <RoleIcon size={12} className="text-muted-foreground" />
+                {item.role === "Company Admin" || item.role === "Division Admin" || item.role === "Workspace Admin" ? (
+                  <Badge variant="secondary" className="text-xs py-0 px-1">Admin</Badge>
+                ) : null}
               </div>
-            )}
-            <Icon size={16} className="mr-2 flex-shrink-0" />
-            <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
-            <div className="flex items-center gap-1 ml-2">
-              <RoleIcon size={12} className="text-muted-foreground" />
-              {item.role === "Company Admin" || item.role === "Division Admin" || item.role === "Workspace Admin" ? (
-                <Badge variant="secondary" className="text-xs py-0 px-1">Admin</Badge>
-              ) : null}
             </div>
-          </div>
+          ) : (
+            <Link
+              to={getNavigationPath()}
+              className={`flex items-center w-full p-2 rounded-lg transition-smooth cursor-pointer
+                ${location.pathname.includes(item.id) ? 'bg-accent text-accent-foreground shadow-soft' : 'hover:bg-muted/50'}
+              `}
+              style={{ paddingLeft: `${12 + indent}px` }}
+            >
+              <Icon size={16} className="mr-2 flex-shrink-0" />
+              <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
+              <div className="flex items-center gap-1 ml-2">
+                <RoleIcon size={12} className="text-muted-foreground" />
+                {item.role === "Company Admin" || item.role === "Division Admin" || item.role === "Workspace Admin" ? (
+                  <Badge variant="secondary" className="text-xs py-0 px-1">Admin</Badge>
+                ) : null}
+              </div>
+            </Link>
+          )}
         </SidebarMenuButton>
       </SidebarMenuItem>
 
