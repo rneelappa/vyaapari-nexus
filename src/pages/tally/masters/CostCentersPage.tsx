@@ -8,6 +8,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, Target, Building, Users, TrendingUp, RefreshCw, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+
+// TEMPORARY DEBUG CODE - Remove after testing
+async function debugAuth() {
+  console.log('[DEBUG] CostCentersPage - Checking authentication status...');
+  
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  console.log('[DEBUG] CostCentersPage - Session:', session, 'Error:', sessionError);
+  
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  console.log('[DEBUG] CostCentersPage - User:', user, 'Error:', userError);
+  
+  if (!session?.session) {
+    console.error('[DEBUG] CostCentersPage - No session found - user not authenticated');
+  } else {
+    console.log('[DEBUG] CostCentersPage - Access token:', session.session.access_token?.substring(0, 20) + '...');
+  }
+  
+  if (!user?.user) {
+    console.error('[DEBUG] CostCentersPage - No user found - user not authenticated');
+  }
+}
+
+// Run debug immediately
+debugAuth();
 
 interface CostCenter {
   guid: string;
@@ -23,13 +48,34 @@ export default function CostCentersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Add circuit breaker state
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
+  const FETCH_COOLDOWN = 5000; // 5 seconds
+
   useEffect(() => {
-    if (user) {
-      fetchCostCenters();
+    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      const now = Date.now();
+      if (now - lastFetchTime > FETCH_COOLDOWN) {
+        fetchCostCenters();
+      }
     }
-  }, [user]);
+  }, [user, fetchAttempts, lastFetchTime]);
 
   const fetchCostCenters = async () => {
+    // Circuit breaker: prevent too many rapid calls
+    const now = Date.now();
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      setError(`Too many failed attempts. Please refresh the page to try again.`);
+      return;
+    }
+
+    if (now - lastFetchTime < FETCH_COOLDOWN) {
+      console.log('Skipping fetch due to cooldown period');
+      return;
+    }
+
     if (!user) {
       setError('Authentication required');
       setLoading(false);
@@ -39,6 +85,9 @@ export default function CostCentersPage() {
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
+      
+      console.log('Fetching cost centers from Supabase...');
       
       // Fetch from Supabase mst_cost_centre table
       const { data, error } = await supabase
@@ -59,13 +108,33 @@ export default function CostCentersPage() {
       }));
       
       setCostCenters(transformedCenters);
+      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching cost centers:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch cost centers');
+      setFetchAttempts(prev => prev + 1);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch cost centers';
+      setError(errorMessage);
       setCostCenters([]);
+      
+      // Don't show destructive toasts for permission errors as they spam the UI
+      if (!errorMessage.includes('permission denied')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setFetchAttempts(0);
+    setLastFetchTime(0);
+    setError(null);
+    fetchCostCenters();
   };
 
   const filteredCostCenters = costCenters.filter(center =>
@@ -94,7 +163,7 @@ export default function CostCentersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchCostCenters} disabled={loading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>

@@ -8,6 +8,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, Calculator, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+// TEMPORARY DEBUG CODE - Remove after testing
+async function debugAuth() {
+  console.log('[DEBUG] AccountingPage - Checking authentication status...');
+  
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  console.log('[DEBUG] AccountingPage - Session:', session, 'Error:', sessionError);
+  
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  console.log('[DEBUG] AccountingPage - User:', user, 'Error:', userError);
+  
+  if (!session?.session) {
+    console.error('[DEBUG] AccountingPage - No session found - user not authenticated');
+  } else {
+    console.log('[DEBUG] AccountingPage - Access token:', session.session.access_token?.substring(0, 20) + '...');
+  }
+  
+  if (!user?.user) {
+    console.error('[DEBUG] AccountingPage - No user found - user not authenticated');
+  }
+}
+
+// Run debug immediately
+debugAuth();
 
 interface AccountingEntry {
   guid: string;
@@ -21,19 +46,52 @@ interface AccountingEntry {
 }
 
 export default function AccountingPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [accountingEntries, setAccountingEntries] = useState<AccountingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Add circuit breaker state
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
+  const FETCH_COOLDOWN = 5000; // 5 seconds
+
   useEffect(() => {
-    fetchAccountingEntries();
-  }, []);
+    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      const now = Date.now();
+      if (now - lastFetchTime > FETCH_COOLDOWN) {
+        fetchAccountingEntries();
+      }
+    }
+  }, [user, fetchAttempts, lastFetchTime]);
 
   const fetchAccountingEntries = async () => {
+    // Circuit breaker: prevent too many rapid calls
+    const now = Date.now();
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      setError(`Too many failed attempts. Please refresh the page to try again.`);
+      return;
+    }
+
+    if (now - lastFetchTime < FETCH_COOLDOWN) {
+      console.log('Skipping fetch due to cooldown period');
+      return;
+    }
+
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
+      
+      console.log('Fetching accounting entries from Supabase...');
       
       const { data, error } = await supabase
         .from('trn_accounting')
@@ -57,13 +115,33 @@ export default function AccountingPage() {
       }));
       
       setAccountingEntries(transformedData);
+      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching accounting entries:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch accounting entries');
+      setFetchAttempts(prev => prev + 1);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch accounting entries';
+      setError(errorMessage);
       setAccountingEntries([]);
+      
+      // Don't show destructive toasts for permission errors as they spam the UI
+      if (!errorMessage.includes('permission denied')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setFetchAttempts(0);
+    setLastFetchTime(0);
+    setError(null);
+    fetchAccountingEntries();
   };
 
   const filteredEntries = accountingEntries.filter(entry =>
@@ -92,6 +170,16 @@ export default function AccountingPage() {
     );
   };
 
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view accounting transactions.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -102,7 +190,7 @@ export default function AccountingPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchAccountingEntries} disabled={loading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>

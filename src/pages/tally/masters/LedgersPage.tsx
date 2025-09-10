@@ -8,6 +8,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard, RefreshCw, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+
+// TEMPORARY DEBUG CODE - Remove after testing
+async function debugAuth() {
+  console.log('[DEBUG] LedgersPage - Checking authentication status...');
+  
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  console.log('[DEBUG] LedgersPage - Session:', session, 'Error:', sessionError);
+  
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  console.log('[DEBUG] LedgersPage - User:', user, 'Error:', userError);
+  
+  if (!session?.session) {
+    console.error('[DEBUG] LedgersPage - No session found - user not authenticated');
+  } else {
+    console.log('[DEBUG] LedgersPage - Access token:', session.session.access_token?.substring(0, 20) + '...');
+  }
+  
+  if (!user?.user) {
+    console.error('[DEBUG] LedgersPage - No user found - user not authenticated');
+  }
+}
+
+// Run debug immediately
+debugAuth();
 
 interface Ledger {
   guid: string;
@@ -31,13 +56,34 @@ export default function LedgersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Add circuit breaker state
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
+  const FETCH_COOLDOWN = 5000; // 5 seconds
+
   useEffect(() => {
-    if (user) {
-      fetchLedgers();
+    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      const now = Date.now();
+      if (now - lastFetchTime > FETCH_COOLDOWN) {
+        fetchLedgers();
+      }
     }
-  }, [user]);
+  }, [user, fetchAttempts, lastFetchTime]);
 
   const fetchLedgers = async () => {
+    // Circuit breaker: prevent too many rapid calls
+    const now = Date.now();
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      setError(`Too many failed attempts. Please refresh the page to try again.`);
+      return;
+    }
+
+    if (now - lastFetchTime < FETCH_COOLDOWN) {
+      console.log('Skipping fetch due to cooldown period');
+      return;
+    }
+
     if (!user) {
       setError('Authentication required');
       setLoading(false);
@@ -47,6 +93,9 @@ export default function LedgersPage() {
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
+      
+      console.log('Fetching ledgers from Supabase...');
       
       // Fetch from Supabase mst_ledger table
       const { data, error } = await supabase
@@ -75,13 +124,33 @@ export default function LedgersPage() {
       }));
       
       setLedgers(transformedLedgers);
+      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching ledgers:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch ledgers');
+      setFetchAttempts(prev => prev + 1);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch ledgers';
+      setError(errorMessage);
       setLedgers([]);
+      
+      // Don't show destructive toasts for permission errors as they spam the UI
+      if (!errorMessage.includes('permission denied')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setFetchAttempts(0);
+    setLastFetchTime(0);
+    setError(null);
+    fetchLedgers();
   };
 
   const filteredLedgers = ledgers.filter(ledger =>
@@ -127,7 +196,7 @@ export default function LedgersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchLedgers} disabled={loading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
