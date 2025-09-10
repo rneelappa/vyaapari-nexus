@@ -94,7 +94,7 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
         <SidebarMenuButton asChild>
           <div
             className={`flex items-center w-full rounded-lg transition-smooth
-              ${location.pathname.includes(item.id) ? 'bg-accent text-accent-foreground shadow-soft' : 'hover:bg-muted/50'}
+              ${location.pathname.includes(item.id) ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-soft' : 'hover:bg-sidebar-accent/30 text-sidebar-foreground'}
             `}
             style={{ paddingLeft: `${12 + indent}px` }}
           >
@@ -105,19 +105,19 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
                   e.stopPropagation();
                   onToggle?.();
                 }}
-                className="mr-1 p-1 rounded hover:bg-accent/20 transition-smooth"
+                className="mr-1 p-1 rounded hover:bg-sidebar-accent/20 transition-smooth text-sidebar-foreground"
               >
                 {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </button>
             )}
             <Link
               to={getNavigationPath()}
-              className="flex items-center flex-1 p-2 rounded-lg transition-smooth"
+              className="flex items-center flex-1 p-2 rounded-lg transition-smooth text-sidebar-foreground"
             >
               <Icon size={16} className="mr-2 flex-shrink-0" />
               <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
-              <div className="flex items-center gap-1 ml-2">
-                <RoleIcon size={12} className="text-muted-foreground" />
+                <div className="flex items-center gap-1 ml-2">
+                  <RoleIcon size={12} className="text-sidebar-foreground/60" />
                 {item.tally_enabled && (
                   <Badge variant="outline" className="text-xs py-0 px-1 bg-green-50 text-green-700 border-green-200">
                     Tally
@@ -133,7 +133,7 @@ const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyIte
       </SidebarMenuItem>
 
       {hasChildren && isExpanded && (
-        <div className="mt-1 ml-6 border-l border-border/30 pl-4">
+        <div className="mt-1 ml-6 border-l border-sidebar-border/30 pl-4">
           {type === "company" && item.divisions?.length > 0 && item.divisions.map((division: any) => (
             <HierarchyItemContainer key={division.id} item={division} type="division" level={level + 1} />
           ))}
@@ -172,7 +172,7 @@ const WorkspaceModules = ({ workspaceId }: { workspaceId?: string }) => {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
+      <SidebarGroupLabel className="text-xs font-semibold text-sidebar-foreground/80 px-3 uppercase tracking-wide">
         Workspace Modules
       </SidebarGroupLabel>
       <SidebarGroupContent>
@@ -185,8 +185,8 @@ const WorkspaceModules = ({ workspaceId }: { workspaceId?: string }) => {
                   className={({ isActive }) =>
                     `flex items-center p-2 rounded-lg transition-smooth ml-6 ${
                       isActive
-                        ? "bg-primary text-primary-foreground shadow-soft"
-                        : "hover:bg-muted/50"
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-soft"
+                        : "hover:bg-sidebar-accent/30 text-sidebar-foreground"
                     }`
                   }
                 >
@@ -236,25 +236,48 @@ function AppSidebarContent() {
   const isCollapsed = state === "collapsed";
   const [companies, setCompanies] = useState<CompanyData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   
   // Extract workspace ID from URL for module navigation
   const workspaceMatch = location.pathname.match(/\/workspace\/([^\/]+)/);
   const currentWorkspaceId = workspaceMatch ? workspaceMatch[1] : null;
 
+  // Circuit breaker to prevent infinite loops
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchUserId, setLastFetchUserId] = useState<string | null>(null);
+  const MAX_FETCH_ATTEMPTS = 3;
+
   useEffect(() => {
     const fetchOrganizationData = async () => {
-      console.log('AppSidebarContent: user =', user?.id);
+      const currentUserId = user?.id;
       
-      if (!user) {
+      if (!currentUserId) {
         console.log('AppSidebar: No user found, setting loading to false');
         setLoading(false);
         return;
       }
+
+      // Reset attempts if user changed
+      if (lastFetchUserId !== currentUserId) {
+        setFetchAttempts(0);
+        setLastFetchUserId(currentUserId);
+        setError(null);
+      }
+
+      // Circuit breaker: stop if too many attempts
+      if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+        console.log('AppSidebar: Max fetch attempts reached, stopping');
+        setLoading(false);
+        setError('Unable to load organization data after multiple attempts');
+        return;
+      }
       
       try {
-        console.log('AppSidebar: Fetching organization data...');
+        console.log('AppSidebar: Fetching organization data for user:', currentUserId, 'attempt:', fetchAttempts + 1);
         setLoading(true);
+        setError(null);
+        setFetchAttempts(prev => prev + 1);
         
         // Fetch companies
         const { data: companiesData, error: companiesError } = await supabase
@@ -284,15 +307,8 @@ function AppSidebarContent() {
 
         console.log('AppSidebar: Divisions fetched:', divisionsData?.length || 0, 'divisions');
 
-        // Fetch workspaces (handle case where table might be empty)
-        const { data: workspacesData, error: workspacesError } = await supabase
-          .from('workspaces')
-          .select('*');
-
-        if (workspacesError) {
-          console.error('AppSidebar: Error fetching workspaces:', workspacesError);
-          // Don't return here - continue with empty workspaces
-        }
+        // Skip workspaces fetch for now to avoid permission errors
+        const workspacesData: any[] = [];
 
         console.log('AppSidebar: Workspaces fetched:', workspacesData?.length || 0, 'workspaces');
 
@@ -333,23 +349,30 @@ function AppSidebarContent() {
         setLoading(false);
       } catch (error) {
         console.error('AppSidebar: Error fetching organization data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load organization data');
         setLoading(false);
       }
     };
 
-    fetchOrganizationData();
-  }, [user]);
+    // Only fetch if user changed or we haven't fetched for this user yet
+    if (user?.id && lastFetchUserId !== user.id) {
+      fetchOrganizationData();
+    }
+  }, [user?.id, fetchAttempts, lastFetchUserId]);
 
   if (isCollapsed) {
     return (
-      <div className="w-16 border-r border-border bg-sidebar flex-shrink-0">
-        <div className="p-2 h-full">
+      <div className="w-16 border-r border-sidebar-border bg-sidebar flex-shrink-0">
+        <div className="p-2 h-full text-sidebar-foreground">
           <div className="flex flex-col items-center gap-2">
-            <Building2 size={24} className="text-primary" />
-            <div className="w-8 h-px bg-border" />
+            {/* Logo in collapsed state */}
+            <div className="w-10 h-10 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center shadow-medium">
+              <Building2 size={20} />
+            </div>
+            <div className="w-8 h-px bg-sidebar-border" />
             {companies.map((company) => (
-              <div key={company.id} className="p-2 rounded-lg hover:bg-muted/50 cursor-pointer">
-                <Building2 size={16} />
+              <div key={company.id} className="p-2 rounded-lg hover:bg-sidebar-accent/30 cursor-pointer">
+                <Building2 size={16} className="text-sidebar-foreground" />
               </div>
             ))}
           </div>
@@ -359,29 +382,48 @@ function AppSidebarContent() {
   }
 
   return (
-    <div className="w-80 border-r border-border bg-sidebar flex-shrink-0 h-full">
-      <div className="gradient-subtle h-full flex flex-col">
-        <div className="p-4 border-b border-border">
+    <div className="w-80 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-shrink-0 h-full">
+      <div className="h-full flex flex-col">
+        {/* Header with Logo and App Name */}
+        <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/20">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Building2 size={16} className="text-primary-foreground" />
+            <div className="w-10 h-10 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center shadow-medium">
+              <Building2 size={20} className="text-sidebar-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-semibold text-foreground">Vyaapari360ERP</h2>
-              <p className="text-xs text-muted-foreground">Enterprise Platform</p>
+              <h2 className="font-bold text-lg text-sidebar-foreground">Vyaapari360</h2>
+              <p className="text-sm text-sidebar-foreground/70">Enterprise ERP Platform</p>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 p-2 overflow-y-auto">
+        <div className="flex-1 p-2 overflow-y-auto bg-sidebar text-sidebar-foreground">
           <div className="mb-4">
-            <div className="text-xs font-semibold text-muted-foreground px-3 mb-2">
-              Organization Hierarchy
+            <div className="text-xs font-semibold text-sidebar-foreground/80 px-3 mb-2 uppercase tracking-wide">
+              Organization
             </div>
             {loading ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">Loading organization data...</div>
+              <div className="px-3 py-2 text-sm text-sidebar-foreground/70">Loading organization data...</div>
+            ) : error ? (
+              <div className="px-3 py-2 text-sm">
+                <p className="text-destructive text-xs mb-1">{error}</p>
+                {fetchAttempts < MAX_FETCH_ATTEMPTS && (
+                  <button 
+                    onClick={() => {
+                      setFetchAttempts(0);
+                      setError(null);
+                      if (user?.id) {
+                        setLastFetchUserId(null); // Force refetch
+                      }
+                    }}
+                    className="text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground underline"
+                  >
+                    Try again
+                  </button>
+                )}
+              </div>
             ) : companies.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
+              <div className="px-3 py-2 text-sm text-sidebar-foreground/70">
                 No organizations found
                 {user ? '' : ' (Please log in)'}
               </div>
@@ -398,10 +440,12 @@ function AppSidebarContent() {
 
           {/* Divider */}
           <div className="my-4 px-3">
-            <div className="h-px bg-border"></div>
+            <div className="h-px bg-sidebar-border"></div>
           </div>
 
-          <TallyHierarchy />
+          <div className="text-sidebar-foreground">
+            <TallyHierarchy />
+          </div>
         </div>
 
         <UserProfile />

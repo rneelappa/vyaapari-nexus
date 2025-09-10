@@ -13,20 +13,73 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Edit, Trash2, Users, TrendingUp, TrendingDown, RefreshCw, TreePine, ChevronRight, ChevronDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+
+// TEMPORARY DEBUG CODE - Remove after testing
+async function debugAuth() {
+  console.log('[DEBUG] Checking authentication status...');
+  
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  console.log('[DEBUG] Session:', session, 'Error:', sessionError);
+  
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  console.log('[DEBUG] User:', user, 'Error:', userError);
+  
+  if (!session?.session) {
+    console.error('[DEBUG] No session found - user not authenticated');
+  } else {
+    console.log('[DEBUG] Access token:', session.session.access_token?.substring(0, 20) + '...');
+  }
+  
+  if (!user?.user) {
+    console.error('[DEBUG] No user found - user not authenticated');
+  }
+  
+  // Test a simple query with explicit auth header
+  if (session?.session?.access_token) {
+    try {
+      console.log('[DEBUG] Testing authenticated query...');
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${session.session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Accept-Profile': 'public'
+        }
+      });
+      console.log('[DEBUG] Test query response:', response.status, await response.text());
+    } catch (error) {
+      console.error('[DEBUG] Test query failed:', error);
+    }
+  }
+}
+
+// Run debug immediately
+debugAuth();
 import { useAuth } from "@/hooks/useAuth";
 import TallyApiService, { TallyGroup } from "@/services/tally-api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { LoadingErrorState } from "@/components/common/LoadingErrorState";
 
 // Group Form Schema
 const groupFormSchema = z.object({
   name: z.string().min(1, "Group name is required"),
   parent: z.string().optional(),
-  primary_group: z.string().min(1, "Primary group is required"),
+  is_primary_group: z.boolean().default(false),
+  primary_group: z.string().optional(),
   is_revenue: z.boolean().optional(),
   is_deemedpositive: z.boolean().optional(),
   affects_gross_profit: z.boolean().optional(),
+}).refine((data) => {
+  // If it's a primary group, primary_group field should be optional
+  // If it's not a primary group, parent should be provided
+  if (!data.is_primary_group && !data.parent) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Non-primary groups must have a parent group selected",
+  path: ["parent"]
 });
 
 type GroupFormData = z.infer<typeof groupFormSchema>;
@@ -65,6 +118,7 @@ export default function GroupsPage() {
     defaultValues: {
       name: "",
       parent: "",
+      is_primary_group: false,
       primary_group: "",
       is_revenue: false,
       is_deemedpositive: true,
@@ -72,18 +126,45 @@ export default function GroupsPage() {
     },
   });
 
+  // Watch is_primary_group to conditionally show/hide parent field
+  const isPrimaryGroup = form.watch("is_primary_group");
+
+  // Add circuit breaker state
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
+  const FETCH_COOLDOWN = 5000; // 5 seconds
+
   useEffect(() => {
-    if (user) {
-      fetchGroups();
+    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      const now = Date.now();
+      if (now - lastFetchTime > FETCH_COOLDOWN) {
+        fetchGroups();
+      }
     }
-  }, [user]);
+  }, [user, fetchAttempts, lastFetchTime]);
 
   const fetchGroups = async () => {
+    // Circuit breaker: prevent too many rapid calls
+    const now = Date.now();
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      setError(`Too many failed attempts. Please refresh the page to try again.`);
+      return;
+    }
+
+    if (now - lastFetchTime < FETCH_COOLDOWN) {
+      console.log('Skipping fetch due to cooldown period');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
       
-      // Fetch groups from Supabase
+      console.log('Fetching groups from Supabase...');
+      
+      // Fetch groups from Supabase with timeout
       const { data, error } = await supabase
         .from('mst_group')
         .select('*')
@@ -111,13 +192,33 @@ export default function GroupsPage() {
       }));
       
       setGroups(transformedGroups);
+      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching groups:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch groups');
+      setFetchAttempts(prev => prev + 1);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch groups';
+      setError(errorMessage);
       setGroups([]);
+      
+      // Don't show destructive toasts for permission errors as they spam the UI
+      if (!errorMessage.includes('permission denied')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setFetchAttempts(0);
+    setLastFetchTime(0);
+    setError(null);
+    fetchGroups();
   };
 
   const buildGroupHierarchy = (groups: Group[]): Group[] => {
@@ -151,9 +252,9 @@ export default function GroupsPage() {
         .from('mst_group')
         .insert({
           name: data.name,
-          parent: data.parent || '',
-          _parent: data.parent || '',
-          primary_group: data.primary_group,
+          parent: data.is_primary_group ? '' : (data.parent || ''),
+          _parent: data.is_primary_group ? '' : (data.parent || ''),
+          primary_group: data.primary_group || '',
           is_revenue: data.is_revenue ? 1 : 0,
           is_deemedpositive: data.is_deemedpositive ? 1 : 0,
           affects_gross_profit: data.affects_gross_profit ? 1 : 0,
@@ -187,9 +288,9 @@ export default function GroupsPage() {
         .from('mst_group')
         .update({
           name: data.name,
-          parent: data.parent || '',
-          _parent: data.parent || '',
-          primary_group: data.primary_group,
+          parent: data.is_primary_group ? '' : (data.parent || ''),
+          _parent: data.is_primary_group ? '' : (data.parent || ''),
+          primary_group: data.primary_group || '',
           is_revenue: data.is_revenue ? 1 : 0,
           is_deemedpositive: data.is_deemedpositive ? 1 : 0,
           affects_gross_profit: data.affects_gross_profit ? 1 : 0,
@@ -245,6 +346,7 @@ export default function GroupsPage() {
     form.reset({
       name: group.name,
       parent: group.parent,
+      is_primary_group: !group.parent || group.parent === '',
       primary_group: group.primary_group,
       is_revenue: !!group.is_revenue,
       is_deemedpositive: !!group.is_deemedpositive,
@@ -427,38 +529,52 @@ export default function GroupsPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="parent"
+                    name="is_primary_group"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Group</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select parent group (optional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {groups.map((group) => (
-                              <SelectItem key={group.guid} value={group.name}>
-                                {group.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel>Primary Group *</FormLabel>
                       </FormItem>
                     )}
                   />
+                  {!isPrimaryGroup && (
+                    <FormField
+                      control={form.control}
+                      name="parent"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Parent Group *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select parent group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {groups.filter(g => !g.parent || g.parent === '').map((group) => (
+                                <SelectItem key={group.guid} value={group.name}>
+                                  {group.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={form.control}
                     name="primary_group"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Group *</FormLabel>
+                        <FormLabel>Primary Group Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select primary group" />
+                              <SelectValue placeholder="Select primary group category (optional)" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -551,9 +667,19 @@ export default function GroupsPage() {
           ) : error ? (
             <div className="text-center py-8">
               <div className="text-destructive mb-2">Error: {error}</div>
-              <Button onClick={fetchGroups} variant="outline">
-                Try Again
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline"
+                disabled={fetchAttempts >= MAX_FETCH_ATTEMPTS}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                {fetchAttempts >= MAX_FETCH_ATTEMPTS ? 'Max attempts reached' : 'Try Again'}
               </Button>
+              {fetchAttempts >= MAX_FETCH_ATTEMPTS && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Please refresh the page to try again
+                </p>
+              )}
             </div>
           ) : (
             <div className="rounded-md border">
@@ -671,40 +797,54 @@ export default function GroupsPage() {
               />
               <FormField
                 control={form.control}
-                name="parent"
+                name="is_primary_group"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parent Group</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select parent group (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {groups
-                          .filter(g => g.name !== selectedGroup?.name) // Prevent self-reference
-                          .map((group) => (
-                            <SelectItem key={group.guid} value={group.name}>
-                              {group.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel>Primary Group *</FormLabel>
                   </FormItem>
                 )}
               />
+              {!isPrimaryGroup && (
+                <FormField
+                  control={form.control}
+                  name="parent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parent Group *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select parent group" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {groups
+                            .filter(g => g.name !== selectedGroup?.name && (!g.parent || g.parent === '')) // Only show primary groups and prevent self-reference
+                            .map((group) => (
+                              <SelectItem key={group.guid} value={group.name}>
+                                {group.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="primary_group"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Primary Group *</FormLabel>
+                    <FormLabel>Primary Group Category</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select primary group" />
+                          <SelectValue placeholder="Select primary group category (optional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

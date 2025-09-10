@@ -8,6 +8,48 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, FileText, Calendar, Settings, Users, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+// TEMPORARY DEBUG CODE - Remove after testing
+async function debugAuth() {
+  console.log('[DEBUG] NonAccountingPage - Checking authentication status...');
+  
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  console.log('[DEBUG] NonAccountingPage - Session:', session, 'Error:', sessionError);
+  
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  console.log('[DEBUG] NonAccountingPage - User:', user, 'Error:', userError);
+  
+  if (!session?.session) {
+    console.error('[DEBUG] NonAccountingPage - No session found - user not authenticated');
+  } else {
+    console.log('[DEBUG] NonAccountingPage - Access token:', session.session.access_token?.substring(0, 20) + '...');
+  }
+  
+  if (!user?.user) {
+    console.error('[DEBUG] NonAccountingPage - No user found - user not authenticated');
+  }
+  
+  // Test a simple query with explicit auth header
+  if (session?.session?.access_token) {
+    try {
+      console.log('[DEBUG] Testing authenticated query...');
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${session.session.access_token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Accept-Profile': 'public'
+        }
+      });
+      console.log('[DEBUG] Test query response:', response.status, await response.text());
+    } catch (error) {
+      console.error('[DEBUG] Test query failed:', error);
+    }
+  }
+}
+
+// Run debug immediately
+debugAuth();
 
 interface NonAccountingEntry {
   guid: string;
@@ -20,19 +62,52 @@ interface NonAccountingEntry {
 }
 
 export default function NonAccountingPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [nonAccountingEntries, setNonAccountingEntries] = useState<NonAccountingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Add circuit breaker state
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
+  const FETCH_COOLDOWN = 5000; // 5 seconds
+
   useEffect(() => {
-    fetchNonAccountingEntries();
-  }, []);
+    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      const now = Date.now();
+      if (now - lastFetchTime > FETCH_COOLDOWN) {
+        fetchNonAccountingEntries();
+      }
+    }
+  }, [user, fetchAttempts, lastFetchTime]);
 
   const fetchNonAccountingEntries = async () => {
+    // Circuit breaker: prevent too many rapid calls
+    const now = Date.now();
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      setError(`Too many failed attempts. Please refresh the page to try again.`);
+      return;
+    }
+
+    if (now - lastFetchTime < FETCH_COOLDOWN) {
+      console.log('Skipping fetch due to cooldown period');
+      return;
+    }
+
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
+      
+      console.log('Fetching non-accounting entries from Supabase...');
       
       const { data, error } = await supabase
         .from('tally_trn_voucher')
@@ -55,13 +130,33 @@ export default function NonAccountingPage() {
       }));
       
       setNonAccountingEntries(transformedData);
+      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching non-accounting entries:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch non-accounting entries');
+      setFetchAttempts(prev => prev + 1);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch non-accounting entries';
+      setError(errorMessage);
       setNonAccountingEntries([]);
+      
+      // Don't show destructive toasts for permission errors as they spam the UI
+      if (!errorMessage.includes('permission denied')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setFetchAttempts(0);
+    setLastFetchTime(0);
+    setError(null);
+    fetchNonAccountingEntries();
   };
 
   const filteredEntries = nonAccountingEntries.filter(entry =>
@@ -86,6 +181,16 @@ export default function NonAccountingPage() {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view non-accounting transactions.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -96,7 +201,7 @@ export default function NonAccountingPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchNonAccountingEntries} disabled={loading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>

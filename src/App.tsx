@@ -41,7 +41,6 @@ import FinancialStatementsPage from "@/pages/tally/display/FinancialStatementsPa
 import ReportsPage from "@/pages/tally/display/ReportsPage";
 import ConfigurationPage from "@/pages/tally/utilities/ConfigurationPage";
 import TestApiPage from "@/pages/tally/TestApiPage";
-import CRUDTestPage from "@/pages/tests/CRUDTestPage";
 import DataManagementPage from "@/pages/tally/data/DataManagementPage";
 import AnalyticsDashboard from "@/pages/tally/analytics/AnalyticsDashboard";
 
@@ -277,13 +276,6 @@ function App() {
                  </AuthGuard>
                } />
                
-               <Route path="/tests/crud" element={
-                 <AuthGuard>
-                   <MainLayout>
-                     <CRUDTestPage />
-                   </MainLayout>
-                 </AuthGuard>
-               } />
                
                <Route path="/tally/data/management" element={
                  <AuthGuard>

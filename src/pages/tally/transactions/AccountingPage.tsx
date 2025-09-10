@@ -5,9 +5,68 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Search, Plus, Edit, Trash2, Calculator, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+// TEMPORARY DEBUG CODE - Remove after testing
+async function debugAuth() {
+  console.log('[DEBUG] AccountingPage - Checking authentication status...');
+  
+  const { data: session, error: sessionError } = await supabase.auth.getSession();
+  console.log('[DEBUG] AccountingPage - Session:', session, 'Error:', sessionError);
+  
+  const { data: user, error: userError } = await supabase.auth.getUser();
+  console.log('[DEBUG] AccountingPage - User:', user, 'Error:', userError);
+  
+  if (!session?.session) {
+    console.error('[DEBUG] AccountingPage - No session found - user not authenticated');
+  } else {
+    console.log('[DEBUG] AccountingPage - Access token:', session.session.access_token?.substring(0, 20) + '...');
+  }
+  
+  if (!user?.user) {
+    console.error('[DEBUG] AccountingPage - No user found - user not authenticated');
+  }
+  
+  // Test a simple query with explicit auth header
+  if (session?.session?.access_token) {
+    try {
+      console.log('[DEBUG] Testing authenticated query...');
+      const response = await fetch(`https://hycyhnjsldiokfkpqzoz.supabase.co/rest/v1/companies?select=id,name&limit=1`, {
+        headers: {
+          'Authorization': `Bearer ${session.session.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5Y3lobmpzbGRpb2tma3Bxem96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NzQyMzksImV4cCI6MjA3MzA1MDIzOX0.pYalSrD_FP8tRY-bPCfFGbXavUq0eGwRmQUCIPnPxNk',
+          'Accept-Profile': 'public'
+        }
+      });
+      console.log('[DEBUG] Test query response:', response.status, await response.text());
+    } catch (error) {
+      console.error('[DEBUG] Test query failed:', error);
+    }
+  }
+}
+
+// Run debug immediately
+debugAuth();
+
+// Form Schema
+const accountingFormSchema = z.object({
+  ledger: z.string().min(1, "Ledger is required"),
+  amount: z.number().min(0.01, "Amount must be greater than 0"),
+  amount_forex: z.number().optional(),
+  currency: z.string().min(1, "Currency is required"),
+});
+
+type AccountingFormData = z.infer<typeof accountingFormSchema>;
 
 interface AccountingEntry {
   guid: string;
@@ -21,19 +80,105 @@ interface AccountingEntry {
 }
 
 export default function AccountingPage() {
+  console.log('[DEBUG] AccountingPage component rendering...');
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [accountingEntries, setAccountingEntries] = useState<AccountingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<AccountingEntry | null>(null);
+  const [availableLedgers, setAvailableLedgers] = useState<string[]>([]);
+
+  console.log('[DEBUG] Creating form instances...');
+  
+  const addFormInstance = useForm<AccountingFormData>({
+    resolver: zodResolver(accountingFormSchema),
+    defaultValues: {
+      ledger: "",
+      amount: 0,
+      amount_forex: 0,
+      currency: "INR",
+    },
+  });
+
+  console.log('[DEBUG] addFormInstance created:', addFormInstance);
+
+  const editFormInstance = useForm<AccountingFormData>({
+    resolver: zodResolver(accountingFormSchema),
+    defaultValues: {
+      ledger: "",
+      amount: 0,
+      amount_forex: 0,
+      currency: "INR",
+    },
+  });
+
+  console.log('[DEBUG] editFormInstance created:', editFormInstance);
+  // Add circuit breaker state
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
+  const FETCH_COOLDOWN = 5000; // 5 seconds
+
+  // Fetch available ledgers for the forms
+  useEffect(() => {
+    const fetchLedgers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('mst_ledger')
+          .select('name')
+          .order('name');
+        
+        if (error) throw error;
+        
+        const ledgerNames = data?.map(ledger => ledger.name) || [];
+        setAvailableLedgers(ledgerNames);
+      } catch (err) {
+        console.error('Error fetching ledgers:', err);
+      }
+    };
+    
+    if (user) {
+      fetchLedgers();
+    }
+  }, [user]);
 
   useEffect(() => {
-    fetchAccountingEntries();
-  }, []);
+    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      const now = Date.now();
+      if (now - lastFetchTime > FETCH_COOLDOWN) {
+        fetchAccountingEntries();
+      }
+    }
+  }, [user, fetchAttempts, lastFetchTime]);
 
   const fetchAccountingEntries = async () => {
+    // Circuit breaker: prevent too many rapid calls
+    const now = Date.now();
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      setError(`Too many failed attempts. Please refresh the page to try again.`);
+      return;
+    }
+
+    if (now - lastFetchTime < FETCH_COOLDOWN) {
+      console.log('Skipping fetch due to cooldown period');
+      return;
+    }
+
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
+      
+      console.log('Fetching accounting entries from Supabase...');
       
       const { data, error } = await supabase
         .from('trn_accounting')
@@ -57,13 +202,140 @@ export default function AccountingPage() {
       }));
       
       setAccountingEntries(transformedData);
+      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching accounting entries:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch accounting entries');
+      setFetchAttempts(prev => prev + 1);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch accounting entries';
+      setError(errorMessage);
       setAccountingEntries([]);
+      
+      // Don't show destructive toasts for permission errors as they spam the UI
+      if (!errorMessage.includes('permission denied')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setFetchAttempts(0);
+    setLastFetchTime(0);
+    setError(null);
+    fetchAccountingEntries();
+  };
+
+  // CRUD Operations
+  const handleAddEntry = async (data: AccountingFormData) => {
+    try {
+      const { error } = await supabase
+        .from('trn_accounting')
+        .insert({
+          guid: crypto.randomUUID(),
+          ledger: data.ledger,
+          _ledger: data.ledger,
+          amount: data.amount,
+          amount_forex: data.amount_forex || data.amount,
+          currency: data.currency,
+          company_id: null, // You might want to set this based on current company
+          division_id: null, // You might want to set this based on current division
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Accounting entry created successfully",
+      });
+
+      setIsAddDialogOpen(false);
+      addFormInstance.reset();
+      fetchAccountingEntries();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to create entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditEntry = async (data: AccountingFormData) => {
+    if (!selectedEntry) return;
+
+    try {
+      const { error } = await supabase
+        .from('trn_accounting')
+        .update({
+          ledger: data.ledger,
+          _ledger: data.ledger,
+          amount: data.amount,
+          amount_forex: data.amount_forex || data.amount,
+          currency: data.currency,
+        })
+        .eq('guid', selectedEntry.guid);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Accounting entry updated successfully",
+      });
+
+      setIsEditDialogOpen(false);
+      setSelectedEntry(null);
+      editFormInstance.reset();
+      fetchAccountingEntries();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to update entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteEntry = async (entry: AccountingEntry) => {
+    try {
+      const { error } = await supabase
+        .from('trn_accounting')
+        .delete()
+        .eq('guid', entry.guid);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Accounting entry deleted successfully",
+      });
+
+      fetchAccountingEntries();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to delete entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditDialog = (entry: AccountingEntry) => {
+    console.log('[DEBUG] openEditDialog called with entry:', entry);
+    console.log('[DEBUG] editFormInstance available:', !!editFormInstance);
+    setSelectedEntry(entry);
+    editFormInstance.reset({
+      ledger: entry.ledger,
+      amount: Math.abs(entry.amount), // Always positive in forms, sign is handled separately
+      amount_forex: entry.amount_forex,
+      currency: entry.currency,
+    });
+    setIsEditDialogOpen(true);
   };
 
   const filteredEntries = accountingEntries.filter(entry =>
@@ -92,6 +364,16 @@ export default function AccountingPage() {
     );
   };
 
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view accounting transactions.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -102,14 +384,121 @@ export default function AccountingPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchAccountingEntries} disabled={loading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Transaction
-          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Transaction
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add New Transaction</DialogTitle>
+                <DialogDescription>
+                  Create a new accounting entry. Enter the ledger details and amount.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...addFormInstance}>
+                <form onSubmit={addFormInstance.handleSubmit(handleAddEntry)} className="space-y-4">
+                  <FormField
+                    control={addFormInstance.control}
+                    name="ledger"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ledger *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select ledger" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {availableLedgers.map((ledger, index) => (
+                              <SelectItem key={`add-ledger-${index}-${ledger}`} value={ledger}>
+                                {ledger}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addFormInstance.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Amount *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Enter amount" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addFormInstance.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                            <SelectItem value="USD">USD - US Dollar</SelectItem>
+                            <SelectItem value="EUR">EUR - Euro</SelectItem>
+                            <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={addFormInstance.control}
+                    name="amount_forex"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Foreign Exchange Amount</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Enter forex amount (optional)" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Create Entry</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -199,12 +588,30 @@ export default function AccountingPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end space-x-2">
-                                <Button variant="ghost" size="sm">
+                                <Button variant="ghost" size="sm" onClick={() => openEditDialog(entry)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Entry</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete this accounting entry for "{entry.ledger}"? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteEntry(entry)}>
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -218,6 +625,113 @@ export default function AccountingPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Edit Transaction Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+            <DialogDescription>
+              Update the accounting entry details.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editFormInstance}>
+            <form onSubmit={editFormInstance.handleSubmit(handleEditEntry)} className="space-y-4">
+              <FormField
+                control={editFormInstance.control}
+                name="ledger"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ledger *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select ledger" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableLedgers.map((ledger, index) => (
+                          <SelectItem key={`edit-ledger-${index}-${ledger}`} value={ledger}>
+                            {ledger}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editFormInstance.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Amount *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="Enter amount" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editFormInstance.control}
+                name="currency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Currency *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                        <SelectItem value="USD">USD - US Dollar</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+                        <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editFormInstance.control}
+                name="amount_forex"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Foreign Exchange Amount</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="Enter forex amount (optional)" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Update Entry</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

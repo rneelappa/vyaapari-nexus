@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronDown, ChevronRight, Building, Building2, Database, Users, BookOpen, Package, Warehouse, Target, FileSignature, TrendingUp, Calculator, FileText, BarChart3, PieChart, FileBarChart, Activity, Settings, Scale } from "lucide-react";
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import TallyMenuItemContainer from "./TallyMenuItem";
 import TallyApiTest from "./TallyApiTest";
 
@@ -110,10 +111,6 @@ const tallyMenuStructure = {
       name: "Test API",
       icon: Activity,
       path: "/tally/test-api"
-    }, {
-      name: "CRUD Tests",
-      icon: Database,
-      path: "/tests/crud"
     }]
   }
 };
@@ -217,11 +214,18 @@ const DivisionHierarchyItem = ({
     </div>;
 };
 const TallyHierarchy = () => {
+  const { user } = useAuth();
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchTallyEnabledData = async () => {
+      // Only fetch if user is authenticated
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Fetch companies with their tally-enabled divisions
         const {
@@ -229,7 +233,8 @@ const TallyHierarchy = () => {
           error: companiesError
         } = await supabase.from('companies').select('*');
         if (companiesError) {
-          console.error('Error fetching companies:', companiesError);
+          console.error('TallyHierarchy: Error fetching companies:', companiesError);
+          setLoading(false);
           return;
         }
         const {
@@ -237,7 +242,8 @@ const TallyHierarchy = () => {
           error: divisionsError
         } = await supabase.from('divisions').select('*').eq('is_active', true).eq('tally_enabled', true);
         if (divisionsError) {
-          console.error('Error fetching divisions:', divisionsError);
+          console.error('TallyHierarchy: Error fetching divisions:', divisionsError);
+          setLoading(false);
           return;
         }
 
@@ -255,7 +261,7 @@ const TallyHierarchy = () => {
       }
     };
     fetchTallyEnabledData();
-  }, []);
+  }, [user]);
   const toggleCompany = (companyId: string) => {
     const newExpanded = new Set(expandedCompanies);
     if (newExpanded.has(companyId)) {
