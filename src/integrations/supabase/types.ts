@@ -135,6 +135,13 @@ export type Database = {
             referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_divisions_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
         ]
       }
       drive_items: {
@@ -274,7 +281,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_attendance_type_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_attendance_type_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_attendance_type_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -337,7 +358,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_cost_category_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_cost_category_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_cost_category_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -382,7 +417,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_cost_centre_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_cost_centre_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_cost_centre_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -522,7 +571,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_employee_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_employee_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_employee_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -567,7 +630,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_godown_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_godown_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_godown_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -627,7 +704,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_group_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_group_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_group_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -690,7 +781,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_gst_effective_rate_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_gst_effective_rate_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_gst_effective_rate_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -810,7 +915,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_ledger_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_ledger_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_ledger_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -867,7 +986,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_opening_batch_allocation_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_opening_batch_allocation_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_opening_batch_allocation_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -918,7 +1051,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_opening_bill_allocation_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_opening_bill_allocation_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_opening_bill_allocation_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -978,7 +1125,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_payhead_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_payhead_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_payhead_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1020,7 +1181,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_stock_group_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_stock_group_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_stock_group_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1125,7 +1300,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_stock_item_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_stock_item_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_stock_item_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1167,7 +1356,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_stockitem_standard_cost_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_stockitem_standard_cost_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_stockitem_standard_cost_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1209,7 +1412,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_stockitem_standard_price_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_stockitem_standard_price_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_stockitem_standard_price_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1260,7 +1477,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_uom_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_uom_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_uom_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1311,7 +1542,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_mst_vouchertype_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_mst_vouchertype_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_vouchertype_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1425,7 +1670,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_tally_mst_group_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_tally_mst_group_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_mst_group_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1473,7 +1732,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_tally_mst_ledger_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_tally_mst_ledger_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_mst_ledger_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1518,7 +1791,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_tally_mst_stock_item_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_tally_mst_stock_item_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_mst_stock_item_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1566,7 +1853,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_tally_trn_voucher_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_tally_trn_voucher_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tally_trn_voucher_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1670,7 +1971,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_accounting_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_accounting_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_accounting_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1721,7 +2036,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_attendance_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_attendance_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_attendance_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1778,7 +2107,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_bank_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_bank_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_bank_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1841,7 +2184,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_batch_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_batch_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_batch_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1892,7 +2249,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_bill_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_bill_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_bill_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1934,7 +2305,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_closingstock_ledger_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_closingstock_ledger_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_closingstock_ledger_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -1988,7 +2373,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_cost_category_centre_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_cost_category_centre_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_cost_category_centre_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -2036,7 +2435,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_cost_centre_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_cost_centre_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_cost_centre_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -2096,7 +2509,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_cost_inventory_category_centre_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_cost_inventory_category_centre_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_cost_inventory_category_centre_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
@@ -2147,7 +2574,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "fk_trn_employee_company_id"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "fk_trn_employee_division"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_trn_employee_division_id"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
