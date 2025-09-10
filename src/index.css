@@ -172,11 +172,11 @@
 
 /* Custom sidebar positioning to start below header */
 .sidebar-below-header [data-sidebar="sidebar"] {
-  top: 4rem !important;
-  height: calc(100vh - 4rem) !important;
+  top: 3rem !important;
+  height: calc(100vh - 3rem) !important;
 }
 .sidebar-below-header div[data-side="left"] > div:nth-child(2) {
-  top: 4rem !important;
-  height: calc(100vh - 4rem) !important;
+  top: 3rem !important;
+  height: calc(100vh - 3rem) !important;
 }
 }
