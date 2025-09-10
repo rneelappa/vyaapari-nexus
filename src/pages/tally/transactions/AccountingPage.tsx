@@ -90,7 +90,17 @@ export default function AccountingPage() {
   const [selectedEntry, setSelectedEntry] = useState<AccountingEntry | null>(null);
   const [availableLedgers, setAvailableLedgers] = useState<string[]>([]);
 
-  const form = useForm<AccountingFormData>({
+  const addForm = useForm<AccountingFormData>({
+    resolver: zodResolver(accountingFormSchema),
+    defaultValues: {
+      ledger: "",
+      amount: 0,
+      amount_forex: 0,
+      currency: "INR",
+    },
+  });
+
+  const editForm = useForm<AccountingFormData>({
     resolver: zodResolver(accountingFormSchema),
     defaultValues: {
       ledger: "",
@@ -238,7 +248,7 @@ export default function AccountingPage() {
       });
 
       setIsAddDialogOpen(false);
-      form.reset();
+      addForm.reset();
       fetchAccountingEntries();
     } catch (err) {
       toast({
@@ -273,7 +283,7 @@ export default function AccountingPage() {
 
       setIsEditDialogOpen(false);
       setSelectedEntry(null);
-      form.reset();
+      editForm.reset();
       fetchAccountingEntries();
     } catch (err) {
       toast({
@@ -310,7 +320,7 @@ export default function AccountingPage() {
 
   const openEditDialog = (entry: AccountingEntry) => {
     setSelectedEntry(entry);
-    form.reset({
+    editForm.reset({
       ledger: entry.ledger,
       amount: Math.abs(entry.amount), // Always positive in form, sign is handled separately
       amount_forex: entry.amount_forex,
@@ -383,10 +393,10 @@ export default function AccountingPage() {
                   Create a new accounting entry. Enter the ledger details and amount.
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleAddEntry)} className="space-y-4">
-                  <FormField
-                    control={form.control}
+          <Form {...addForm}>
+            <form onSubmit={addForm.handleSubmit(handleAddEntry)} className="space-y-4">
+              <FormField
+                control={addForm.control}
                     name="ledger"
                     render={({ field }) => (
                       <FormItem>
@@ -397,20 +407,20 @@ export default function AccountingPage() {
                               <SelectValue placeholder="Select ledger" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
-                            {availableLedgers.map((ledger) => (
-                              <SelectItem key={ledger} value={ledger}>
-                                {ledger}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
+                      <SelectContent>
+                        {availableLedgers.map((ledger, index) => (
+                          <SelectItem key={`add-ledger-${index}-${ledger}`} value={ledger}>
+                            {ledger}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
-                    control={form.control}
+                control={addForm.control}
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
@@ -429,7 +439,7 @@ export default function AccountingPage() {
                     )}
                   />
                   <FormField
-                    control={form.control}
+                control={addForm.control}
                     name="currency"
                     render={({ field }) => (
                       <FormItem>
@@ -452,7 +462,7 @@ export default function AccountingPage() {
                     )}
                   />
                   <FormField
-                    control={form.control}
+                control={addForm.control}
                     name="amount_forex"
                     render={({ field }) => (
                       <FormItem>
@@ -616,10 +626,10 @@ export default function AccountingPage() {
               Update the accounting entry details.
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleEditEntry)} className="space-y-4">
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEditEntry)} className="space-y-4">
               <FormField
-                control={form.control}
+                control={editForm.control}
                 name="ledger"
                 render={({ field }) => (
                   <FormItem>
@@ -631,8 +641,8 @@ export default function AccountingPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {availableLedgers.map((ledger) => (
-                          <SelectItem key={ledger} value={ledger}>
+                        {availableLedgers.map((ledger, index) => (
+                          <SelectItem key={`edit-ledger-${index}-${ledger}`} value={ledger}>
                             {ledger}
                           </SelectItem>
                         ))}
@@ -643,7 +653,7 @@ export default function AccountingPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={editForm.control}
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
@@ -662,7 +672,7 @@ export default function AccountingPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={editForm.control}
                 name="currency"
                 render={({ field }) => (
                   <FormItem>
@@ -685,7 +695,7 @@ export default function AccountingPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={editForm.control}
                 name="amount_forex"
                 render={({ field }) => (
                   <FormItem>
