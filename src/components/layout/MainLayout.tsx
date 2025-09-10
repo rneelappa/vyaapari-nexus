@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebarRebuilt";
-import { Bell, Search, Settings, Bot } from "lucide-react";
+import { Bell, Search, Settings, Bot, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,34 +15,38 @@ export function MainLayout({ children }: MainLayoutProps) {
     <SidebarProvider className="sidebar-below-header">
       <div className="min-h-screen w-full bg-gradient-subtle">
         {/* Full-width Header */}
-        <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 z-10 w-full">
+        <header className="h-16 border-b border-border bg-sidebar backdrop-blur supports-[backdrop-filter]:bg-sidebar flex-shrink-0 z-10 w-full">
           <div className="flex items-center justify-between h-full px-6">
             <div className="flex items-center gap-4">
-              <SidebarTrigger />
-              <div className="hidden md:flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 w-96">
-                <Search size={16} className="text-muted-foreground" />
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-6 w-6 text-white" />
+                <span className="text-lg font-semibold text-white">Vyaapari360</span>
+              </div>
+              <SidebarTrigger className="text-white hover:bg-white/10" />
+              <div className="hidden md:flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 w-96">
+                <Search size={16} className="text-white/70" />
                 <Input
                   placeholder="Search across organization..."
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-white placeholder:text-white/60"
                 />
               </div>
             </div>
             
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative text-white hover:bg-white/10">
                 <Bell size={18} />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full flex items-center justify-center">
                   <span className="text-xs text-white font-medium">3</span>
                 </div>
               </Button>
               
-              <Button variant="ghost" size="icon" className="hover:bg-primary/10">
-                <Bot size={18} className="text-primary" />
+              <Button variant="ghost" size="icon" className="hover:bg-white/10 text-white">
+                <Bot size={18} />
               </Button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
                     <Settings size={18} />
                   </Button>
                 </DropdownMenuTrigger>
