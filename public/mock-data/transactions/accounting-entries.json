@@ -1,0 +1,90 @@
+[
+  {
+    "id": "1",
+    "voucher_id": "1",
+    "ledger_id": "5",
+    "debit": 10000,
+    "credit": 0,
+    "narration": "Payment to ABC Company",
+    "company_id": "default",
+    "created_at": "2024-01-15T00:00:00Z",
+    "updated_at": "2024-01-15T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "voucher_id": "1",
+    "ledger_id": "2",
+    "debit": 0,
+    "credit": 10000,
+    "narration": "Payment to ABC Company",
+    "company_id": "default",
+    "created_at": "2024-01-15T00:00:00Z",
+    "updated_at": "2024-01-15T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "voucher_id": "2",
+    "ledger_id": "2",
+    "debit": 15000,
+    "credit": 0,
+    "narration": "Receipt from XYZ Customer",
+    "company_id": "default",
+    "created_at": "2024-01-16T00:00:00Z",
+    "updated_at": "2024-01-16T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "voucher_id": "2",
+    "ledger_id": "4",
+    "debit": 0,
+    "credit": 15000,
+    "narration": "Receipt from XYZ Customer",
+    "company_id": "default",
+    "created_at": "2024-01-16T00:00:00Z",
+    "updated_at": "2024-01-16T00:00:00Z"
+  },
+  {
+    "id": "5",
+    "voucher_id": "3",
+    "ledger_id": "9",
+    "debit": 5000,
+    "credit": 0,
+    "narration": "Office Rent",
+    "company_id": "default",
+    "created_at": "2024-01-17T00:00:00Z",
+    "updated_at": "2024-01-17T00:00:00Z"
+  },
+  {
+    "id": "6",
+    "voucher_id": "3",
+    "ledger_id": "2",
+    "debit": 0,
+    "credit": 5000,
+    "narration": "Office Rent",
+    "company_id": "default",
+    "created_at": "2024-01-17T00:00:00Z",
+    "updated_at": "2024-01-17T00:00:00Z"
+  },
+  {
+    "id": "7",
+    "voucher_id": "4",
+    "ledger_id": "2",
+    "debit": 20000,
+    "credit": 0,
+    "narration": "Bank transfer from HDFC to ICICI",
+    "company_id": "default",
+    "created_at": "2024-01-18T00:00:00Z",
+    "updated_at": "2024-01-18T00:00:00Z"
+  },
+  {
+    "id": "8",
+    "voucher_id": "4",
+    "ledger_id": "3",
+    "debit": 0,
+    "credit": 20000,
+    "narration": "Bank transfer from HDFC to ICICI",
+    "company_id": "default",
+    "created_at": "2024-01-18T00:00:00Z",
+    "updated_at": "2024-01-18T00:00:00Z"
+  }
+]

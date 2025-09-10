@@ -98,6 +98,14 @@ const tallyMenuStructure = {
       name: "Tally Configuration",
       icon: Settings,
       path: "/tally/utilities/configuration"
+    }, {
+      name: "Test API",
+      icon: Activity,
+      path: "/tally/test-api"
+    }, {
+      name: "CRUD Tests",
+      icon: Database,
+      path: "/tests/crud"
     }]
   }
 };

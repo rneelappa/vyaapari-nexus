@@ -1,0 +1,44 @@
+[
+  {
+    "id": "1",
+    "name": "Basic Salary",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "name": "House Rent Allowance",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "name": "Transport Allowance",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "name": "Medical Allowance",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "5",
+    "name": "Provident Fund",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "6",
+    "name": "Professional Tax",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]
