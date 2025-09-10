@@ -186,12 +186,21 @@ async function processTable(
             break;
             
           case 'upsert':
-            result = await supabase
-              .from(tableName)
-              .upsert(enrichedBatch, { 
-                onConflict: 'guid,company_id,division_id',
-                ignoreDuplicates: false 
-              });
+            // For upsert, try insert first, if conflicts occur, handle individually
+            result = await supabase.from(tableName).insert(enrichedBatch);
+            if (result.error && result.error.code === '23505') {
+              // Handle conflicts by updating individual records
+              for (const record of enrichedBatch) {
+                const { company_id: _, division_id: __, ...updateData } = record;
+                await supabase
+                  .from(tableName)
+                  .update(updateData)
+                  .eq('guid', record.guid)
+                  .eq('company_id', companyId)
+                  .eq('division_id', divisionId);
+              }
+              result = { error: null }; // Reset error since we handled it
+            }
             break;
             
           default:

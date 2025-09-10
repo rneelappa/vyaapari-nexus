@@ -120,21 +120,29 @@ async function processData(request: TallyDataRequest): Promise<ApiResponse> {
             if (!record.guid) {
               throw new Error('GUID required for update operation');
             }
+            // Remove company_id and division_id from the update data since they're used in the WHERE clause
+            const { company_id: _, division_id: __, ...updateData } = enrichedRecord;
             result = await supabase
               .from(table_name)
-              .update(enrichedRecord)
+              .update(updateData)
               .eq('guid', record.guid)
               .eq('company_id', company_id)
               .eq('division_id', division_id);
             break;
             
           case 'upsert':
-            result = await supabase
-              .from(table_name)
-              .upsert(enrichedRecord, { 
-                onConflict: 'guid,company_id,division_id',
-                ignoreDuplicates: false 
-              });
+            // For upsert, try insert first, if it fails due to conflict, then update
+            result = await supabase.from(table_name).insert(enrichedRecord);
+            if (result.error && result.error.code === '23505') {
+              // Conflict error, try update instead
+              const { company_id: _, division_id: __, ...updateData } = enrichedRecord;
+              result = await supabase
+                .from(table_name)
+                .update(updateData)
+                .eq('guid', record.guid)
+                .eq('company_id', company_id)
+                .eq('division_id', division_id);
+            }
             break;
             
           case 'delete':
