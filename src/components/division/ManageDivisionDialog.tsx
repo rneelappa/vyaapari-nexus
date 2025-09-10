@@ -60,11 +60,42 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
 
   const handleSave = async () => {
     try {
+      // Validate required fields - only name is required
+      if (!formData.name.trim()) {
+        toast({
+          title: "Error",
+          description: "Division name is required.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Safely parse budget - handle both string and number inputs
+      let budgetValue = null;
+      if (formData.budget) {
+        const budgetStr = formData.budget.toString();
+        if (budgetStr.trim()) {
+          // Remove currency symbols and convert to number
+          const numericBudget = budgetStr.replace(/[₹,\s]/g, '');
+          if (numericBudget) {
+            budgetValue = parseFloat(numericBudget);
+            if (isNaN(budgetValue)) {
+              toast({
+                title: "Error",
+                description: "Please enter a valid budget amount.",
+                variant: "destructive",
+              });
+              return;
+            }
+          }
+        }
+      }
+
       console.log('Saving division with data:', {
         name: formData.name,
-        description: formData.description,
-        manager_name: formData.manager_name,
-        budget: parseFloat(formData.budget.replace(/[₹,\s]/g, '')) || 0,
+        description: formData.description || null,
+        manager_name: formData.manager_name || null,
+        budget: budgetValue,
         tally_enabled: tallyEnabled,
         tally_url: tallyEnabled ? tallyUrl : null,
         tally_company_id: tallyEnabled ? tallyCompanyId : null,
@@ -75,13 +106,12 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
         .from('divisions')
         .update({
           name: formData.name,
-          description: formData.description,
-          manager_name: formData.manager_name,
-          budget: parseFloat(formData.budget.replace(/[₹,\s]/g, '')) || 0,
+          description: formData.description || null,
+          manager_name: formData.manager_name || null,
+          budget: budgetValue,
           tally_enabled: tallyEnabled,
           tally_url: tallyEnabled ? tallyUrl : null,
           tally_company_id: tallyEnabled ? tallyCompanyId : null,
-          updated_at: new Date().toISOString()
         })
         .eq('id', division.id)
         .select()
