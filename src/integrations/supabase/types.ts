@@ -659,6 +659,7 @@ export type Database = {
           company_id: string | null
           division_id: string | null
           guid: string
+          id: number
           is_deemedpositive: number | null
           is_reserved: number | null
           is_revenue: number | null
@@ -673,6 +674,7 @@ export type Database = {
           company_id?: string | null
           division_id?: string | null
           guid: string
+          id?: never
           is_deemedpositive?: number | null
           is_reserved?: number | null
           is_revenue?: number | null
@@ -687,6 +689,7 @@ export type Database = {
           company_id?: string | null
           division_id?: string | null
           guid?: string
+          id?: never
           is_deemedpositive?: number | null
           is_reserved?: number | null
           is_revenue?: number | null
@@ -824,6 +827,7 @@ export type Database = {
           gst_supply_type: string
           gstn: string
           guid: string
+          id: number
           is_deemedpositive: number | null
           is_revenue: number | null
           it_pan: string
@@ -858,6 +862,7 @@ export type Database = {
           gst_supply_type?: string
           gstn?: string
           guid: string
+          id?: never
           is_deemedpositive?: number | null
           is_revenue?: number | null
           it_pan?: string
@@ -892,6 +897,7 @@ export type Database = {
           gst_supply_type?: string
           gstn?: string
           guid?: string
+          id?: never
           is_deemedpositive?: number | null
           is_revenue?: number | null
           it_pan?: string
