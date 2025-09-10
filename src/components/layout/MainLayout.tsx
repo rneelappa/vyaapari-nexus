@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Search, Settings } from "lucide-react";
+import { Bell, Search, Settings, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -38,6 +38,10 @@ export function MainLayout({ children }: MainLayoutProps) {
                     <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full flex items-center justify-center">
                       <span className="text-xs text-white font-medium">3</span>
                     </div>
+                  </Button>
+                  
+                  <Button variant="ghost" size="icon" title="AI Workbot">
+                    <Bot size={18} className="text-primary" />
                   </Button>
                   
                   <DropdownMenu>
