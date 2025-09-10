@@ -9,6 +9,10 @@ import WorkspacePage from "./pages/WorkspacePage";
 import CompanyPage from "./pages/CompanyPage";
 import DivisionPage from "./pages/DivisionPage";
 import NotFound from "./pages/NotFound";
+import TallyMasterPage from "./pages/TallyMasterPage";
+import TallyTransactionPage from "./pages/TallyTransactionPage";
+import TallyDisplayPage from "./pages/TallyDisplayPage";
+import TallyUtilityPage from "./pages/TallyUtilityPage";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +29,11 @@ const App = () => (
             <Route path="/company/:companyId/division/:divisionId" element={<DivisionPage />} />
             <Route path="/workspace/:workspaceId" element={<WorkspacePage />} />
             <Route path="/workspace/:workspaceId/:module" element={<WorkspacePage />} />
+            {/* Tally Routes */}
+            <Route path="/workspace/:workspaceId/masters/:module" element={<TallyMasterPage />} />
+            <Route path="/workspace/:workspaceId/transactions/:module" element={<TallyTransactionPage />} />
+            <Route path="/workspace/:workspaceId/display/:module" element={<TallyDisplayPage />} />
+            <Route path="/workspace/:workspaceId/utilities/:module" element={<TallyUtilityPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
