@@ -65,7 +65,9 @@ export function MainLayout({ children }: MainLayoutProps) {
 
         {/* Content area with sidebar below header */}
         <div className="flex h-[calc(100vh-4rem)]">
-          <AppSidebar />
+          <div className="flex">
+            <AppSidebar />
+          </div>
           
           {/* Main Content */}
           <main className="flex-1 overflow-auto bg-background">
