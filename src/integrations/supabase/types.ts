@@ -62,6 +62,9 @@ export type Database = {
           parent_division_id: string | null
           performance_score: number | null
           status: string | null
+          tally_enabled: boolean
+          tally_last_sync: string | null
+          tally_url: string | null
           updated_at: string
         }
         Insert: {
@@ -78,6 +81,9 @@ export type Database = {
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
+          tally_enabled?: boolean
+          tally_last_sync?: string | null
+          tally_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -94,6 +100,9 @@ export type Database = {
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
+          tally_enabled?: boolean
+          tally_last_sync?: string | null
+          tally_url?: string | null
           updated_at?: string
         }
         Relationships: [

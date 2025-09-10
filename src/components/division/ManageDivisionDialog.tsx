@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,9 @@ interface Division {
   budget: string;
   performance_score: number;
   status: string;
+  tally_enabled?: boolean;
+  tally_url?: string;
+  company_id: string;
 }
 
 interface ManageDivisionDialogProps {
@@ -38,24 +42,60 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
     budget: division.budget,
   });
   
-  const [tallyEnabled, setTallyEnabled] = useState(false);
-  const [tallyUrl, setTallyUrl] = useState("");
+  const [tallyEnabled, setTallyEnabled] = useState(division.tally_enabled || false);
+  const [tallyUrl, setTallyUrl] = useState(division.tally_url || "");
   const { toast } = useToast();
 
-  const handleSave = () => {
-    const updatedDivision = {
-      ...division,
-      ...formData,
-    };
-    onDivisionUpdate(updatedDivision);
-    toast({
-      title: "Division Updated",
-      description: "Division details have been saved successfully.",
-    });
-    onOpenChange(false);
+  // Update state when division prop changes
+  useEffect(() => {
+    setTallyEnabled(division.tally_enabled || false);
+    setTallyUrl(division.tally_url || "");
+  }, [division]);
+
+  const handleSave = async () => {
+    try {
+      // Update division basic information in database
+      const { error: divisionError } = await supabase
+        .from('divisions')
+        .update({
+          name: formData.name,
+          description: formData.description,
+          manager_name: formData.manager_name,
+          budget: parseFloat(formData.budget.replace(/[₹,\s]/g, '')) || 0,
+          tally_enabled: tallyEnabled,
+          tally_url: tallyEnabled ? tallyUrl : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', division.id);
+
+      if (divisionError) {
+        throw divisionError;
+      }
+
+      const updatedDivision = {
+        ...division,
+        ...formData,
+        tally_enabled: tallyEnabled,
+        tally_url: tallyEnabled ? tallyUrl : null,
+      };
+      
+      onDivisionUpdate(updatedDivision);
+      toast({
+        title: "Division Updated",
+        description: "Division details have been saved successfully.",
+      });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating division:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update division. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleTallyConfiguration = () => {
+  const handleTallyConfiguration = async () => {
     if (!tallyUrl.trim()) {
       toast({
         title: "Error",
@@ -65,9 +105,10 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
       return;
     }
     
+    // Test connection could be added here
     toast({
-      title: "Tally Connected",
-      description: `Successfully connected to Tally server: ${tallyUrl}`,
+      title: "Tally Configuration Saved",
+      description: `Tally URL configured: ${tallyUrl}`,
     });
   };
 

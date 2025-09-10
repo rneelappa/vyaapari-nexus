@@ -1,42 +1,8 @@
-import { useState } from "react";
-import { ChevronDown, ChevronRight, Building, Building2, Calculator, BookOpen, FileText, BarChart3, Database, Package, Warehouse, Target, FileSignature, TrendingUp, PieChart, FileBarChart, Activity, Settings, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronRight, Building, Building2, Database, Users, BookOpen, Package, Warehouse, Target, FileSignature, TrendingUp, Calculator, FileText, BarChart3, PieChart, FileBarChart, Activity, Settings } from "lucide-react";
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
+import { supabase } from "@/integrations/supabase/client";
 import TallyMenuItemContainer from "./TallyMenuItem";
-
-// Mock data for tally-enabled divisions
-const mockTallyData = {
-  companies: [
-    {
-      id: "550e8400-e29b-41d4-a716-446655440000",
-      name: "Acme Corporation",
-      divisions: [
-        {
-          id: "div1",
-          name: "Engineering",
-          tallyEnabled: true,
-          tallyUrl: "http://localhost:9000"
-        },
-        {
-          id: "div2",
-          name: "Marketing", 
-          tallyEnabled: false // This won't show up
-        }
-      ]
-    },
-    {
-      id: "550e8400-e29b-41d4-a716-446655440001",
-      name: "TechStart Inc",
-      divisions: [
-        {
-          id: "div3",
-          name: "Product",
-          tallyEnabled: false, // Not tally enabled
-          tallyUrl: null
-        }
-      ]
-    }
-  ]
-};
 
 // Tally workspace structure
 const tallyMenuStructure = {
@@ -80,15 +46,29 @@ const tallyMenuStructure = {
   }
 };
 
+interface Company {
+  id: string;
+  name: string;
+  divisions: Division[];
+}
+
+interface Division {
+  id: string;
+  name: string;
+  tally_enabled: boolean;
+  tally_url: string | null;
+  company_id: string;
+}
+
 interface CompanyHierarchyItemProps {
-  company: any;
+  company: Company;
   isExpanded: boolean;
   onToggle: () => void;
 }
 
 const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarchyItemProps) => {
   // Filter to only show tally-enabled divisions
-  const tallyEnabledDivisions = company.divisions.filter((division: any) => division.tallyEnabled);
+  const tallyEnabledDivisions = company.divisions.filter((division: Division) => division.tally_enabled);
   
   if (tallyEnabledDivisions.length === 0) {
     return null; // Don't show company if no tally-enabled divisions
@@ -119,7 +99,7 @@ const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarch
 
       {isExpanded && (
         <div className="ml-4 mt-1">
-          {tallyEnabledDivisions.map((division: any) => (
+          {tallyEnabledDivisions.map((division: Division) => (
             <DivisionHierarchyItem key={division.id} division={division} />
           ))}
         </div>
@@ -129,7 +109,7 @@ const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarch
 };
 
 interface DivisionHierarchyItemProps {
-  division: any;
+  division: Division;
 }
 
 const DivisionHierarchyItem = ({ division }: DivisionHierarchyItemProps) => {
@@ -172,6 +152,50 @@ const DivisionHierarchyItem = ({ division }: DivisionHierarchyItemProps) => {
 
 const TallyHierarchy = () => {
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTallyEnabledData = async () => {
+      try {
+        // Fetch companies with their tally-enabled divisions
+        const { data: companiesData, error: companiesError } = await supabase
+          .from('companies')
+          .select('*');
+
+        if (companiesError) {
+          console.error('Error fetching companies:', companiesError);
+          return;
+        }
+
+        const { data: divisionsData, error: divisionsError } = await supabase
+          .from('divisions')
+          .select('*')
+          .eq('tally_enabled', true);
+
+        if (divisionsError) {
+          console.error('Error fetching divisions:', divisionsError);
+          return;
+        }
+
+        // Group divisions by company
+        const companiesWithDivisions: Company[] = companiesData
+          .map(company => ({
+            ...company,
+            divisions: divisionsData.filter(division => division.company_id === company.id)
+          }))
+          .filter(company => company.divisions.length > 0); // Only include companies with tally-enabled divisions
+
+        setCompanies(companiesWithDivisions);
+      } catch (error) {
+        console.error('Error fetching tally data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTallyEnabledData();
+  }, []);
 
   const toggleCompany = (companyId: string) => {
     const newExpanded = new Set(expandedCompanies);
@@ -183,12 +207,22 @@ const TallyHierarchy = () => {
     setExpandedCompanies(newExpanded);
   };
 
-  // Filter companies that have at least one tally-enabled division
-  const companiesWithTally = mockTallyData.companies.filter(company => 
-    company.divisions.some(division => division.tallyEnabled)
-  );
+  if (loading) {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
+          Tally Workspaces
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <div className="text-xs text-muted-foreground px-3 py-2">
+            Loading...
+          </div>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
 
-  if (companiesWithTally.length === 0) {
+  if (companies.length === 0) {
     return (
       <SidebarGroup>
         <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
@@ -210,7 +244,7 @@ const TallyHierarchy = () => {
       </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu className="list-none">
-          {companiesWithTally.map((company) => (
+          {companies.map((company) => (
             <CompanyHierarchyItem
               key={company.id}
               company={company}
