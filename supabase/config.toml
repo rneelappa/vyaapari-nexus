@@ -37,3 +37,6 @@ verify_jwt = false
 
 [functions.tally-bulk-import]
 verify_jwt = false
+
+[functions.tally-api-test]
+verify_jwt = false

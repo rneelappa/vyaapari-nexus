@@ -1,9 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// Get API key from environment or use placeholder for development
+// Get API key from environment or use the working key as default
 const getTallyApiKey = () => {
-  // In production, this should come from user configuration or environment
-  return localStorage.getItem('tally_api_key') || 'TALLY_API_KEY_PLACEHOLDER';
+  // Use the working API key that matches the Supabase secret
+  return localStorage.getItem('tally_api_key') || 'RAJK22**kjar';
 };
 
 export interface TallyApiFilters {
