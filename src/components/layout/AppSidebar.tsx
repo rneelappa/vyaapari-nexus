@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Building2, Users, Briefcase, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck, Building } from "lucide-react";
+import { ChevronDown, ChevronRight, Building2, Users, Briefcase, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck, Building, Calculator, BookOpen, FileText, BarChart3, Database, Package, Warehouse, Target, FileSignature, TrendingUp, PieChart, FileBarChart, Activity } from "lucide-react";
 import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -57,6 +57,48 @@ const mockData = {
       ]
     }
   ]
+};
+
+// Tally workspace structure
+const tallyWorkspaces = {
+  masters: {
+    name: "Masters",
+    icon: Database,
+    children: [
+      { name: "Groups", icon: Users, path: "/tally/masters/groups" },
+      { name: "Ledgers", icon: BookOpen, path: "/tally/masters/ledgers" },
+      { name: "Stock Items", icon: Package, path: "/tally/masters/stock-items" },
+      { name: "Godowns", icon: Warehouse, path: "/tally/masters/godowns" },
+      { name: "Cost Centers", icon: Target, path: "/tally/masters/cost-centers" },
+      { name: "Voucher Types", icon: FileSignature, path: "/tally/masters/voucher-types" },
+    ]
+  },
+  transactions: {
+    name: "Transactions",
+    icon: TrendingUp,
+    children: [
+      { name: "Accounting", icon: Calculator, path: "/tally/transactions/accounting" },
+      { name: "Non-Accounting", icon: FileText, path: "/tally/transactions/non-accounting" },
+      { name: "Inventory", icon: Package, path: "/tally/transactions/inventory" },
+    ]
+  },
+  display: {
+    name: "Display",
+    icon: BarChart3,
+    children: [
+      { name: "DayBook", icon: BookOpen, path: "/tally/display/daybook" },
+      { name: "Statistics", icon: PieChart, path: "/tally/display/statistics" },
+      { name: "Financial Statements", icon: FileBarChart, path: "/tally/display/financial-statements" },
+      { name: "Reports", icon: Activity, path: "/tally/display/reports" },
+    ]
+  },
+  utilities: {
+    name: "Utilities",
+    icon: Settings,
+    children: [
+      { name: "Tally Configuration", icon: Settings, path: "/tally/utilities/configuration" },
+    ]
+  }
 };
 
 const roleIcons = {
@@ -212,6 +254,108 @@ const WorkspaceModules = ({ workspaceId }: { workspaceId?: string }) => {
   );
 };
 
+const TallyWorkspaceItem = ({ item, level, isExpanded, onToggle }: {
+  item: any;
+  level: number;
+  isExpanded?: boolean;
+  onToggle?: () => void;
+}) => {
+  const location = useLocation();
+  const hasChildren = item.children && item.children.length > 0;
+  const indent = level * 12;
+
+  return (
+    <div className="list-none">
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild>
+          <div
+            className={`flex items-center w-full rounded-lg transition-smooth
+              ${location.pathname.includes(item.path || '') ? 'bg-accent text-accent-foreground shadow-soft' : 'hover:bg-muted/50'}
+            `}
+            style={{ paddingLeft: `${12 + indent}px` }}
+          >
+            {hasChildren && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggle?.();
+                }}
+                className="mr-1 p-1 rounded hover:bg-accent/20 transition-smooth"
+              >
+                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+            )}
+            {item.path ? (
+              <Link
+                to={item.path}
+                className="flex items-center flex-1 p-2 rounded-lg transition-smooth"
+              >
+                <item.icon size={16} className="mr-2 flex-shrink-0" />
+                <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
+              </Link>
+            ) : (
+              <div className="flex items-center flex-1 p-2 rounded-lg transition-smooth">
+                <item.icon size={16} className="mr-2 flex-shrink-0" />
+                <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
+              </div>
+            )}
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+
+      {hasChildren && isExpanded && (
+        <div className="mt-1">
+          {item.children?.map((child: any) => (
+            <TallyWorkspaceItem key={child.name} item={child} level={level + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const TallyWorkspaceContainer = ({ item, level }: { item: any; level: number }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <TallyWorkspaceItem
+      item={item}
+      level={level}
+      isExpanded={isExpanded}
+      onToggle={() => setIsExpanded(!isExpanded)}
+    />
+  );
+};
+
+const TallyWorkspaces = () => {
+  const workspaceCategories = Object.values(tallyWorkspaces);
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
+        Tally Workspaces
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu className="list-none">
+          {mockData.companies.map((company) => 
+            company.divisions.map((division) => (
+              <div key={`${company.id}-${division.id}`} className="mb-2">
+                <div className="text-xs font-medium text-muted-foreground px-3 mb-1">
+                  {division.name}
+                </div>
+                {workspaceCategories.map((category) => (
+                  <TallyWorkspaceContainer key={category.name} item={category} level={1} />
+                ))}
+              </div>
+            ))
+          )}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+};
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
@@ -267,6 +411,13 @@ export function AppSidebar() {
           </div>
 
           <WorkspaceModules workspaceId={currentWorkspaceId} />
+
+          {/* Divider */}
+          <div className="my-4 px-3">
+            <div className="h-px bg-border"></div>
+          </div>
+
+          <TallyWorkspaces />
         </div>
 
         <div className="p-4 border-t border-border">
