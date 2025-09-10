@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Edit, Trash2, DollarSign, RefreshCw, Calculator, Users, Calendar, Briefcase } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -96,6 +97,7 @@ const PAYHEAD_CATEGORIES = [
 ];
 
 export default function PayheadsPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [payheads, setPayheads] = useState<Payhead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,8 +122,10 @@ export default function PayheadsPage() {
   });
 
   useEffect(() => {
-    fetchPayheads();
-  }, []);
+    if (user) {
+      fetchPayheads();
+    }
+  }, [user]);
 
   const fetchPayheads = async () => {
     try {
@@ -293,6 +297,16 @@ export default function PayheadsPage() {
       default: return <Users className="h-3 w-3" />;
     }
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view payroll heads.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

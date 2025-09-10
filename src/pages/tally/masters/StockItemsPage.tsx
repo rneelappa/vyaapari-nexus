@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,14 +83,17 @@ const mockStockItems: StockItem[] = [
 ];
 
 export default function StockItemsPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStockItems();
-  }, []);
+    if (user) {
+      fetchStockItems();
+    }
+  }, [user]);
 
   const fetchStockItems = async () => {
     try {
@@ -156,6 +160,16 @@ export default function StockItemsPage() {
       maximumFractionDigits: decimals,
     }).format(num);
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view stock items.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

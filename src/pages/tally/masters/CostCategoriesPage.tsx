@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Edit, Trash2, Layers, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -51,6 +52,7 @@ const PREDEFINED_CATEGORIES = [
 ];
 
 export default function CostCategoriesPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [costCategories, setCostCategories] = useState<CostCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,8 +71,10 @@ export default function CostCategoriesPage() {
   });
 
   useEffect(() => {
-    fetchCostCategories();
-  }, []);
+    if (user) {
+      fetchCostCategories();
+    }
+  }, [user]);
 
   const fetchCostCategories = async () => {
     try {
@@ -220,6 +224,16 @@ export default function CostCategoriesPage() {
     if (category.allocate_non_revenue) return "secondary";
     return "outline";
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view cost categories.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

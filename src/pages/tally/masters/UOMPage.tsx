@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Edit, Trash2, Scale, RefreshCw, Calculator, Gauge } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -56,6 +57,7 @@ const UNIT_CATEGORIES = [
 ];
 
 export default function UOMPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [uoms, setUoms] = useState<UOM[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,8 +80,10 @@ export default function UOMPage() {
   });
 
   useEffect(() => {
-    fetchUoms();
-  }, []);
+    if (user) {
+      fetchUoms();
+    }
+  }, [user]);
 
   const fetchUoms = async () => {
     try {
@@ -243,6 +247,16 @@ export default function UOMPage() {
     );
     return category?.name || "Other";
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view units of measure.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

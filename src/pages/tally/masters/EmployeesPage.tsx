@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, Users, RefreshCw, User, Mail, Phone, Calendar, MapPin, CreditCard, UserCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -92,6 +93,7 @@ const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const GENDERS = ["Male", "Female", "Other"];
 
 export default function EmployeesPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,8 +130,10 @@ export default function EmployeesPage() {
   });
 
   useEffect(() => {
-    fetchEmployees();
-  }, []);
+    if (user) {
+      fetchEmployees();
+    }
+  }, [user]);
 
   const fetchEmployees = async () => {
     try {
@@ -330,6 +334,16 @@ export default function EmployeesPage() {
   const getEmployeeStatus = (employee: Employee) => {
     return employee.date_of_release ? "Inactive" : "Active";
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view employees.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

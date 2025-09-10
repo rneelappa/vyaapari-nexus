@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, FileSignature, Calculator, Package, Settings, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface VoucherType {
   guid: string;
@@ -22,14 +23,17 @@ interface VoucherType {
 }
 
 export default function VoucherTypesPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [voucherTypes, setVoucherTypes] = useState<VoucherType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchVoucherTypes();
-  }, []);
+    if (user) {
+      fetchVoucherTypes();
+    }
+  }, [user]);
 
   const fetchVoucherTypes = async () => {
     try {
@@ -88,6 +92,16 @@ export default function VoucherTypesPage() {
         return <FileSignature className="h-4 w-4 text-muted-foreground" />;
     }
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view voucher types.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">

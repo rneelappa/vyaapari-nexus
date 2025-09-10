@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Search, Plus, Edit, Trash2, Users, TrendingUp, TrendingDown, RefreshCw, TreePine, ChevronRight, ChevronDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import TallyApiService, { TallyGroup } from "@/services/tally-api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +49,7 @@ const PRIMARY_GROUPS = [
 ];
 
 export default function GroupsPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,8 +73,10 @@ export default function GroupsPage() {
   });
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    if (user) {
+      fetchGroups();
+    }
+  }, [user]);
 
   const fetchGroups = async () => {
     try {
@@ -360,6 +364,16 @@ export default function GroupsPage() {
       </div>
     );
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view groups.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
