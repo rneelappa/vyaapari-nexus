@@ -113,7 +113,7 @@ const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarch
       </SidebarMenuItem>
 
       {isExpanded && (
-        <div className="ml-4 mt-1">
+        <div className="ml-6 mt-1 border-l border-border/30 pl-4">
           {tallyEnabledDivisions.map((division: Division) => (
             <DivisionHierarchyItem key={division.id} division={division} />
           ))}
@@ -158,7 +158,7 @@ const DivisionHierarchyItem = ({ division }: DivisionHierarchyItemProps) => {
       </SidebarMenuItem>
 
       {isExpanded && (
-        <div className="ml-4 mt-1">
+        <div className="ml-6 mt-1 border-l border-border/30 pl-4">
           {Object.values(tallyMenuStructure).map((category) => (
             <TallyMenuItemContainer key={category.name} item={category} level={0} />
           ))}

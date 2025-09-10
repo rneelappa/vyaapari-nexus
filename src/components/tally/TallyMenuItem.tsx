@@ -13,7 +13,7 @@ interface TallyMenuItemProps {
 const TallyMenuItem = ({ item, level, isExpanded, onToggle }: TallyMenuItemProps) => {
   const location = useLocation();
   const hasChildren = item.children && item.children.length > 0;
-  const indent = level * 12;
+  const indent = level * 20; // Increased indent for better visual hierarchy
 
   // Check if current item is active - exact path match only
   const isActive = item.path && location.pathname === item.path;
@@ -65,7 +65,7 @@ const TallyMenuItem = ({ item, level, isExpanded, onToggle }: TallyMenuItemProps
       </SidebarMenuItem>
 
       {hasChildren && isExpanded && (
-        <div className="mt-1">
+        <div className="mt-1 ml-4 border-l border-border/20 pl-3">
           {item.children?.map((child: any) => (
             <TallyMenuItemContainer key={child.name} item={child} level={level + 1} />
           ))}
