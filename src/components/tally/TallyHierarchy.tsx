@@ -66,6 +66,7 @@ interface Division {
   performance_score: number | null;
   parent_division_id: string | null;
   is_active: boolean;
+  tally_enabled: boolean;
   created_at: string;
   updated_at: string;
   created_by: string | null;
@@ -80,9 +81,7 @@ interface CompanyHierarchyItemProps {
 const CompanyHierarchyItem = ({ company, isExpanded, onToggle }: CompanyHierarchyItemProps) => {
   // Filter to only show tally-enabled divisions
   const tallyEnabledDivisions = company.divisions.filter(division => {
-    // For now, check if division has any Tally data or is active
-    // You can later add a tally_enabled column to divisions table
-    return division.is_active;
+    return division.is_active && division.tally_enabled;
   });
   
   if (tallyEnabledDivisions.length === 0) {
@@ -189,7 +188,8 @@ const TallyHierarchy = () => {
         const { data: divisionsData, error: divisionsError } = await supabase
           .from('divisions')
           .select('*')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('tally_enabled', true);
 
         if (divisionsError) {
           console.error('Error fetching divisions:', divisionsError);
@@ -201,7 +201,7 @@ const TallyHierarchy = () => {
           .map(company => ({
             ...company,
             divisions: divisionsData.filter(division => 
-              division.company_id === company.id && division.is_active
+              division.company_id === company.id && division.is_active && division.tally_enabled
             )
           }))
           .filter(company => company.divisions.length > 0); // Only include companies with tally-enabled divisions
