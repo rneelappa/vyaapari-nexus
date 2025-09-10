@@ -1,59 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, Warehouse, MapPin, Package } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Warehouse, MapPin, RefreshCw, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Godown {
   guid: string;
   name: string;
   parent: string;
   address: string;
-  stock_count: number;
-  total_value: number;
 }
 
-const mockGodowns: Godown[] = [
-  {
-    guid: "1",
-    name: "Main Warehouse",
-    parent: "Primary",
-    address: "123 Industrial Area, Phase 1, Bangalore",
-    stock_count: 45,
-    total_value: 2500000
-  },
-  {
-    guid: "2",
-    name: "Raw Material Store",
-    parent: "Main Warehouse",
-    address: "123 Industrial Area, Phase 1, Bangalore - Block A",
-    stock_count: 25,
-    total_value: 1200000
-  },
-  {
-    guid: "3",
-    name: "Finished Goods Store",
-    parent: "Main Warehouse", 
-    address: "123 Industrial Area, Phase 1, Bangalore - Block B",
-    stock_count: 20,
-    total_value: 1300000
-  },
-  {
-    guid: "4",
-    name: "Branch Office Store",
-    parent: "Secondary",
-    address: "456 Commercial Street, Chennai",
-    stock_count: 15,
-    total_value: 450000
-  }
-];
-
 export default function GodownsPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [godowns] = useState<Godown[]>(mockGodowns);
+  const [godowns, setGodowns] = useState<Godown[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchGodowns();
+    }
+  }, [user]);
+
+  const fetchGodowns = async () => {
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch from Supabase mst_godown table
+      const { data, error } = await supabase
+        .from('mst_godown')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform data to match Godown interface
+      const transformedGodowns: Godown[] = (data || []).map(item => ({
+        guid: item.guid,
+        name: item.name,
+        parent: item.parent,
+        address: item.address,
+      }));
+      
+      setGodowns(transformedGodowns);
+    } catch (err) {
+      console.error('Error fetching godowns:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch godowns');
+      setGodowns([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredGodowns = godowns.filter(godown =>
     godown.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,14 +74,15 @@ export default function GodownsPage() {
     godown.address.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view godowns.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -79,10 +93,16 @@ export default function GodownsPage() {
             Manage warehouse locations and storage facilities
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Godown
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchGodowns} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Godown
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -114,63 +134,69 @@ export default function GodownsPage() {
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Godown Name</TableHead>
-                    <TableHead>Parent</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Stock Items</TableHead>
-                    <TableHead>Total Value</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredGodowns.map((godown) => (
-                    <TableRow key={godown.guid}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <Warehouse className="h-4 w-4 text-muted-foreground" />
-                          {godown.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{godown.parent}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm max-w-48 truncate">
-                            {godown.address}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Package className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{godown.stock_count}</span>
-                          <span className="text-sm text-muted-foreground">items</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-medium text-green-600">
-                          {formatCurrency(godown.total_value)}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {loading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading godowns...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Godown Name</TableHead>
+                      <TableHead>Parent</TableHead>
+                      <TableHead>Address</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredGodowns.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          <p className="text-muted-foreground">No godowns found. Data may need to be synchronized from Tally.</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredGodowns.map((godown) => (
+                        <TableRow key={godown.guid}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center space-x-2">
+                              <Warehouse className="h-4 w-4 text-muted-foreground" />
+                              {godown.name}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{godown.parent}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <MapPin className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm max-w-48 truncate">
+                                {godown.address}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

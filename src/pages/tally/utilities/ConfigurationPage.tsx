@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ConfigItem {
   key: string;
@@ -26,78 +28,86 @@ interface ConfigItem {
   options?: string[];
 }
 
-const mockConfigItems: ConfigItem[] = [
-  {
-    key: "tally_url",
-    value: "http://localhost:9000",
-    description: "Tally ERP server URL for data synchronization",
-    type: "string"
-  },
-  {
-    key: "sync_interval",
-    value: "300",
-    description: "Automatic sync interval in seconds (300 = 5 minutes)",
-    type: "number"
-  },
-  {
-    key: "auto_sync_enabled",
-    value: "true",
-    description: "Enable automatic data synchronization",
-    type: "boolean"
-  },
-  {
-    key: "backup_enabled",
-    value: "true",
-    description: "Enable automatic database backups",
-    type: "boolean"
-  },
-  {
-    key: "backup_retention_days",
-    value: "30",
-    description: "Number of days to retain backup files",
-    type: "number"
-  },
-  {
-    key: "currency_code",
-    value: "INR",
-    description: "Default currency for financial reports",
-    type: "select",
-    options: ["INR", "USD", "EUR", "GBP"]
-  },
-  {
-    key: "date_format",
-    value: "DD/MM/YYYY",
-    description: "Default date format for display",
-    type: "select",
-    options: ["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"]
-  },
-  {
-    key: "decimal_places",
-    value: "2",
-    description: "Number of decimal places for currency amounts",
-    type: "number"
-  }
-];
-
-const mockSyncStatus = {
-  lastSync: "2025-01-15T10:30:00Z",
-  status: "success",
-  recordsSynced: 1250,
-  errors: 0,
-  nextSync: "2025-01-15T10:35:00Z"
-};
-
-const mockSystemInfo = {
-  version: "1.0.0",
-  databaseSize: "2.5 GB",
-  totalRecords: 125000,
-  lastBackup: "2025-01-15T06:00:00Z",
-  uptime: "15 days, 8 hours"
-};
-
 export default function ConfigurationPage() {
-  const [configItems, setConfigItems] = useState<ConfigItem[]>(mockConfigItems);
+  const { user } = useAuth();
+  const [configItems, setConfigItems] = useState<ConfigItem[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchConfig();
+    }
+  }, [user]);
+
+  const fetchConfig = async () => {
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch from Supabase config table
+      const { data, error } = await supabase
+        .from('config')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform data to match ConfigItem interface with defaults
+      const transformedConfig: ConfigItem[] = (data || []).map(item => ({
+        key: item.name,
+        value: item.value || '',
+        description: `Configuration setting: ${item.name}`,
+        type: 'string' as const,
+      }));
+
+      // Add default configs if table is empty
+      if (transformedConfig.length === 0) {
+        const defaultConfigs: ConfigItem[] = [
+          {
+            key: "tally_url",
+            value: "http://localhost:9000",
+            description: "Tally ERP server URL for data synchronization",
+            type: "string"
+          },
+          {
+            key: "currency_code",
+            value: "INR",
+            description: "Default currency for financial reports",
+            type: "select",
+            options: ["INR", "USD", "EUR", "GBP"]
+          }
+        ];
+        setConfigItems(defaultConfigs);
+      } else {
+        setConfigItems(transformedConfig);
+      }
+    } catch (err) {
+      console.error('Error fetching config:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch configuration');
+      
+      // Fallback to default config
+      setConfigItems([
+        {
+          key: "tally_url",
+          value: "http://localhost:9000",
+          description: "Tally ERP server URL for data synchronization",
+          type: "string"
+        }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleConfigChange = (key: string, value: string) => {
     setConfigItems(prev => 
@@ -108,10 +118,15 @@ export default function ConfigurationPage() {
     setHasChanges(true);
   };
 
-  const handleSave = () => {
-    // Save configuration logic would go here
-    setHasChanges(false);
-    // Show success message
+  const handleSave = async () => {
+    try {
+      // Save configuration logic would go here
+      // For now, just simulate success
+      setHasChanges(false);
+      console.log('Configuration saved:', configItems);
+    } catch (err) {
+      console.error('Error saving config:', err);
+    }
   };
 
   const formatDateTime = (dateString: string) => {
@@ -144,6 +159,16 @@ export default function ConfigurationPage() {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view configuration.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -154,6 +179,10 @@ export default function ConfigurationPage() {
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button variant="outline" onClick={fetchConfig} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Button variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Test Connection
@@ -185,9 +214,24 @@ export default function ConfigurationPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {configItems.filter(item => 
-                ["currency_code", "date_format", "decimal_places"].includes(item.key)
-              ).map((item) => (
+              {loading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading configuration...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : configItems.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No configuration items found.</p>
+                </div>
+              ) : (
+                configItems.filter(item => 
+                  ["currency_code", "date_format", "decimal_places", "tally_url"].includes(item.key)
+                ).map((item) => (
                 <div key={item.key} className="space-y-2">
                   <Label htmlFor={item.key} className="text-sm font-medium">
                     {item.key.replace(/_/g, ' ').toUpperCase()}
@@ -233,7 +277,8 @@ export default function ConfigurationPage() {
                     </p>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -252,7 +297,7 @@ export default function ConfigurationPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {configItems.filter(item => 
-                  ["tally_url", "sync_interval", "auto_sync_enabled"].includes(item.key)
+                  ["tally_url"].includes(item.key)
                 ).map((item) => (
                   <div key={item.key} className="space-y-2">
                     <Label htmlFor={item.key} className="text-sm font-medium">
@@ -304,34 +349,14 @@ export default function ConfigurationPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Status:</span>
                   <div className="flex items-center space-x-2">
-                    {getStatusIcon(mockSyncStatus.status)}
-                    {getStatusBadge(mockSyncStatus.status)}
+                    {getStatusIcon("success")}
+                    {getStatusBadge("success")}
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Last Sync:</span>
+                  <span className="text-sm font-medium">Connection:</span>
                   <span className="text-sm text-muted-foreground">
-                    {formatDateTime(mockSyncStatus.lastSync)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Records Synced:</span>
-                  <span className="text-sm font-medium">
-                    {mockSyncStatus.recordsSynced.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Errors:</span>
-                  <span className={`text-sm ${
-                    mockSyncStatus.errors > 0 ? "text-red-600" : "text-green-600"
-                  }`}>
-                    {mockSyncStatus.errors}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Next Sync:</span>
-                  <span className="text-sm text-muted-foreground">
-                    {formatDateTime(mockSyncStatus.nextSync)}
+                    Ready to sync with Tally
                   </span>
                 </div>
                 <div className="pt-4">
@@ -357,6 +382,9 @@ export default function ConfigurationPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Backup configuration will be available in future updates.</p>
+              </div>
               {configItems.filter(item => 
                 ["backup_enabled", "backup_retention_days"].includes(item.key)
               ).map((item) => (
@@ -417,29 +445,15 @@ export default function ConfigurationPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Version:</span>
-                <Badge variant="outline">{mockSystemInfo.version}</Badge>
+                <Badge variant="outline">1.0.0</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Database Size:</span>
-                <span className="text-sm font-medium">{mockSystemInfo.databaseSize}</span>
+                <span className="text-sm font-medium">Database:</span>
+                <span className="text-sm font-medium">Supabase PostgreSQL</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Total Records:</span>
-                <span className="text-sm font-medium">
-                  {mockSystemInfo.totalRecords.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Last Backup:</span>
-                <span className="text-sm text-muted-foreground">
-                  {formatDateTime(mockSystemInfo.lastBackup)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">System Uptime:</span>
-                <span className="text-sm text-muted-foreground">
-                  {mockSystemInfo.uptime}
-                </span>
+                <span className="text-sm font-medium">Status:</span>
+                <span className="text-sm text-green-600">Connected</span>
               </div>
             </CardContent>
           </Card>

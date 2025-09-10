@@ -5,103 +5,79 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard, RefreshCw } from "lucide-react";
+import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard, RefreshCw, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import TallyApiService, { TallyLedger } from "@/services/tally-api";
+import { useAuth } from "@/hooks/useAuth";
 
-interface Ledger extends TallyLedger {
-  // Additional UI-specific properties can be added here
-  alias?: string;
-  is_revenue?: boolean;
-  is_deemedpositive?: boolean;
-  gstn?: string;
-  email?: string;
-  mailing_address?: string;
-  bank_account_number?: string;
+interface Ledger {
+  guid: string;
+  name: string;
+  parent: string;
+  alias: string;
+  opening_balance: number;
+  closing_balance: number;
+  is_revenue: boolean;
+  is_deemedpositive: boolean;
+  gstn: string;
+  email: string;
+  mailing_address: string;
+  bank_account_number: string;
 }
 
-const mockLedgers: Ledger[] = [
-  {
-    guid: "1",
-    name: "LSI-MECH ENGINEERS PRIVATE LIMITED",
-    parent: "Sundry Debtors",
-    alias: "LSI-MECH",
-    opening_balance: 0,
-    closing_balance: 150000,
-    is_revenue: false,
-    is_deemedpositive: true,
-    gstn: "29AABCL1234A1Z5",
-    email: "accounts@lsimech.com",
-    mailing_address: "123 Industrial Area, Bangalore",
-    bank_account_number: "1234567890",
-    company_id: "COMPANY001",
-    division_id: "DIV001",
-    created_at: "2024-01-01T00:00:00Z"
-  },
-  {
-    guid: "2",
-    name: "Cash",
-    parent: "Cash-in-Hand",
-    alias: "CASH",
-    opening_balance: 50000,
-    closing_balance: 75000,
-    is_revenue: false,
-    is_deemedpositive: true,
-    gstn: "",
-    email: "",
-    mailing_address: "",
-    bank_account_number: "",
-    company_id: "COMPANY001",
-    division_id: "DIV001",
-    created_at: "2024-01-01T00:00:00Z"
-  },
-  {
-    guid: "3",
-    name: "Sales",
-    parent: "Sales Accounts",
-    alias: "SALES",
-    opening_balance: 0,
-    closing_balance: -500000,
-    is_revenue: true,
-    is_deemedpositive: false,
-    gstn: "",
-    email: "",
-    mailing_address: "",
-    bank_account_number: "",
-    company_id: "COMPANY001",
-    division_id: "DIV001",
-    created_at: "2024-01-01T00:00:00Z"
-  }
-];
-
 export default function LedgersPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchLedgers();
-  }, []);
+    if (user) {
+      fetchLedgers();
+    }
+  }, [user]);
 
   const fetchLedgers = async () => {
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch real data from Tally API
-      const response = await TallyApiService.getLedgers({ limit: 100 });
+      // Fetch from Supabase mst_ledger table
+      const { data, error } = await supabase
+        .from('mst_ledger')
+        .select('*')
+        .order('name');
       
-      if (response.success) {
-        setLedgers(response.data || []);
-      } else {
-        throw new Error(response.error || 'Failed to fetch ledgers');
+      if (error) {
+        throw error;
       }
+      
+      // Transform data to match Ledger interface
+      const transformedLedgers: Ledger[] = (data || []).map(item => ({
+        guid: item.guid,
+        name: item.name,
+        parent: item.parent,
+        alias: item.alias,
+        opening_balance: item.opening_balance || 0,
+        closing_balance: item.closing_balance || 0,
+        is_revenue: !!item.is_revenue,
+        is_deemedpositive: !!item.is_deemedpositive,
+        gstn: item.gstn || '',
+        email: item.email || '',
+        mailing_address: item.mailing_address || '',
+        bank_account_number: item.bank_account_number || '',
+      }));
+      
+      setLedgers(transformedLedgers);
     } catch (err) {
       console.error('Error fetching ledgers:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch ledgers');
-      
-      // Fallback to empty array if API fails
       setLedgers([]);
     } finally {
       setLoading(false);
@@ -113,6 +89,16 @@ export default function LedgersPage() {
     ledger.parent.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ledger.alias.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view ledgers.</p>
+        </div>
+      </div>
+    );
+  }
 
   const getDebitCreditIcon = (isDeemedPositive: boolean) => {
     return isDeemedPositive ? (
@@ -182,21 +168,39 @@ export default function LedgersPage() {
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ledger Name</TableHead>
-                    <TableHead>Parent Group</TableHead>
-                    <TableHead>Nature</TableHead>
-                    <TableHead>Opening Balance</TableHead>
-                    <TableHead>Closing Balance</TableHead>
-                    <TableHead>GSTN</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLedgers.map((ledger) => (
+              {loading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading ledgers...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ledger Name</TableHead>
+                      <TableHead>Parent Group</TableHead>
+                      <TableHead>Nature</TableHead>
+                      <TableHead>Opening Balance</TableHead>
+                      <TableHead>Closing Balance</TableHead>
+                      <TableHead>GSTN</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLedgers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          <p className="text-muted-foreground">No ledgers found. Data may need to be synchronized from Tally.</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredLedgers.map((ledger) => (
                     <TableRow key={ledger.guid}>
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-2">
@@ -268,10 +272,12 @@ export default function LedgersPage() {
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

@@ -1,73 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, Target, Building, Users, TrendingUp } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Target, Building, Users, TrendingUp, RefreshCw, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CostCenter {
   guid: string;
   name: string;
   parent: string;
   category: string;
-  allocated_amount: number;
-  employee_count: number;
-  is_active: boolean;
 }
 
-const mockCostCenters: CostCenter[] = [
-  {
-    guid: "1",
-    name: "Production Department",
-    parent: "Manufacturing",
-    category: "Direct Costs",
-    allocated_amount: 500000,
-    employee_count: 25,
-    is_active: true
-  },
-  {
-    guid: "2",
-    name: "Quality Control",
-    parent: "Manufacturing",
-    category: "Direct Costs", 
-    allocated_amount: 150000,
-    employee_count: 8,
-    is_active: true
-  },
-  {
-    guid: "3",
-    name: "Sales & Marketing",
-    parent: "Administration",
-    category: "Indirect Costs",
-    allocated_amount: 300000,
-    employee_count: 12,
-    is_active: true
-  },
-  {
-    guid: "4",
-    name: "Human Resources",
-    parent: "Administration",
-    category: "Indirect Costs",
-    allocated_amount: 200000,
-    employee_count: 5,
-    is_active: true
-  },
-  {
-    guid: "5",
-    name: "IT Department",
-    parent: "Support",
-    category: "Indirect Costs",
-    allocated_amount: 100000,
-    employee_count: 3,
-    is_active: false
-  }
-];
-
 export default function CostCentersPage() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [costCenters] = useState<CostCenter[]>(mockCostCenters);
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchCostCenters();
+    }
+  }, [user]);
+
+  const fetchCostCenters = async () => {
+    if (!user) {
+      setError('Authentication required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch from Supabase mst_cost_centre table
+      const { data, error } = await supabase
+        .from('mst_cost_centre')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Transform data to match CostCenter interface
+      const transformedCenters: CostCenter[] = (data || []).map(item => ({
+        guid: item.guid,
+        name: item.name,
+        parent: item.parent,
+        category: item.category,
+      }));
+      
+      setCostCenters(transformedCenters);
+    } catch (err) {
+      console.error('Error fetching cost centers:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch cost centers');
+      setCostCenters([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredCostCenters = costCenters.filter(center =>
     center.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,14 +74,15 @@ export default function CostCentersPage() {
     center.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  if (!user) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <p className="text-muted-foreground">Please log in to view cost centers.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -93,10 +93,16 @@ export default function CostCentersPage() {
             Manage cost centers for expense allocation and tracking
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Cost Center
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchCostCenters} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Cost Center
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -129,76 +135,69 @@ export default function CostCentersPage() {
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cost Center</TableHead>
-                    <TableHead>Parent</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Allocated Amount</TableHead>
-                    <TableHead>Employees</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCostCenters.map((center) => (
-                    <TableRow key={center.guid}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center space-x-2">
-                          <Target className="h-4 w-4 text-muted-foreground" />
-                          {center.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Building className="h-3 w-3 text-muted-foreground" />
-                          <Badge variant="outline">{center.parent}</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={center.category === "Direct Costs" ? "default" : "secondary"}
-                        >
-                          {center.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center space-x-1">
-                          <TrendingUp className="h-3 w-3 text-green-600" />
-                          <span className="font-medium text-green-600">
-                            {formatCurrency(center.allocated_amount)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Users className="h-3 w-3 text-muted-foreground" />
-                          <span className="font-medium">{center.employee_count}</span>
-                          <span className="text-sm text-muted-foreground">people</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {center.is_active ? (
-                          <Badge variant="default">Active</Badge>
-                        ) : (
-                          <Badge variant="secondary">Inactive</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {loading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading cost centers...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cost Center</TableHead>
+                      <TableHead>Parent</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCostCenters.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          <p className="text-muted-foreground">No cost centers found. Data may need to be synchronized from Tally.</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredCostCenters.map((center) => (
+                        <TableRow key={center.guid}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center space-x-2">
+                              <Target className="h-4 w-4 text-muted-foreground" />
+                              {center.name}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Building className="h-3 w-3 text-muted-foreground" />
+                              <Badge variant="outline">{center.parent}</Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {center.category}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
