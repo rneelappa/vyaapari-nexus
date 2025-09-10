@@ -39,6 +39,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useTallyWorkspaces } from "@/hooks/useWorkspaces";
 import { useWorkspaceModules, WorkspaceModule } from "@/hooks/useWorkspaceModules";
+import { useCompanies, useDivisions, useWorkspacesByDivision } from "@/hooks/useHierarchy";
 
 const iconMap = {
   FolderOpen,
@@ -60,100 +61,12 @@ const iconMap = {
   Cog,
 };
 
-// Mock data structure for companies/divisions hierarchy
-const mockData = {
-  organization: "Vyaapari360",
-  companies: [
-    {
-      id: "comp1",
-      name: "Acme Corporation",
-      role: "Company Admin",
-      divisions: [
-        {
-          id: "div1",
-          name: "Engineering",
-          role: "Division Manager",
-        },
-        {
-          id: "div2",
-          name: "Marketing",
-          role: "Marketing Manager",
-        },
-      ],
-    },
-    {
-      id: "comp2",
-      name: "TechStart Inc",
-      role: "Consultant",
-      divisions: [
-        {
-          id: "div3",
-          name: "Product",
-          role: "Product Manager",
-        },
-      ],
-    },
-  ],
-};
-
-const roleIcons = {
-  "Super Admin": Building2,
-  "Company Admin": Building2,
-  "Division Manager": Users,
-  "Team Lead": Users,
-  "Marketing Manager": Users,
-  "Campaign Manager": Users,
-  "Product Manager": Users,
-  "Developer": Users,
-  "Designer": Users,
-  "Consultant": Users,
-};
-
-interface HierarchyItemProps {
-  item: any;
-  type: "company" | "division" | "workspace";
-  collapsed?: boolean;
-}
-
-const HierarchyItem = ({ item, type, collapsed }: HierarchyItemProps) => {
-  const [isExpanded, setIsExpanded] = useState(type === "company");
+// Database-driven hierarchy components
+const CompanyItem = ({ company }: { company: any }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { data: divisions } = useDivisions(company.id);
   const location = useLocation();
-  const hasChildren = (type === "company" && item.divisions?.length) || (type === "division" && item.workspaces?.length);
-  const RoleIcon = roleIcons[item.role as keyof typeof roleIcons] || Users;
-
-  const getNavigationPath = () => {
-    switch (type) {
-      case "company":
-        return `/company/${item.id}`;
-      case "division":
-        const company = mockData.companies.find(c => c.divisions.some(d => d.id === item.id));
-        return company ? `/company/${company.id}/division/${item.id}` : "#";
-      case "workspace":
-        return `/workspace/${item.id}`;
-      default:
-        return "#";
-    }
-  };
-
-  const toggleExpanded = () => {
-    if (hasChildren) {
-      setIsExpanded(!isExpanded);
-    }
-  };
-
-  const isActive = location.pathname.includes(item.id);
-
-  if (collapsed) {
-    return (
-      <SidebarMenuItem>
-        <SidebarMenuButton asChild size="sm">
-          <NavLink to={getNavigationPath()} title={item.name}>
-            <RoleIcon className="h-4 w-4" />
-          </NavLink>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-    );
-  }
+  const isActive = location.pathname.includes(`/company/${company.id}`);
 
   return (
     <div>
@@ -166,45 +79,34 @@ const HierarchyItem = ({ item, type, collapsed }: HierarchyItemProps) => {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {hasChildren && (
-              <span 
-                className="h-4 w-4 flex items-center justify-center"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleExpanded();
-                }}
-              >
-                {isExpanded ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
-              </span>
-            )}
-            <RoleIcon className="h-4 w-4" />
-            <NavLink to={getNavigationPath()} className="flex-1">
-              {item.name}
+            <span 
+              className="h-4 w-4 flex items-center justify-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+            </span>
+            <Building2 className="h-4 w-4" />
+            <NavLink to={`/company/${company.id}`} className="flex-1">
+              {company.name}
             </NavLink>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
       
-      {hasChildren && isExpanded && (
+      {isExpanded && divisions && (
         <div className="ml-6 space-y-1">
-          {type === "company" && item.divisions?.map((division: any) => (
-            <HierarchyItem
+          {divisions.map((division) => (
+            <DivisionItem
               key={division.id}
-              item={division}
-              type="division"
-              collapsed={collapsed}
-            />
-          ))}
-          {type === "division" && item.workspaces?.map((workspace: any) => (
-            <HierarchyItem
-              key={workspace.id}
-              item={workspace}
-              type="workspace"
-              collapsed={collapsed}
+              division={division}
+              companyId={company.id}
             />
           ))}
         </div>
@@ -213,21 +115,94 @@ const HierarchyItem = ({ item, type, collapsed }: HierarchyItemProps) => {
   );
 };
 
-const HierarchyItemContainer = ({ 
-  item, 
-  type, 
-  collapsed 
-}: { 
-  item: any; 
-  type: "company" | "division"; 
-  collapsed?: boolean; 
-}) => {
+const DivisionItem = ({ division, companyId }: { division: any; companyId: string }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { data: workspaces } = useWorkspacesByDivision(division.id);
+  const location = useLocation();
+  const isActive = location.pathname.includes(`/division/${division.id}`);
+
   return (
-    <HierarchyItem
-      item={item}
-      type={type}
-      collapsed={collapsed}
-    />
+    <div>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild size="sm">
+          <div
+            className={`flex items-center space-x-2 cursor-pointer ${
+              isActive
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span 
+              className="h-4 w-4 flex items-center justify-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+            </span>
+            <Users className="h-4 w-4" />
+            <NavLink to={`/company/${companyId}/division/${division.id}`} className="flex-1">
+              {division.name}
+            </NavLink>
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      
+      {isExpanded && workspaces && (
+        <div className="ml-6 space-y-1">
+          {workspaces.map((workspace) => (
+            <WorkspaceItem
+              key={workspace.id}
+              workspace={workspace}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const WorkspaceItem = ({ workspace }: { workspace: any }) => {
+  const location = useLocation();
+  const isActive = location.pathname.includes(`/workspace/${workspace.id}`);
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild size="sm">
+        <NavLink
+          to={`/workspace/${workspace.id}`}
+          className={`flex items-center space-x-2 ${
+            isActive
+              ? "bg-primary/10 text-primary font-medium"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <FolderOpen className="h-4 w-4" />
+          <span>{workspace.name}</span>
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+};
+
+const OrganizationHierarchy = () => {
+  const { data: companies, isLoading } = useCompanies();
+
+  if (isLoading) {
+    return <div className="p-4 text-sm text-muted-foreground">Loading...</div>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {companies?.map((company) => (
+        <CompanyItem key={company.id} company={company} />
+      ))}
+    </div>
   );
 };
 
@@ -388,22 +363,20 @@ export function AppSidebar() {
         <div className="flex items-center space-x-2 px-4 py-2">
           <Building2 className="h-6 w-6 text-primary" />
           {!collapsed && (
-            <span className="text-lg font-semibold">{mockData.organization}</span>
+            <span className="text-lg font-semibold">Vyaapari360</span>
           )}
         </div>
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        <SidebarMenu>
-          {mockData.companies.map((company) => (
-            <HierarchyItemContainer
-              key={company.id}
-              item={company}
-              type="company"
-              collapsed={collapsed}
-            />
-          ))}
-        </SidebarMenu>
+        {!collapsed && (
+          <div className="px-2 py-4">
+            <div className="text-xs font-medium text-muted-foreground mb-2 px-2">
+              ORGANIZATION
+            </div>
+            <OrganizationHierarchy />
+          </div>
+        )}
 
         {/* Tally Workspaces Section */}
         {!collapsed && (
