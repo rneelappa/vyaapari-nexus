@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Ledger {
   guid: string;
@@ -69,7 +70,36 @@ const mockLedgers: Ledger[] = [
 
 export default function LedgersPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [ledgers] = useState<Ledger[]>(mockLedgers);
+  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchLedgers();
+  }, []);
+
+  const fetchLedgers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error: supabaseError } = await supabase
+        .from('mst_ledger')
+        .select('*')
+        .order('name');
+
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      setLedgers(data || []);
+    } catch (err) {
+      console.error('Error fetching ledgers:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch ledgers');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredLedgers = ledgers.filter(ledger =>
     ledger.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

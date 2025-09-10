@@ -144,9 +144,21 @@ export default function GroupsPage() {
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
+              {loading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <div className="text-red-600 mb-2">Error: {error}</div>
+                  <Button onClick={fetchGroups} variant="outline">
+                    Try Again
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
                     <TableHead>Group Name</TableHead>
                     <TableHead>Parent Group</TableHead>
                     <TableHead>Primary Group</TableHead>
@@ -205,6 +217,7 @@ export default function GroupsPage() {
                   ))}
                 </TableBody>
               </Table>
+              )
             </TabsContent>
           </Tabs>
         </CardContent>

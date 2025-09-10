@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +82,36 @@ const mockStockItems: StockItem[] = [
 
 export default function StockItemsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [stockItems] = useState<StockItem[]>(mockStockItems);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchStockItems();
+  }, []);
+
+  const fetchStockItems = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error: supabaseError } = await supabase
+        .from('mst_stock_item')
+        .select('*')
+        .order('name');
+
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      setStockItems(data || []);
+    } catch (err) {
+      console.error('Error fetching stock items:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch stock items');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredStockItems = stockItems.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
