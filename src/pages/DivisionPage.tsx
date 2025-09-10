@@ -8,17 +8,62 @@ import { Building2, Users, Target, TrendingUp, Settings, MessageSquare, FolderOp
 const DivisionPage = () => {
   const { companyId, divisionId } = useParams();
   
-  // Mock division data - in real app this would come from API
-  const division = {
-    id: divisionId,
-    name: "Technology Division",
-    description: "Driving innovation through cutting-edge technology solutions",
-    manager: "Sarah Johnson",
-    employees: 450,
-    budget: "₹2.5 Cr",
-    performance: 94,
-    status: "Active"
+  // Mock data structure matching the sidebar
+  const mockData = {
+    companies: [
+      {
+        id: "comp1",
+        name: "Acme Corporation",
+        divisions: [
+          {
+            id: "div1",
+            name: "Engineering",
+            description: "Building innovative software solutions and maintaining technical excellence",
+            manager: "Sarah Johnson",
+            employees: 450,
+            budget: "₹2.5 Cr",
+            performance: 94,
+            status: "Active"
+          },
+          {
+            id: "div2", 
+            name: "Marketing",
+            description: "Driving brand awareness and customer engagement through strategic campaigns",
+            manager: "Michael Chen",
+            employees: 125,
+            budget: "₹1.2 Cr", 
+            performance: 87,
+            status: "Active"
+          }
+        ]
+      },
+      {
+        id: "comp2",
+        name: "TechStart Inc",
+        divisions: [
+          {
+            id: "div3",
+            name: "Product",
+            description: "Designing and developing cutting-edge products for market success",
+            manager: "Emily Rodriguez",
+            employees: 280,
+            budget: "₹3.1 Cr",
+            performance: 91,
+            status: "Active"
+          }
+        ]
+      }
+    ]
   };
+
+  // Find the specific division based on companyId and divisionId
+  const company = mockData.companies.find(c => c.id === companyId);
+  const division = company?.divisions.find(d => d.id === divisionId);
+
+  // Default fallback if division not found
+  if (!division) {
+    return <div className="p-6">Division not found</div>;
+  }
 
   const workspaces = [
     { 
