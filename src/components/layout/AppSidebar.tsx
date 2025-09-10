@@ -14,11 +14,11 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 
-// Mock data structure
+// Mock data structure - updated with real company UUIDs from database
 const mockData = {
   companies: [
     {
-      id: "comp1",
+      id: "550e8400-e29b-41d4-a716-446655440000",
       name: "Acme Corporation",
       role: "Company Admin",
       divisions: [
@@ -42,7 +42,7 @@ const mockData = {
       ]
     },
     {
-      id: "comp2",
+      id: "550e8400-e29b-41d4-a716-446655440001",
       name: "TechStart Inc",
       role: "User",
       divisions: [

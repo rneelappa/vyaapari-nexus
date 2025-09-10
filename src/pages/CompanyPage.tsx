@@ -22,9 +22,13 @@ const CompanyPage = () => {
           .from('companies')
           .select('*')
           .eq('id', companyId)
-          .single();
+          .maybeSingle();
           
         if (companyError) throw companyError;
+        if (!companyData) {
+          console.log('No company found for ID:', companyId);
+          throw new Error('Company not found');
+        }
         
         // Fetch divisions data
         const { data: divisionsData, error: divisionsError } = await supabase
