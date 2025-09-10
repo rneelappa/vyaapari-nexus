@@ -17,6 +17,7 @@ const CompanyPage = () => {
       if (!companyId) return;
       
       try {
+        console.log('Fetching company data for ID:', companyId);
         // Fetch company data
         const { data: companyData, error: companyError } = await supabase
           .from('companies')
@@ -24,6 +25,7 @@ const CompanyPage = () => {
           .eq('id', companyId)
           .maybeSingle();
           
+        console.log('Company query result:', { companyData, companyError });
         if (companyError) throw companyError;
         if (!companyData) {
           console.log('No company found for ID:', companyId);
@@ -68,17 +70,29 @@ const CompanyPage = () => {
         setDivisions(enrichedDivisions);
       } catch (error) {
         console.error('Error fetching company data:', error);
-        // Fallback to mock data if fetch fails
-        setCompany({
-          id: companyId,
-          name: "Acme Corporation",
-          description: "Sample company data",
-          domain: "acme.com",
-          totalEmployees: 500,
-          totalDivisions: 3,
-          establishedYear: 2020,
-          status: "Active"
-        });
+        // Fallback to mock data based on company ID
+        const mockCompanyData = companyId === "550e8400-e29b-41d4-a716-446655440001" 
+          ? {
+              id: companyId,
+              name: "TechStart Inc",
+              description: "Innovative technology startup",
+              domain: "techstart.com",
+              totalEmployees: 150,
+              totalDivisions: 1,
+              establishedYear: 2022,
+              status: "Active"
+            }
+          : {
+              id: companyId,
+              name: "Acme Corporation",
+              description: "Sample company data",
+              domain: "acme.com",
+              totalEmployees: 500,
+              totalDivisions: 3,
+              establishedYear: 2020,
+              status: "Active"
+            };
+        setCompany(mockCompanyData);
         setDivisions([
           { id: "div1", name: "Technology", employee_count: 200, workspaces: 5 },
           { id: "div2", name: "Sales", employee_count: 150, workspaces: 3 },
