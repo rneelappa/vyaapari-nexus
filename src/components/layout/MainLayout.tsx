@@ -15,7 +15,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     <SidebarProvider className="sidebar-below-header">
       <div className="min-h-screen w-full bg-gradient-subtle">
         {/* Full-width Header */}
-        <header className="h-12 border-b border-border bg-sidebar backdrop-blur supports-[backdrop-filter]:bg-sidebar flex-shrink-0 z-10 w-full">
+        <header className="sticky top-0 h-12 border-b border-border bg-sidebar backdrop-blur supports-[backdrop-filter]:bg-sidebar flex-shrink-0 z-50 w-full">
           <div className="flex items-center justify-between h-full px-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
