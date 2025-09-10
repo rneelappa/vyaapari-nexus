@@ -391,57 +391,6 @@ export type Database = {
           },
         ]
       }
-      workspace_modules: {
-        Row: {
-          created_at: string
-          icon: string | null
-          id: string
-          is_expandable: boolean | null
-          name: string
-          parent_id: string | null
-          path: string | null
-          sort_order: number | null
-          workspace_id: string
-        }
-        Insert: {
-          created_at?: string
-          icon?: string | null
-          id?: string
-          is_expandable?: boolean | null
-          name: string
-          parent_id?: string | null
-          path?: string | null
-          sort_order?: number | null
-          workspace_id: string
-        }
-        Update: {
-          created_at?: string
-          icon?: string | null
-          id?: string
-          is_expandable?: boolean | null
-          name?: string
-          parent_id?: string | null
-          path?: string | null
-          sort_order?: number | null
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workspace_modules_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "workspace_modules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workspace_modules_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       workspaces: {
         Row: {
           company_id: string
