@@ -60,8 +60,18 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
 
   const handleSave = async () => {
     try {
+      console.log('Saving division with data:', {
+        name: formData.name,
+        description: formData.description,
+        manager_name: formData.manager_name,
+        budget: parseFloat(formData.budget.replace(/[₹,\s]/g, '')) || 0,
+        tally_enabled: tallyEnabled,
+        tally_url: tallyEnabled ? tallyUrl : null,
+        tally_company_id: tallyEnabled ? tallyCompanyId : null,
+      });
+
       // Update division basic information in database
-      const { error: divisionError } = await supabase
+      const { data, error: divisionError } = await supabase
         .from('divisions')
         .update({
           name: formData.name,
@@ -73,11 +83,16 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
           tally_company_id: tallyEnabled ? tallyCompanyId : null,
           updated_at: new Date().toISOString()
         })
-        .eq('id', division.id);
+        .eq('id', division.id)
+        .select()
+        .single();
 
       if (divisionError) {
+        console.error('Division update error:', divisionError);
         throw divisionError;
       }
+
+      console.log('Division updated successfully:', data);
 
       const updatedDivision = {
         ...division,
