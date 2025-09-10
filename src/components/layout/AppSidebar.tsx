@@ -215,10 +215,17 @@ export function AppSidebar() {
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
-      if (!user) return;
+      console.log('AppSidebar: Starting to fetch organization data, user:', user?.id);
+      
+      if (!user) {
+        console.log('AppSidebar: No user found, setting loading to false');
+        setLoading(false);
+        return;
+      }
       
       try {
-        console.log('Fetching organization data...');
+        console.log('AppSidebar: Fetching organization data...');
+        setLoading(true);
         
         // Fetch companies
         const { data: companiesData, error: companiesError } = await supabase
@@ -227,12 +234,12 @@ export function AppSidebar() {
           .eq('is_active', true);
 
         if (companiesError) {
-          console.error('Error fetching companies:', companiesError);
+          console.error('AppSidebar: Error fetching companies:', companiesError);
           setLoading(false);
           return;
         }
 
-        console.log('Companies fetched:', companiesData);
+        console.log('AppSidebar: Companies fetched:', companiesData?.length || 0, 'companies');
 
         // Fetch divisions
         const { data: divisionsData, error: divisionsError } = await supabase
@@ -241,12 +248,12 @@ export function AppSidebar() {
           .eq('is_active', true);
 
         if (divisionsError) {
-          console.error('Error fetching divisions:', divisionsError);
+          console.error('AppSidebar: Error fetching divisions:', divisionsError);
           setLoading(false);
           return;
         }
 
-        console.log('Divisions fetched:', divisionsData);
+        console.log('AppSidebar: Divisions fetched:', divisionsData?.length || 0, 'divisions');
 
         // Fetch workspaces
         const { data: workspacesData, error: workspacesError } = await supabase
@@ -254,20 +261,16 @@ export function AppSidebar() {
           .select('*');
 
         if (workspacesError) {
-          console.error('Error fetching workspaces:', workspacesError);
+          console.error('AppSidebar: Error fetching workspaces:', workspacesError);
           setLoading(false);
           return;
         }
 
-        console.log('Workspaces fetched:', workspacesData);
+        console.log('AppSidebar: Workspaces fetched:', workspacesData?.length || 0, 'workspaces');
 
         // Structure the data
-        const structuredCompanies: CompanyData[] = companiesData.map(company => ({
-          id: company.id,
-          name: company.name,
-          description: company.description,
-          role: "Super Admin", // For now, all roles are Super Admin since user is super admin
-          divisions: divisionsData
+        const structuredCompanies: CompanyData[] = (companiesData || []).map(company => {
+          const companyDivisions = (divisionsData || [])
             .filter(division => division.company_id === company.id)
             .map(division => ({
               id: division.id,
@@ -276,7 +279,7 @@ export function AppSidebar() {
               role: division.tally_enabled ? "Tally Admin" : "Division Admin",
               company_id: company.id,
               tally_enabled: division.tally_enabled || false,
-              workspaces: workspacesData
+              workspaces: (workspacesData || [])
                 .filter(workspace => workspace.division_id === division.id)
                 .map(workspace => ({
                   id: workspace.id,
@@ -285,14 +288,23 @@ export function AppSidebar() {
                   role: "Workspace Admin",
                   is_default: workspace.is_default || false
                 }))
-            }))
-        }));
+            }));
+          
+          return {
+            id: company.id,
+            name: company.name,
+            description: company.description,
+            role: "Super Admin", // For now, all roles are Super Admin since user is super admin
+            divisions: companyDivisions
+          };
+        });
 
-        console.log('Structured companies:', structuredCompanies);
+        console.log('AppSidebar: Structured companies:', structuredCompanies.length, 'companies with hierarchy');
+        console.log('AppSidebar: Full structured data:', JSON.stringify(structuredCompanies, null, 2));
         setCompanies(structuredCompanies);
+        setLoading(false);
       } catch (error) {
-        console.error('Error fetching organization data:', error);
-      } finally {
+        console.error('AppSidebar: Error fetching organization data:', error);
         setLoading(false);
       }
     };
@@ -339,12 +351,20 @@ export function AppSidebar() {
               Organization Hierarchy
             </div>
             {loading ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
+              <div className="px-3 py-2 text-sm text-muted-foreground">Loading organization data...</div>
+            ) : companies.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                No organizations found
+                {user ? '' : ' (Please log in)'}
+              </div>
             ) : (
               <SidebarMenu className="list-none">
-                {companies.map((company) => (
-                  <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
-                ))}
+                {companies.map((company) => {
+                  console.log('AppSidebar: Rendering company:', company.name, 'with', company.divisions.length, 'divisions');
+                  return (
+                    <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
+                  );
+                })}
               </SidebarMenu>
             )}
           </div>
