@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import TallyHierarchy from "@/components/tally/TallyHierarchy";
 import { UserProfile } from "./UserProfile";
 import { supabase } from "@/integrations/supabase/client";
+import { ErrorBoundary } from "@/components/auth/ErrorBoundary";
 
 interface CompanyData {
   id: string;
@@ -202,6 +203,34 @@ const WorkspaceModules = ({ workspaceId }: { workspaceId?: string }) => {
 };
 
 export function AppSidebar() {
+  return (
+    <ErrorBoundary fallback={<SidebarSkeleton />}>
+      <AppSidebarContent />
+    </ErrorBoundary>
+  );
+}
+
+function SidebarSkeleton() {
+  return (
+    <div className="w-80 border-r border-border bg-sidebar flex-shrink-0 h-full">
+      <div className="gradient-subtle h-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-muted rounded animate-pulse" />
+            <div className="w-24 h-4 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="w-full h-6 bg-muted rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppSidebarContent() {
   const { state } = useSidebar();
   const location = useLocation();
   const isCollapsed = state === "collapsed";
@@ -215,7 +244,7 @@ export function AppSidebar() {
 
   useEffect(() => {
     const fetchOrganizationData = async () => {
-      console.log('AppSidebar: Starting to fetch organization data, user:', user?.id);
+      console.log('AppSidebarContent: user =', user?.id);
       
       if (!user) {
         console.log('AppSidebar: No user found, setting loading to false');
