@@ -65,10 +65,21 @@ import { LoadingErrorState } from "@/components/common/LoadingErrorState";
 const groupFormSchema = z.object({
   name: z.string().min(1, "Group name is required"),
   parent: z.string().optional(),
-  primary_group: z.string().min(1, "Primary group is required"),
+  is_primary_group: z.boolean().default(false),
+  primary_group: z.string().optional(),
   is_revenue: z.boolean().optional(),
   is_deemedpositive: z.boolean().optional(),
   affects_gross_profit: z.boolean().optional(),
+}).refine((data) => {
+  // If it's a primary group, primary_group field should be optional
+  // If it's not a primary group, parent should be provided
+  if (!data.is_primary_group && !data.parent) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Non-primary groups must have a parent group selected",
+  path: ["parent"]
 });
 
 type GroupFormData = z.infer<typeof groupFormSchema>;
@@ -107,12 +118,16 @@ export default function GroupsPage() {
     defaultValues: {
       name: "",
       parent: "",
+      is_primary_group: false,
       primary_group: "",
       is_revenue: false,
       is_deemedpositive: true,
       affects_gross_profit: false,
     },
   });
+
+  // Watch is_primary_group to conditionally show/hide parent field
+  const isPrimaryGroup = form.watch("is_primary_group");
 
   // Add circuit breaker state
   const [fetchAttempts, setFetchAttempts] = useState(0);
@@ -237,9 +252,9 @@ export default function GroupsPage() {
         .from('mst_group')
         .insert({
           name: data.name,
-          parent: data.parent || '',
-          _parent: data.parent || '',
-          primary_group: data.primary_group,
+          parent: data.is_primary_group ? '' : (data.parent || ''),
+          _parent: data.is_primary_group ? '' : (data.parent || ''),
+          primary_group: data.primary_group || '',
           is_revenue: data.is_revenue ? 1 : 0,
           is_deemedpositive: data.is_deemedpositive ? 1 : 0,
           affects_gross_profit: data.affects_gross_profit ? 1 : 0,
@@ -273,9 +288,9 @@ export default function GroupsPage() {
         .from('mst_group')
         .update({
           name: data.name,
-          parent: data.parent || '',
-          _parent: data.parent || '',
-          primary_group: data.primary_group,
+          parent: data.is_primary_group ? '' : (data.parent || ''),
+          _parent: data.is_primary_group ? '' : (data.parent || ''),
+          primary_group: data.primary_group || '',
           is_revenue: data.is_revenue ? 1 : 0,
           is_deemedpositive: data.is_deemedpositive ? 1 : 0,
           affects_gross_profit: data.affects_gross_profit ? 1 : 0,
@@ -331,6 +346,7 @@ export default function GroupsPage() {
     form.reset({
       name: group.name,
       parent: group.parent,
+      is_primary_group: !group.parent || group.parent === '',
       primary_group: group.primary_group,
       is_revenue: !!group.is_revenue,
       is_deemedpositive: !!group.is_deemedpositive,
@@ -513,38 +529,52 @@ export default function GroupsPage() {
                   />
                   <FormField
                     control={form.control}
-                    name="parent"
+                    name="is_primary_group"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Parent Group</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select parent group (optional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {groups.map((group) => (
-                              <SelectItem key={group.guid} value={group.name}>
-                                {group.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                        <FormLabel>Primary Group *</FormLabel>
                       </FormItem>
                     )}
                   />
+                  {!isPrimaryGroup && (
+                    <FormField
+                      control={form.control}
+                      name="parent"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Parent Group *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select parent group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {groups.filter(g => !g.parent || g.parent === '').map((group) => (
+                                <SelectItem key={group.guid} value={group.name}>
+                                  {group.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                   <FormField
                     control={form.control}
                     name="primary_group"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Group *</FormLabel>
+                        <FormLabel>Primary Group Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select primary group" />
+                              <SelectValue placeholder="Select primary group category (optional)" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -767,40 +797,54 @@ export default function GroupsPage() {
               />
               <FormField
                 control={form.control}
-                name="parent"
+                name="is_primary_group"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parent Group</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select parent group (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {groups
-                          .filter(g => g.name !== selectedGroup?.name) // Prevent self-reference
-                          .map((group) => (
-                            <SelectItem key={group.guid} value={group.name}>
-                              {group.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel>Primary Group *</FormLabel>
                   </FormItem>
                 )}
               />
+              {!isPrimaryGroup && (
+                <FormField
+                  control={form.control}
+                  name="parent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parent Group *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select parent group" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {groups
+                            .filter(g => g.name !== selectedGroup?.name && (!g.parent || g.parent === '')) // Only show primary groups and prevent self-reference
+                            .map((group) => (
+                              <SelectItem key={group.guid} value={group.name}>
+                                {group.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="primary_group"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Primary Group *</FormLabel>
+                    <FormLabel>Primary Group Category</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select primary group" />
+                          <SelectValue placeholder="Select primary group category (optional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
