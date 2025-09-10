@@ -193,6 +193,7 @@ function AppSidebarContent({}: AppSidebarContentProps) {
     console.log('[AppSidebar] fetchData called, user ID:', user?.id);
     if (!user?.id) {
       console.log('[AppSidebar] No user ID, returning early');
+      setLoading(false);
       return;
     }
 
@@ -206,7 +207,8 @@ function AppSidebarContent({}: AppSidebarContentProps) {
       setCompanies(organizationData);
     } catch (err) {
       console.error('[AppSidebar] Error fetching sidebar data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load sidebar data');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load sidebar data';
+      setError(errorMessage);
     } finally {
       console.log('[AppSidebar] Setting loading to false');
       setLoading(false);

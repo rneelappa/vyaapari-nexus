@@ -1,5 +1,34 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Circuit breaker for preventing infinite retries
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailureTime = 0;
+  private readonly threshold = 3;
+  private readonly timeout = 30000; // 30 seconds
+
+  canExecute(): boolean {
+    if (this.failures >= this.threshold) {
+      const timeSinceLastFailure = Date.now() - this.lastFailureTime;
+      if (timeSinceLastFailure < this.timeout) {
+        return false;
+      }
+      // Reset after timeout
+      this.failures = 0;
+    }
+    return true;
+  }
+
+  onSuccess(): void {
+    this.failures = 0;
+  }
+
+  onFailure(): void {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+  }
+}
+
 // Types for sidebar data
 export interface CompanyData {
   id: string;
@@ -31,6 +60,7 @@ export interface WorkspaceData {
 class SidebarDataService {
   private cache = new Map<string, { data: any; timestamp: number }>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private circuitBreaker = new CircuitBreaker();
 
   private getFromCache<T>(key: string): T | null {
     const entry = this.cache.get(key);
@@ -50,6 +80,19 @@ class SidebarDataService {
 
   async fetchOrganizationData(userId: string): Promise<CompanyData[]> {
     console.log('[SidebarDataService] fetchOrganizationData called for userId:', userId);
+    
+    // Check if user is authenticated
+    if (!userId) {
+      console.error('[SidebarDataService] No userId provided, cannot fetch data');
+      throw new Error('User not authenticated');
+    }
+
+    // Check circuit breaker
+    if (!this.circuitBreaker.canExecute()) {
+      console.error('[SidebarDataService] Circuit breaker is open, preventing request');
+      throw new Error('Service temporarily unavailable due to repeated failures');
+    }
+
     const cacheKey = `organization_${userId}`;
     const cached = this.getFromCache<CompanyData[]>(cacheKey);
     if (cached) {
@@ -117,15 +160,31 @@ class SidebarDataService {
       console.log('[SidebarDataService] Structured result:', result.length, 'companies');
       this.setCache(cacheKey, result);
       console.log('[SidebarDataService] Successfully cached organization data');
+      this.circuitBreaker.onSuccess();
       return result;
     } catch (error) {
       console.error('[SidebarDataService] Error in fetchOrganizationData:', error);
-      return [];
+      this.circuitBreaker.onFailure();
+      throw error;
     }
   }
 
   async fetchTallyHierarchy(): Promise<CompanyData[]> {
     console.log('[SidebarDataService] fetchTallyHierarchy called');
+    
+    // Check authentication status
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('[SidebarDataService] User not authenticated for Tally data');
+      throw new Error('User not authenticated');
+    }
+
+    // Check circuit breaker
+    if (!this.circuitBreaker.canExecute()) {
+      console.error('[SidebarDataService] Circuit breaker is open for Tally data');
+      throw new Error('Tally service temporarily unavailable');
+    }
+
     const cacheKey = 'tally_hierarchy';
     const cached = this.getFromCache<CompanyData[]>(cacheKey);
     if (cached) {
@@ -173,10 +232,12 @@ class SidebarDataService {
         }));
 
       this.setCache(cacheKey, result);
+      this.circuitBreaker.onSuccess();
       return result;
     } catch (error) {
       console.error('Error in fetchTallyHierarchy:', error);
-      return [];
+      this.circuitBreaker.onFailure();
+      throw error;
     }
   }
 

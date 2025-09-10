@@ -4,6 +4,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
 import { sidebarDataService, type CompanyData } from "@/services/sidebar-data-service";
 import { LoadingErrorState } from "@/components/common/LoadingErrorState";
+import { useAuth } from "@/hooks/useAuth";
 
 // Tally menu structure with icons
 const tallyMenuStructure = {
@@ -270,13 +271,29 @@ function TallyMenuSection({ section, level }: TallyMenuSectionProps) {
 
 export function TallyHierarchyRebuilt() {
   console.log('[TallyHierarchy] TallyHierarchyRebuilt rendering');
+  const { user, loading: authLoading } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedCompanies, setExpandedCompanies] = useState<Set<string>>(new Set());
 
   const fetchTallyData = useCallback(async () => {
-    console.log('[TallyHierarchy] fetchTallyData called');
+    console.log('[TallyHierarchy] fetchTallyData called, user:', user?.id, 'authLoading:', authLoading);
+    
+    // Wait for authentication to complete
+    if (authLoading) {
+      console.log('[TallyHierarchy] Still loading auth, waiting...');
+      return;
+    }
+
+    // Check if user is authenticated
+    if (!user?.id) {
+      console.log('[TallyHierarchy] No authenticated user, skipping data fetch');
+      setLoading(false);
+      setError('Please log in to view Tally data');
+      return;
+    }
+
     try {
       console.log('[TallyHierarchy] Setting loading to true, calling service');
       setLoading(true);
@@ -287,12 +304,13 @@ export function TallyHierarchyRebuilt() {
       setCompanies(tallyData);
     } catch (err) {
       console.error('[TallyHierarchy] Error fetching Tally hierarchy:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load Tally data');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load Tally data';
+      setError(errorMessage);
     } finally {
       console.log('[TallyHierarchy] Setting loading to false');
       setLoading(false);
     }
-  }, []);
+  }, [user?.id, authLoading]);
 
   useEffect(() => {
     console.log('[TallyHierarchy] useEffect triggered, calling fetchTallyData');
