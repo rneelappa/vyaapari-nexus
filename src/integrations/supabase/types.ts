@@ -47,6 +47,21 @@ export type Database = {
         }
         Relationships: []
       }
+      config: {
+        Row: {
+          name: string
+          value: string | null
+        }
+        Insert: {
+          name: string
+          value?: string | null
+        }
+        Update: {
+          name?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       divisions: {
         Row: {
           budget: number | null
@@ -62,10 +77,6 @@ export type Database = {
           parent_division_id: string | null
           performance_score: number | null
           status: string | null
-          tally_company_id: string | null
-          tally_enabled: boolean
-          tally_last_sync: string | null
-          tally_url: string | null
           updated_at: string
         }
         Insert: {
@@ -82,10 +93,6 @@ export type Database = {
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
-          tally_company_id?: string | null
-          tally_enabled?: boolean
-          tally_last_sync?: string | null
-          tally_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -102,10 +109,6 @@ export type Database = {
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
-          tally_company_id?: string | null
-          tally_enabled?: boolean
-          tally_last_sync?: string | null
-          tally_url?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -216,6 +219,1097 @@ export type Database = {
           },
         ]
       }
+      mst_attendance_type: {
+        Row: {
+          _parent: string
+          _uom: string
+          attendance_period: string
+          attendance_type: string
+          company_id: string
+          division_id: string
+          guid: string
+          name: string
+          parent: string
+          uom: string
+        }
+        Insert: {
+          _parent?: string
+          _uom?: string
+          attendance_period?: string
+          attendance_type?: string
+          company_id: string
+          division_id: string
+          guid: string
+          name?: string
+          parent?: string
+          uom?: string
+        }
+        Update: {
+          _parent?: string
+          _uom?: string
+          attendance_period?: string
+          attendance_type?: string
+          company_id?: string
+          division_id?: string
+          guid?: string
+          name?: string
+          parent?: string
+          uom?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_attendance_type_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_attendance_type_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_company: {
+        Row: {
+          company_id: string
+          company_name: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          company_name: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          company_name?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      mst_cost_category: {
+        Row: {
+          allocate_non_revenue: number | null
+          allocate_revenue: number | null
+          company_id: string
+          division_id: string
+          guid: string
+          name: string
+        }
+        Insert: {
+          allocate_non_revenue?: number | null
+          allocate_revenue?: number | null
+          company_id: string
+          division_id: string
+          guid: string
+          name?: string
+        }
+        Update: {
+          allocate_non_revenue?: number | null
+          allocate_revenue?: number | null
+          company_id?: string
+          division_id?: string
+          guid?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_cost_category_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_cost_category_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_cost_centre: {
+        Row: {
+          _parent: string
+          category: string
+          company_id: string
+          division_id: string
+          guid: string
+          name: string
+          parent: string
+        }
+        Insert: {
+          _parent?: string
+          category?: string
+          company_id: string
+          division_id: string
+          guid: string
+          name?: string
+          parent?: string
+        }
+        Update: {
+          _parent?: string
+          category?: string
+          company_id?: string
+          division_id?: string
+          guid?: string
+          name?: string
+          parent?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_cost_centre_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_cost_centre_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_division: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          division_id: string
+          division_name: string
+          tally_url: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          division_id: string
+          division_name: string
+          tally_url: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          division_id?: string
+          division_name?: string
+          tally_url?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_division_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      mst_employee: {
+        Row: {
+          _parent: string
+          aadhar: string
+          address: string
+          blood_group: string
+          company_id: string
+          date_of_birth: string | null
+          date_of_joining: string | null
+          date_of_release: string | null
+          designation: string
+          division_id: string
+          email: string
+          father_mother_name: string
+          function_role: string
+          gender: string
+          guid: string
+          id_number: string
+          location: string
+          mobile: string
+          name: string
+          pan: string
+          parent: string
+          pf_joining_date: string | null
+          pf_number: string
+          pf_relieving_date: string | null
+          pr_account_number: string
+          spouse_name: string
+          uan: string
+        }
+        Insert: {
+          _parent?: string
+          aadhar?: string
+          address?: string
+          blood_group?: string
+          company_id: string
+          date_of_birth?: string | null
+          date_of_joining?: string | null
+          date_of_release?: string | null
+          designation?: string
+          division_id: string
+          email?: string
+          father_mother_name?: string
+          function_role?: string
+          gender?: string
+          guid: string
+          id_number?: string
+          location?: string
+          mobile?: string
+          name?: string
+          pan?: string
+          parent?: string
+          pf_joining_date?: string | null
+          pf_number?: string
+          pf_relieving_date?: string | null
+          pr_account_number?: string
+          spouse_name?: string
+          uan?: string
+        }
+        Update: {
+          _parent?: string
+          aadhar?: string
+          address?: string
+          blood_group?: string
+          company_id?: string
+          date_of_birth?: string | null
+          date_of_joining?: string | null
+          date_of_release?: string | null
+          designation?: string
+          division_id?: string
+          email?: string
+          father_mother_name?: string
+          function_role?: string
+          gender?: string
+          guid?: string
+          id_number?: string
+          location?: string
+          mobile?: string
+          name?: string
+          pan?: string
+          parent?: string
+          pf_joining_date?: string | null
+          pf_number?: string
+          pf_relieving_date?: string | null
+          pr_account_number?: string
+          spouse_name?: string
+          uan?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_employee_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_employee_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_godown: {
+        Row: {
+          _parent: string
+          address: string
+          company_id: string
+          division_id: string
+          guid: string
+          name: string
+          parent: string
+        }
+        Insert: {
+          _parent?: string
+          address?: string
+          company_id: string
+          division_id: string
+          guid: string
+          name?: string
+          parent?: string
+        }
+        Update: {
+          _parent?: string
+          address?: string
+          company_id?: string
+          division_id?: string
+          guid?: string
+          name?: string
+          parent?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_godown_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_godown_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_group: {
+        Row: {
+          _parent: string
+          affects_gross_profit: number | null
+          company_id: string
+          division_id: string
+          guid: string
+          is_deemedpositive: number | null
+          is_reserved: number | null
+          is_revenue: number | null
+          name: string
+          parent: string
+          primary_group: string
+          sort_position: number | null
+        }
+        Insert: {
+          _parent?: string
+          affects_gross_profit?: number | null
+          company_id: string
+          division_id: string
+          guid: string
+          is_deemedpositive?: number | null
+          is_reserved?: number | null
+          is_revenue?: number | null
+          name?: string
+          parent?: string
+          primary_group?: string
+          sort_position?: number | null
+        }
+        Update: {
+          _parent?: string
+          affects_gross_profit?: number | null
+          company_id?: string
+          division_id?: string
+          guid?: string
+          is_deemedpositive?: number | null
+          is_reserved?: number | null
+          is_revenue?: number | null
+          name?: string
+          parent?: string
+          primary_group?: string
+          sort_position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_group_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_group_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_gst_effective_rate: {
+        Row: {
+          _item: string
+          applicable_from: string | null
+          company_id: string
+          division_id: string
+          hsn_code: string
+          hsn_description: string
+          is_rcm_applicable: number | null
+          item: string
+          nature_of_goods: string
+          nature_of_transaction: string
+          rate: number | null
+          supply_type: string
+          taxability: string
+        }
+        Insert: {
+          _item?: string
+          applicable_from?: string | null
+          company_id: string
+          division_id: string
+          hsn_code?: string
+          hsn_description?: string
+          is_rcm_applicable?: number | null
+          item?: string
+          nature_of_goods?: string
+          nature_of_transaction?: string
+          rate?: number | null
+          supply_type?: string
+          taxability?: string
+        }
+        Update: {
+          _item?: string
+          applicable_from?: string | null
+          company_id?: string
+          division_id?: string
+          hsn_code?: string
+          hsn_description?: string
+          is_rcm_applicable?: number | null
+          item?: string
+          nature_of_goods?: string
+          nature_of_transaction?: string
+          rate?: number | null
+          supply_type?: string
+          taxability?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_gst_effective_rate_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_gst_effective_rate_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_ledger: {
+        Row: {
+          _parent: string
+          alias: string
+          bank_account_holder: string
+          bank_account_number: string
+          bank_branch: string
+          bank_ifsc: string
+          bank_name: string
+          bank_swift: string
+          bill_credit_period: number
+          closing_balance: number | null
+          company_id: string
+          description: string
+          division_id: string
+          email: string
+          gst_duty_head: string
+          gst_registration_type: string
+          gst_supply_type: string
+          gstn: string
+          guid: string
+          is_deemedpositive: number | null
+          is_revenue: number | null
+          it_pan: string
+          mailing_address: string
+          mailing_country: string
+          mailing_name: string
+          mailing_pincode: string
+          mailing_state: string
+          name: string
+          notes: string
+          opening_balance: number | null
+          parent: string
+          tax_rate: number | null
+        }
+        Insert: {
+          _parent?: string
+          alias?: string
+          bank_account_holder?: string
+          bank_account_number?: string
+          bank_branch?: string
+          bank_ifsc?: string
+          bank_name?: string
+          bank_swift?: string
+          bill_credit_period?: number
+          closing_balance?: number | null
+          company_id: string
+          description?: string
+          division_id: string
+          email?: string
+          gst_duty_head?: string
+          gst_registration_type?: string
+          gst_supply_type?: string
+          gstn?: string
+          guid: string
+          is_deemedpositive?: number | null
+          is_revenue?: number | null
+          it_pan?: string
+          mailing_address?: string
+          mailing_country?: string
+          mailing_name?: string
+          mailing_pincode?: string
+          mailing_state?: string
+          name?: string
+          notes?: string
+          opening_balance?: number | null
+          parent?: string
+          tax_rate?: number | null
+        }
+        Update: {
+          _parent?: string
+          alias?: string
+          bank_account_holder?: string
+          bank_account_number?: string
+          bank_branch?: string
+          bank_ifsc?: string
+          bank_name?: string
+          bank_swift?: string
+          bill_credit_period?: number
+          closing_balance?: number | null
+          company_id?: string
+          description?: string
+          division_id?: string
+          email?: string
+          gst_duty_head?: string
+          gst_registration_type?: string
+          gst_supply_type?: string
+          gstn?: string
+          guid?: string
+          is_deemedpositive?: number | null
+          is_revenue?: number | null
+          it_pan?: string
+          mailing_address?: string
+          mailing_country?: string
+          mailing_name?: string
+          mailing_pincode?: string
+          mailing_state?: string
+          name?: string
+          notes?: string
+          opening_balance?: number | null
+          parent?: string
+          tax_rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_ledger_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_ledger_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_opening_batch_allocation: {
+        Row: {
+          _godown: string
+          _item: string
+          company_id: string
+          division_id: string
+          godown: string
+          item: string
+          manufactured_on: string | null
+          name: string
+          opening_balance: number | null
+          opening_rate: number | null
+          opening_value: number | null
+        }
+        Insert: {
+          _godown?: string
+          _item?: string
+          company_id: string
+          division_id: string
+          godown?: string
+          item?: string
+          manufactured_on?: string | null
+          name?: string
+          opening_balance?: number | null
+          opening_rate?: number | null
+          opening_value?: number | null
+        }
+        Update: {
+          _godown?: string
+          _item?: string
+          company_id?: string
+          division_id?: string
+          godown?: string
+          item?: string
+          manufactured_on?: string | null
+          name?: string
+          opening_balance?: number | null
+          opening_rate?: number | null
+          opening_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_opening_batch_allocation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_opening_batch_allocation_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_opening_bill_allocation: {
+        Row: {
+          _ledger: string
+          bill_credit_period: number
+          bill_date: string | null
+          company_id: string
+          division_id: string
+          is_advance: number | null
+          ledger: string
+          name: string
+          opening_balance: number | null
+        }
+        Insert: {
+          _ledger?: string
+          bill_credit_period?: number
+          bill_date?: string | null
+          company_id: string
+          division_id: string
+          is_advance?: number | null
+          ledger?: string
+          name?: string
+          opening_balance?: number | null
+        }
+        Update: {
+          _ledger?: string
+          bill_credit_period?: number
+          bill_date?: string | null
+          company_id?: string
+          division_id?: string
+          is_advance?: number | null
+          ledger?: string
+          name?: string
+          opening_balance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_opening_bill_allocation_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_opening_bill_allocation_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_payhead: {
+        Row: {
+          _parent: string
+          calculation_period: string
+          calculation_type: string
+          company_id: string
+          division_id: string
+          guid: string
+          income_type: string
+          leave_type: string
+          name: string
+          parent: string
+          pay_type: string
+          payslip_name: string
+        }
+        Insert: {
+          _parent?: string
+          calculation_period?: string
+          calculation_type?: string
+          company_id: string
+          division_id: string
+          guid: string
+          income_type?: string
+          leave_type?: string
+          name?: string
+          parent?: string
+          pay_type?: string
+          payslip_name?: string
+        }
+        Update: {
+          _parent?: string
+          calculation_period?: string
+          calculation_type?: string
+          company_id?: string
+          division_id?: string
+          guid?: string
+          income_type?: string
+          leave_type?: string
+          name?: string
+          parent?: string
+          pay_type?: string
+          payslip_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_payhead_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_payhead_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_stock_group: {
+        Row: {
+          _parent: string
+          company_id: string
+          division_id: string
+          guid: string
+          name: string
+          parent: string
+        }
+        Insert: {
+          _parent?: string
+          company_id: string
+          division_id: string
+          guid: string
+          name?: string
+          parent?: string
+        }
+        Update: {
+          _parent?: string
+          company_id?: string
+          division_id?: string
+          guid?: string
+          name?: string
+          parent?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_stock_group_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_stock_group_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_stock_item: {
+        Row: {
+          _alternate_uom: string
+          _parent: string
+          _uom: string
+          alias: string
+          alternate_uom: string
+          closing_balance: number | null
+          closing_rate: number | null
+          closing_value: number | null
+          company_id: string
+          conversion: number
+          costing_method: string
+          description: string
+          division_id: string
+          gst_hsn_code: string | null
+          gst_hsn_description: string | null
+          gst_rate: number | null
+          gst_taxability: string | null
+          gst_type_of_supply: string | null
+          guid: string
+          name: string
+          notes: string
+          opening_balance: number | null
+          opening_rate: number | null
+          opening_value: number | null
+          parent: string
+          part_number: string
+          uom: string
+        }
+        Insert: {
+          _alternate_uom?: string
+          _parent?: string
+          _uom?: string
+          alias?: string
+          alternate_uom?: string
+          closing_balance?: number | null
+          closing_rate?: number | null
+          closing_value?: number | null
+          company_id: string
+          conversion?: number
+          costing_method?: string
+          description?: string
+          division_id: string
+          gst_hsn_code?: string | null
+          gst_hsn_description?: string | null
+          gst_rate?: number | null
+          gst_taxability?: string | null
+          gst_type_of_supply?: string | null
+          guid: string
+          name?: string
+          notes?: string
+          opening_balance?: number | null
+          opening_rate?: number | null
+          opening_value?: number | null
+          parent?: string
+          part_number?: string
+          uom?: string
+        }
+        Update: {
+          _alternate_uom?: string
+          _parent?: string
+          _uom?: string
+          alias?: string
+          alternate_uom?: string
+          closing_balance?: number | null
+          closing_rate?: number | null
+          closing_value?: number | null
+          company_id?: string
+          conversion?: number
+          costing_method?: string
+          description?: string
+          division_id?: string
+          gst_hsn_code?: string | null
+          gst_hsn_description?: string | null
+          gst_rate?: number | null
+          gst_taxability?: string | null
+          gst_type_of_supply?: string | null
+          guid?: string
+          name?: string
+          notes?: string
+          opening_balance?: number | null
+          opening_rate?: number | null
+          opening_value?: number | null
+          parent?: string
+          part_number?: string
+          uom?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_stock_item_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_stock_item_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_stockitem_standard_cost: {
+        Row: {
+          _item: string
+          company_id: string
+          date: string | null
+          division_id: string
+          item: string
+          rate: number | null
+        }
+        Insert: {
+          _item?: string
+          company_id: string
+          date?: string | null
+          division_id: string
+          item?: string
+          rate?: number | null
+        }
+        Update: {
+          _item?: string
+          company_id?: string
+          date?: string | null
+          division_id?: string
+          item?: string
+          rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_stockitem_standard_cost_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_stockitem_standard_cost_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_stockitem_standard_price: {
+        Row: {
+          _item: string
+          company_id: string
+          date: string | null
+          division_id: string
+          item: string
+          rate: number | null
+        }
+        Insert: {
+          _item?: string
+          company_id: string
+          date?: string | null
+          division_id: string
+          item?: string
+          rate?: number | null
+        }
+        Update: {
+          _item?: string
+          company_id?: string
+          date?: string | null
+          division_id?: string
+          item?: string
+          rate?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_stockitem_standard_price_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_stockitem_standard_price_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_uom: {
+        Row: {
+          additional_units: string
+          base_units: string
+          company_id: string
+          conversion: number
+          division_id: string
+          formalname: string
+          guid: string
+          is_simple_unit: number
+          name: string
+        }
+        Insert: {
+          additional_units: string
+          base_units: string
+          company_id: string
+          conversion: number
+          division_id: string
+          formalname?: string
+          guid: string
+          is_simple_unit: number
+          name?: string
+        }
+        Update: {
+          additional_units?: string
+          base_units?: string
+          company_id?: string
+          conversion?: number
+          division_id?: string
+          formalname?: string
+          guid?: string
+          is_simple_unit?: number
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_uom_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_uom_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      mst_vouchertype: {
+        Row: {
+          _parent: string
+          affects_stock: number | null
+          company_id: string
+          division_id: string
+          guid: string
+          is_deemedpositive: number | null
+          name: string
+          numbering_method: string
+          parent: string
+        }
+        Insert: {
+          _parent?: string
+          affects_stock?: number | null
+          company_id: string
+          division_id: string
+          guid: string
+          is_deemedpositive?: number | null
+          name?: string
+          numbering_method?: string
+          parent?: string
+        }
+        Update: {
+          _parent?: string
+          affects_stock?: number | null
+          company_id?: string
+          division_id?: string
+          guid?: string
+          is_deemedpositive?: number | null
+          name?: string
+          numbering_method?: string
+          parent?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mst_vouchertype_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "mst_vouchertype_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -266,6 +1360,150 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tally_mst_group: {
+        Row: {
+          _parent: string
+          affects_gross_profit: number | null
+          company_id: string
+          created_at: string | null
+          division_id: string
+          guid: string
+          is_deemedpositive: number | null
+          is_reserved: number | null
+          is_revenue: number | null
+          name: string
+          parent: string
+          primary_group: string
+          sort_position: number | null
+        }
+        Insert: {
+          _parent?: string
+          affects_gross_profit?: number | null
+          company_id: string
+          created_at?: string | null
+          division_id: string
+          guid: string
+          is_deemedpositive?: number | null
+          is_reserved?: number | null
+          is_revenue?: number | null
+          name?: string
+          parent?: string
+          primary_group?: string
+          sort_position?: number | null
+        }
+        Update: {
+          _parent?: string
+          affects_gross_profit?: number | null
+          company_id?: string
+          created_at?: string | null
+          division_id?: string
+          guid?: string
+          is_deemedpositive?: number | null
+          is_reserved?: number | null
+          is_revenue?: number | null
+          name?: string
+          parent?: string
+          primary_group?: string
+          sort_position?: number | null
+        }
+        Relationships: []
+      }
+      tally_mst_ledger: {
+        Row: {
+          closing_balance: number | null
+          company_id: string
+          created_at: string | null
+          division_id: string
+          guid: string
+          name: string
+          opening_balance: number | null
+          parent: string
+        }
+        Insert: {
+          closing_balance?: number | null
+          company_id: string
+          created_at?: string | null
+          division_id: string
+          guid: string
+          name: string
+          opening_balance?: number | null
+          parent?: string
+        }
+        Update: {
+          closing_balance?: number | null
+          company_id?: string
+          created_at?: string | null
+          division_id?: string
+          guid?: string
+          name?: string
+          opening_balance?: number | null
+          parent?: string
+        }
+        Relationships: []
+      }
+      tally_mst_stock_item: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          division_id: string
+          guid: string
+          name: string
+          parent: string
+          unit: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          division_id: string
+          guid: string
+          name: string
+          parent?: string
+          unit?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          division_id?: string
+          guid?: string
+          name?: string
+          parent?: string
+          unit?: string | null
+        }
+        Relationships: []
+      }
+      tally_trn_voucher: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          date: string | null
+          division_id: string
+          guid: string
+          narration: string | null
+          voucher_number: string | null
+          voucher_type: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          date?: string | null
+          division_id: string
+          guid: string
+          narration?: string | null
+          voucher_number?: string | null
+          voucher_type?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          date?: string | null
+          division_id?: string
+          guid?: string
+          narration?: string | null
+          voucher_number?: string | null
+          voucher_type?: string | null
+        }
+        Relationships: []
       }
       tasks: {
         Row: {
@@ -320,6 +1558,780 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      trn_accounting: {
+        Row: {
+          _ledger: string
+          amount: number
+          amount_forex: number
+          company_id: string
+          currency: string
+          division_id: string
+          guid: string
+          ledger: string
+        }
+        Insert: {
+          _ledger?: string
+          amount?: number
+          amount_forex?: number
+          company_id: string
+          currency?: string
+          division_id: string
+          guid?: string
+          ledger?: string
+        }
+        Update: {
+          _ledger?: string
+          amount?: number
+          amount_forex?: number
+          company_id?: string
+          currency?: string
+          division_id?: string
+          guid?: string
+          ledger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_accounting_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_accounting_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_attendance: {
+        Row: {
+          _attendancetype_name: string
+          _employee_name: string
+          attendancetype_name: string
+          company_id: string
+          division_id: string
+          employee_name: string
+          guid: string
+          time_value: number
+          type_value: number
+        }
+        Insert: {
+          _attendancetype_name?: string
+          _employee_name?: string
+          attendancetype_name?: string
+          company_id: string
+          division_id: string
+          employee_name?: string
+          guid?: string
+          time_value?: number
+          type_value?: number
+        }
+        Update: {
+          _attendancetype_name?: string
+          _employee_name?: string
+          attendancetype_name?: string
+          company_id?: string
+          division_id?: string
+          employee_name?: string
+          guid?: string
+          time_value?: number
+          type_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_attendance_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_attendance_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_bank: {
+        Row: {
+          _ledger: string
+          amount: number
+          bank_name: string
+          bankers_date: string | null
+          company_id: string
+          division_id: string
+          guid: string
+          instrument_date: string | null
+          instrument_number: string
+          ledger: string
+          transaction_type: string
+        }
+        Insert: {
+          _ledger?: string
+          amount?: number
+          bank_name?: string
+          bankers_date?: string | null
+          company_id: string
+          division_id: string
+          guid?: string
+          instrument_date?: string | null
+          instrument_number?: string
+          ledger?: string
+          transaction_type?: string
+        }
+        Update: {
+          _ledger?: string
+          amount?: number
+          bank_name?: string
+          bankers_date?: string | null
+          company_id?: string
+          division_id?: string
+          guid?: string
+          instrument_date?: string | null
+          instrument_number?: string
+          ledger?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_bank_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_bank_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_batch: {
+        Row: {
+          _destination_godown: string
+          _godown: string
+          _item: string
+          amount: number
+          company_id: string
+          destination_godown: string | null
+          division_id: string
+          godown: string | null
+          guid: string
+          item: string
+          name: string
+          quantity: number
+          tracking_number: string | null
+        }
+        Insert: {
+          _destination_godown?: string
+          _godown?: string
+          _item?: string
+          amount?: number
+          company_id: string
+          destination_godown?: string | null
+          division_id: string
+          godown?: string | null
+          guid?: string
+          item?: string
+          name?: string
+          quantity?: number
+          tracking_number?: string | null
+        }
+        Update: {
+          _destination_godown?: string
+          _godown?: string
+          _item?: string
+          amount?: number
+          company_id?: string
+          destination_godown?: string | null
+          division_id?: string
+          godown?: string | null
+          guid?: string
+          item?: string
+          name?: string
+          quantity?: number
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_batch_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_batch_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_bill: {
+        Row: {
+          _ledger: string
+          amount: number
+          bill_credit_period: number
+          billtype: string
+          company_id: string
+          division_id: string
+          guid: string
+          ledger: string
+          name: string
+        }
+        Insert: {
+          _ledger?: string
+          amount?: number
+          bill_credit_period?: number
+          billtype?: string
+          company_id: string
+          division_id: string
+          guid?: string
+          ledger?: string
+          name?: string
+        }
+        Update: {
+          _ledger?: string
+          amount?: number
+          bill_credit_period?: number
+          billtype?: string
+          company_id?: string
+          division_id?: string
+          guid?: string
+          ledger?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_bill_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_bill_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_closingstock_ledger: {
+        Row: {
+          _ledger: string
+          company_id: string
+          division_id: string
+          ledger: string
+          stock_date: string | null
+          stock_value: number
+        }
+        Insert: {
+          _ledger?: string
+          company_id: string
+          division_id: string
+          ledger?: string
+          stock_date?: string | null
+          stock_value?: number
+        }
+        Update: {
+          _ledger?: string
+          company_id?: string
+          division_id?: string
+          ledger?: string
+          stock_date?: string | null
+          stock_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_closingstock_ledger_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_closingstock_ledger_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_cost_category_centre: {
+        Row: {
+          _costcategory: string
+          _costcentre: string
+          _ledger: string
+          amount: number
+          company_id: string
+          costcategory: string
+          costcentre: string
+          division_id: string
+          guid: string
+          ledger: string
+        }
+        Insert: {
+          _costcategory?: string
+          _costcentre?: string
+          _ledger?: string
+          amount?: number
+          company_id: string
+          costcategory?: string
+          costcentre?: string
+          division_id: string
+          guid?: string
+          ledger?: string
+        }
+        Update: {
+          _costcategory?: string
+          _costcentre?: string
+          _ledger?: string
+          amount?: number
+          company_id?: string
+          costcategory?: string
+          costcentre?: string
+          division_id?: string
+          guid?: string
+          ledger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_cost_category_centre_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_cost_category_centre_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_cost_centre: {
+        Row: {
+          _costcentre: string
+          _ledger: string
+          amount: number
+          company_id: string
+          costcentre: string
+          division_id: string
+          guid: string
+          ledger: string
+        }
+        Insert: {
+          _costcentre?: string
+          _ledger?: string
+          amount?: number
+          company_id: string
+          costcentre?: string
+          division_id: string
+          guid?: string
+          ledger?: string
+        }
+        Update: {
+          _costcentre?: string
+          _ledger?: string
+          amount?: number
+          company_id?: string
+          costcentre?: string
+          division_id?: string
+          guid?: string
+          ledger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_cost_centre_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_cost_centre_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_cost_inventory_category_centre: {
+        Row: {
+          _costcategory: string
+          _costcentre: string
+          _item: string
+          _ledger: string
+          amount: number
+          company_id: string
+          costcategory: string
+          costcentre: string
+          division_id: string
+          guid: string
+          item: string
+          ledger: string
+        }
+        Insert: {
+          _costcategory?: string
+          _costcentre?: string
+          _item?: string
+          _ledger?: string
+          amount?: number
+          company_id: string
+          costcategory?: string
+          costcentre?: string
+          division_id: string
+          guid?: string
+          item?: string
+          ledger?: string
+        }
+        Update: {
+          _costcategory?: string
+          _costcentre?: string
+          _item?: string
+          _ledger?: string
+          amount?: number
+          company_id?: string
+          costcategory?: string
+          costcentre?: string
+          division_id?: string
+          guid?: string
+          item?: string
+          ledger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_cost_inventory_category_centre_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_cost_inventory_category_centre_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_employee: {
+        Row: {
+          _category: string
+          _employee_name: string
+          amount: number
+          category: string
+          company_id: string
+          division_id: string
+          employee_name: string
+          employee_sort_order: number
+          guid: string
+        }
+        Insert: {
+          _category?: string
+          _employee_name?: string
+          amount?: number
+          category?: string
+          company_id: string
+          division_id: string
+          employee_name?: string
+          employee_sort_order?: number
+          guid?: string
+        }
+        Update: {
+          _category?: string
+          _employee_name?: string
+          amount?: number
+          category?: string
+          company_id?: string
+          division_id?: string
+          employee_name?: string
+          employee_sort_order?: number
+          guid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_employee_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_employee_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_inventory: {
+        Row: {
+          _godown: string
+          _item: string
+          additional_amount: number
+          amount: number
+          company_id: string
+          discount_amount: number
+          division_id: string
+          godown: string | null
+          guid: string
+          item: string
+          order_duedate: string | null
+          order_number: string | null
+          quantity: number
+          rate: number
+          tracking_number: string | null
+        }
+        Insert: {
+          _godown?: string
+          _item?: string
+          additional_amount?: number
+          amount?: number
+          company_id: string
+          discount_amount?: number
+          division_id: string
+          godown?: string | null
+          guid?: string
+          item?: string
+          order_duedate?: string | null
+          order_number?: string | null
+          quantity?: number
+          rate?: number
+          tracking_number?: string | null
+        }
+        Update: {
+          _godown?: string
+          _item?: string
+          additional_amount?: number
+          amount?: number
+          company_id?: string
+          discount_amount?: number
+          division_id?: string
+          godown?: string | null
+          guid?: string
+          item?: string
+          order_duedate?: string | null
+          order_number?: string | null
+          quantity?: number
+          rate?: number
+          tracking_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_inventory_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_inventory_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_inventory_accounting: {
+        Row: {
+          _ledger: string
+          additional_allocation_type: string
+          amount: number
+          company_id: string
+          division_id: string
+          guid: string
+          ledger: string
+        }
+        Insert: {
+          _ledger?: string
+          additional_allocation_type?: string
+          amount?: number
+          company_id: string
+          division_id: string
+          guid?: string
+          ledger?: string
+        }
+        Update: {
+          _ledger?: string
+          additional_allocation_type?: string
+          amount?: number
+          company_id?: string
+          division_id?: string
+          guid?: string
+          ledger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_inventory_accounting_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_inventory_accounting_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_payhead: {
+        Row: {
+          _category: string
+          _employee_name: string
+          _payhead_name: string
+          amount: number
+          category: string
+          company_id: string
+          division_id: string
+          employee_name: string
+          employee_sort_order: number
+          guid: string
+          payhead_name: string
+          payhead_sort_order: number
+        }
+        Insert: {
+          _category?: string
+          _employee_name?: string
+          _payhead_name?: string
+          amount?: number
+          category?: string
+          company_id: string
+          division_id: string
+          employee_name?: string
+          employee_sort_order?: number
+          guid?: string
+          payhead_name?: string
+          payhead_sort_order?: number
+        }
+        Update: {
+          _category?: string
+          _employee_name?: string
+          _payhead_name?: string
+          amount?: number
+          category?: string
+          company_id?: string
+          division_id?: string
+          employee_name?: string
+          employee_sort_order?: number
+          guid?: string
+          payhead_name?: string
+          payhead_sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_payhead_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_payhead_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
+          },
+        ]
+      }
+      trn_voucher: {
+        Row: {
+          _party_name: string
+          _voucher_type: string
+          company_id: string
+          date: string
+          division_id: string
+          guid: string
+          is_accounting_voucher: number | null
+          is_inventory_voucher: number | null
+          is_invoice: number | null
+          is_order_voucher: number | null
+          narration: string
+          party_name: string
+          place_of_supply: string
+          reference_date: string | null
+          reference_number: string
+          voucher_number: string
+          voucher_type: string
+        }
+        Insert: {
+          _party_name?: string
+          _voucher_type?: string
+          company_id: string
+          date: string
+          division_id: string
+          guid: string
+          is_accounting_voucher?: number | null
+          is_inventory_voucher?: number | null
+          is_invoice?: number | null
+          is_order_voucher?: number | null
+          narration?: string
+          party_name: string
+          place_of_supply: string
+          reference_date?: string | null
+          reference_number?: string
+          voucher_number?: string
+          voucher_type: string
+        }
+        Update: {
+          _party_name?: string
+          _voucher_type?: string
+          company_id?: string
+          date?: string
+          division_id?: string
+          guid?: string
+          is_accounting_voucher?: number | null
+          is_inventory_voucher?: number | null
+          is_invoice?: number | null
+          is_order_voucher?: number | null
+          narration?: string
+          party_name?: string
+          place_of_supply?: string
+          reference_date?: string | null
+          reference_number?: string
+          voucher_number?: string
+          voucher_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trn_voucher_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "mst_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "trn_voucher_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "mst_division"
+            referencedColumns: ["division_id"]
           },
         ]
       }
