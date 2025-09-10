@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Building2, Users, Target, TrendingUp, Settings, MessageSquare, FolderOpen, CheckSquare } from "lucide-react";
+import ManageDivisionDialog from "@/components/division/ManageDivisionDialog";
 
 const DivisionPage = () => {
   const { companyId, divisionId } = useParams();
+  const [manageDivisionOpen, setManageDivisionOpen] = useState(false);
+  const [divisionData, setDivisionData] = useState<any>(null);
   
   // Mock data structure matching the sidebar - updated with real company UUIDs
   const mockData = {
@@ -64,6 +68,13 @@ const DivisionPage = () => {
   if (!division) {
     return <div className="p-6">Division not found</div>;
   }
+
+  // Use current division data or fall back to mock data
+  const currentDivision = divisionData || division;
+
+  const handleDivisionUpdate = (updatedDivision: any) => {
+    setDivisionData(updatedDivision);
+  };
 
   const workspaces = [
     { 
@@ -137,18 +148,22 @@ const DivisionPage = () => {
               <Building2 className="h-8 w-8 text-accent-foreground" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{division.name}</h1>
-              <p className="text-muted-foreground mt-1">{division.description}</p>
+              <h1 className="text-3xl font-bold text-foreground">{currentDivision.name}</h1>
+              <p className="text-muted-foreground mt-1">{currentDivision.description}</p>
               <div className="flex items-center space-x-4 mt-2">
                 <Badge variant="secondary" className="flex items-center space-x-1">
                   <Users className="h-3 w-3" />
-                  <span>Manager: {division.manager}</span>
+                  <span>Manager: {currentDivision.manager_name || currentDivision.manager}</span>
                 </Badge>
-                <Badge className="bg-accent text-accent-foreground">{division.status}</Badge>
+                <Badge className="bg-accent text-accent-foreground">{currentDivision.status}</Badge>
               </div>
             </div>
           </div>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setManageDivisionOpen(true)}
+          >
             <Settings className="h-4 w-4 mr-2" />
             Manage Division
           </Button>
@@ -163,7 +178,7 @@ const DivisionPage = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{division.employees}</div>
+            <div className="text-2xl font-bold">{currentDivision.employees || currentDivision.employee_count}</div>
             <p className="text-xs text-muted-foreground">Active employees</p>
           </CardContent>
         </Card>
@@ -174,7 +189,7 @@ const DivisionPage = () => {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{division.budget}</div>
+            <div className="text-2xl font-bold">{currentDivision.budget}</div>
             <p className="text-xs text-muted-foreground">Current fiscal year</p>
           </CardContent>
         </Card>
@@ -185,7 +200,7 @@ const DivisionPage = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{division.performance}%</div>
+            <div className="text-2xl font-bold">{currentDivision.performance || currentDivision.performance_score}%</div>
             <p className="text-xs text-muted-foreground">Above target</p>
           </CardContent>
         </Card>
@@ -292,6 +307,14 @@ const DivisionPage = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Manage Division Dialog */}
+      <ManageDivisionDialog
+        open={manageDivisionOpen}
+        onOpenChange={setManageDivisionOpen}
+        division={currentDivision}
+        onDivisionUpdate={handleDivisionUpdate}
+      />
     </div>
   );
 };
