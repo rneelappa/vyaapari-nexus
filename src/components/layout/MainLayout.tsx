@@ -12,7 +12,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="sidebar-below-header">
       <div className="min-h-screen w-full bg-gradient-subtle">
         {/* Full-width Header */}
         <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0 z-10 w-full">
