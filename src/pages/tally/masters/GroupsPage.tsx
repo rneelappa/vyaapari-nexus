@@ -5,52 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Users, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import TallyApiService, { TallyGroup } from "@/services/tally-api";
 
-interface Group {
-  guid: string;
-  name: string;
-  parent: string;
-  primary_group: string;
-  is_revenue: boolean;
-  is_deemedpositive: boolean;
-  affects_gross_profit: boolean;
-  sort_position: number;
+interface Group extends TallyGroup {
+  // Additional UI-specific properties can be added here
 }
-
-const mockGroups: Group[] = [
-  {
-    guid: "1",
-    name: "Sundry Debtors",
-    parent: "Current Assets",
-    primary_group: "Assets",
-    is_revenue: false,
-    is_deemedpositive: true,
-    affects_gross_profit: false,
-    sort_position: 1
-  },
-  {
-    guid: "2", 
-    name: "Sundry Creditors",
-    parent: "Current Liabilities",
-    primary_group: "Liabilities",
-    is_revenue: false,
-    is_deemedpositive: false,
-    affects_gross_profit: false,
-    sort_position: 2
-  },
-  {
-    guid: "3",
-    name: "Sales Accounts",
-    parent: "Sales",
-    primary_group: "Income",
-    is_revenue: true,
-    is_deemedpositive: false,
-    affects_gross_profit: true,
-    sort_position: 3
-  }
-];
 
 export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,12 +28,20 @@ export default function GroupsPage() {
       setLoading(true);
       setError(null);
       
-      // Using mock data until Tally tables are created
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
-      setGroups(mockGroups);
+      // Fetch real data from Tally API
+      const response = await TallyApiService.getGroups({ limit: 100 });
+      
+      if (response.success) {
+        setGroups(response.data || []);
+      } else {
+        throw new Error(response.error || 'Failed to fetch groups');
+      }
     } catch (err) {
       console.error('Error fetching groups:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch groups');
+      
+      // Fallback to empty array if API fails
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -101,10 +70,16 @@ export default function GroupsPage() {
             Manage chart of accounts groups and their hierarchy
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Group
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchGroups} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Group
+          </Button>
+        </div>
       </div>
 
       <Card>

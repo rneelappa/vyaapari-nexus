@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Building, Building2, Database, Users, BookOp
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import TallyMenuItemContainer from "./TallyMenuItem";
+import TallyApiTest from "./TallyApiTest";
 
 // Tally workspace structure
 const tallyMenuStructure = {
@@ -258,6 +259,11 @@ const TallyHierarchy = () => {
           ))}
         </SidebarMenu>
       </SidebarGroupContent>
+      
+      {/* API Test Component */}
+      <div className="p-4">
+        <TallyApiTest />
+      </div>
     </SidebarGroup>
   );
 };

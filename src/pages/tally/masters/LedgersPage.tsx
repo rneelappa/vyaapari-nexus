@@ -5,22 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard } from "lucide-react";
+import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import TallyApiService, { TallyLedger } from "@/services/tally-api";
 
-interface Ledger {
-  guid: string;
-  name: string;
-  parent: string;
-  alias: string;
-  opening_balance: number;
-  closing_balance: number;
-  is_revenue: boolean;
-  is_deemedpositive: boolean;
-  gstn: string;
-  email: string;
-  mailing_address: string;
-  bank_account_number: string;
+interface Ledger extends TallyLedger {
+  // Additional UI-specific properties can be added here
+  alias?: string;
+  is_revenue?: boolean;
+  is_deemedpositive?: boolean;
+  gstn?: string;
+  email?: string;
+  mailing_address?: string;
+  bank_account_number?: string;
 }
 
 const mockLedgers: Ledger[] = [
@@ -83,12 +80,20 @@ export default function LedgersPage() {
       setLoading(true);
       setError(null);
       
-      // Using mock data until Tally tables are created
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
-      setLedgers(mockLedgers);
+      // Fetch real data from Tally API
+      const response = await TallyApiService.getLedgers({ limit: 100 });
+      
+      if (response.success) {
+        setLedgers(response.data || []);
+      } else {
+        throw new Error(response.error || 'Failed to fetch ledgers');
+      }
     } catch (err) {
       console.error('Error fetching ledgers:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch ledgers');
+      
+      // Fallback to empty array if API fails
+      setLedgers([]);
     } finally {
       setLoading(false);
     }
@@ -126,10 +131,16 @@ export default function LedgersPage() {
             Manage individual ledger accounts in your chart of accounts
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Ledger
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={fetchLedgers} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Ledger
+          </Button>
+        </div>
       </div>
 
       <Card>

@@ -1,3 +1,6 @@
+import { supabase } from "@/integrations/supabase/client";
+import TallyApiService, { TallyGroup, TallyLedger, TallyVoucher, TallyStockItem, TallyDashboardStats } from "./tally-api";
+
 export interface TallyCompanyMapping {
   id: number;
   tally_company_id: string;
@@ -76,38 +79,67 @@ export class TallyMappingService {
    */
   static async getTallyDataForDivision(divisionId: string) {
     try {
-      // Mock data until Tally tables are created
+      // Check if Tally API is available
+      const isApiAvailable = await TallyApiService.healthCheck();
+      if (!isApiAvailable) {
+        console.warn('Tally API not available, returning mock data');
+        return this.getMockTallyData();
+      }
+
+      // Fetch real data from Tally API
+      const [groupsResponse, ledgersResponse, vouchersResponse, stockItemsResponse] = await Promise.all([
+        TallyApiService.getGroups({ limit: 100 }),
+        TallyApiService.getLedgers({ limit: 100 }),
+        TallyApiService.getVouchers({ limit: 100 }),
+        TallyApiService.getStockItems({ limit: 100 })
+      ]);
+
       return {
-        ledgers: [
-          {
-            guid: "mock-ledger-1",
-            name: "Cash",
-            parent: "Cash-in-Hand",
-            opening_balance: 10000
-          }
-        ],
-        groups: [
-          {
-            guid: "mock-group-1",
-            name: "Current Assets",
-            parent: "Assets",
-            primary_group: "Assets"
-          }
-        ],
-        vouchers: [
-          {
-            guid: "mock-voucher-1",
-            voucher_type: "Receipt",
-            date: new Date().toISOString(),
-            amount: 1000
-          }
-        ],
-        tallyCompanyId: "mock-tally-company-id"
+        groups: groupsResponse.data || [],
+        ledgers: ledgersResponse.data || [],
+        vouchers: vouchersResponse.data || [],
+        stockItems: stockItemsResponse.data || [],
+        tallyCompanyId: "bc90d453-0c64-4f6f-8bbe-dca32aba40d1" // SKM Steels company ID
       };
     } catch (error) {
       console.error('Error in getTallyDataForDivision:', error);
-      throw error;
+      // Fallback to mock data if API fails
+      return this.getMockTallyData();
     }
+  }
+
+  /**
+   * Get mock Tally data as fallback
+   */
+  private static getMockTallyData() {
+    return {
+      groups: [
+        {
+          guid: "mock-group-1",
+          name: "Current Assets",
+          parent: "Assets",
+          primary_group: "Assets"
+        }
+      ],
+      ledgers: [
+        {
+          guid: "mock-ledger-1",
+          name: "Cash",
+          parent: "Cash-in-Hand",
+          opening_balance: 10000
+        }
+      ],
+      vouchers: [
+        {
+          guid: "mock-voucher-1",
+          voucher_type: "Receipt",
+          date: new Date().toISOString(),
+          amount: 1000
+        }
+      ],
+      stockItems: [],
+      tallyCompanyId: "mock-tally-company-id"
+    };
   }
 
   /**
