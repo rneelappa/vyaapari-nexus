@@ -1,5 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Get API key from environment or use placeholder for development
+const getTallyApiKey = () => {
+  // In production, this should come from user configuration or environment
+  return localStorage.getItem('tally_api_key') || 'TALLY_API_KEY_PLACEHOLDER';
+};
+
 export interface TallyApiFilters {
   dateFrom?: string;
   dateTo?: string;
@@ -9,6 +15,7 @@ export interface TallyApiFilters {
 }
 
 export interface TallyApiRequest {
+  api_key: string;
   action: 'getCompanies' | 'getLedgers' | 'getGroups' | 'getStockItems' | 'getVouchers' | 'getCostCenters' | 'getGodowns' | 'getEmployees';
   divisionId?: string;
   companyId?: string;
@@ -22,12 +29,17 @@ export interface TallyApiResponse<T = any> {
 }
 
 class TallyApiService {
-  private async callTallyApi<T = any>(request: TallyApiRequest): Promise<TallyApiResponse<T>> {
+  private async callTallyApi<T = any>(request: Omit<TallyApiRequest, 'api_key'>): Promise<TallyApiResponse<T>> {
     try {
       console.log('Calling Tally API with request:', request);
       
+      const requestWithApiKey = {
+        ...request,
+        api_key: getTallyApiKey()
+      };
+      
       const { data, error } = await supabase.functions.invoke('tally-api', {
-        body: request
+        body: requestWithApiKey
       });
 
       if (error) {

@@ -6,7 +6,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const tallyApiKey = Deno.env.get('TALLY_API_KEY')!;
+
 interface TallyApiRequest {
+  api_key: string;
   action: 'getCompanies' | 'getLedgers' | 'getGroups' | 'getStockItems' | 'getVouchers' | 'getCostCenters' | 'getGodowns' | 'getEmployees';
   divisionId?: string;
   companyId?: string;
@@ -26,12 +29,22 @@ serve(async (req) => {
   }
 
   try {
+    const { api_key, action, divisionId, companyId, filters = {} } = await req.json() as TallyApiRequest
+    
+    // Validate API key
+    if (api_key !== tallyApiKey) {
+      console.error('Invalid API key in tally-api request');
+      return new Response(
+        JSON.stringify({ error: 'Invalid API key' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     )
 
-    const { action, divisionId, companyId, filters = {} } = await req.json() as TallyApiRequest
     console.log(`Tally API request: ${action}`, { divisionId, companyId, filters })
 
     const { limit = 100, offset = 0, search = '', dateFrom, dateTo } = filters
