@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Building2, Users, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck, Building } from "lucide-react";
+import { ChevronDown, ChevronRight, Building2, Users, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck, Building, LogOut } from "lucide-react";
 import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   Sidebar,
@@ -13,7 +13,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import TallyHierarchy from "@/components/tally/TallyHierarchy";
+import { UserProfile } from "./UserProfile";
 
 // Mock data structure - updated with real company UUIDs from database
 const mockData = {
@@ -277,18 +279,7 @@ export function AppSidebar() {
           <TallyHierarchy />
         </div>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
-              <Users size={16} className="text-accent-foreground" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">John Doe</p>
-              <p className="text-xs text-muted-foreground">Super Admin</p>
-            </div>
-            <Settings size={16} className="text-muted-foreground cursor-pointer hover:text-foreground transition-fast" />
-          </div>
-        </div>
+        <UserProfile />
       </div>
     </div>
   );
