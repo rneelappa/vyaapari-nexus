@@ -242,6 +242,9 @@ function AppSidebarContent() {
   const workspaceMatch = location.pathname.match(/\/workspace\/([^\/]+)/);
   const currentWorkspaceId = workspaceMatch ? workspaceMatch[1] : null;
 
+  // Add circuit breaker to prevent infinite calls
+  const [hasFetched, setHasFetched] = useState(false);
+
   useEffect(() => {
     const fetchOrganizationData = async () => {
       console.log('AppSidebarContent: user =', user?.id);
@@ -252,9 +255,16 @@ function AppSidebarContent() {
         return;
       }
       
+      // Prevent infinite calls - only fetch once per user session
+      if (hasFetched) {
+        console.log('AppSidebar: Already fetched data, skipping');
+        return;
+      }
+      
       try {
         console.log('AppSidebar: Fetching organization data...');
         setLoading(true);
+        setHasFetched(true);
         
         // Fetch companies
         const { data: companiesData, error: companiesError } = await supabase
@@ -330,8 +340,11 @@ function AppSidebarContent() {
       }
     };
 
-    fetchOrganizationData();
-  }, [user]);
+    // Only fetch if user exists and we haven't fetched yet
+    if (user && !hasFetched) {
+      fetchOrganizationData();
+    }
+  }, [user, hasFetched]);
 
   if (isCollapsed) {
     return (

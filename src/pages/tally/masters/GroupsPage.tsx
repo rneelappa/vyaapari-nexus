@@ -18,6 +18,7 @@ import TallyApiService, { TallyGroup } from "@/services/tally-api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { LoadingErrorState } from "@/components/common/LoadingErrorState";
 
 // Group Form Schema
 const groupFormSchema = z.object({
@@ -72,18 +73,42 @@ export default function GroupsPage() {
     },
   });
 
+  // Add circuit breaker state
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const MAX_FETCH_ATTEMPTS = 3;
+  const FETCH_COOLDOWN = 5000; // 5 seconds
+
   useEffect(() => {
-    if (user) {
-      fetchGroups();
+    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
+      const now = Date.now();
+      if (now - lastFetchTime > FETCH_COOLDOWN) {
+        fetchGroups();
+      }
     }
-  }, [user]);
+  }, [user, fetchAttempts, lastFetchTime]);
 
   const fetchGroups = async () => {
+    // Circuit breaker: prevent too many rapid calls
+    const now = Date.now();
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+      setError(`Too many failed attempts. Please refresh the page to try again.`);
+      return;
+    }
+
+    if (now - lastFetchTime < FETCH_COOLDOWN) {
+      console.log('Skipping fetch due to cooldown period');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
+      setLastFetchTime(now);
       
-      // Fetch groups from Supabase
+      console.log('Fetching groups from Supabase...');
+      
+      // Fetch groups from Supabase with timeout
       const { data, error } = await supabase
         .from('mst_group')
         .select('*')
@@ -111,13 +136,33 @@ export default function GroupsPage() {
       }));
       
       setGroups(transformedGroups);
+      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching groups:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch groups');
+      setFetchAttempts(prev => prev + 1);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch groups';
+      setError(errorMessage);
       setGroups([]);
+      
+      // Don't show destructive toasts for permission errors as they spam the UI
+      if (!errorMessage.includes('permission denied')) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setFetchAttempts(0);
+    setLastFetchTime(0);
+    setError(null);
+    fetchGroups();
   };
 
   const buildGroupHierarchy = (groups: Group[]): Group[] => {
@@ -551,9 +596,19 @@ export default function GroupsPage() {
           ) : error ? (
             <div className="text-center py-8">
               <div className="text-destructive mb-2">Error: {error}</div>
-              <Button onClick={fetchGroups} variant="outline">
-                Try Again
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline"
+                disabled={fetchAttempts >= MAX_FETCH_ATTEMPTS}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                {fetchAttempts >= MAX_FETCH_ATTEMPTS ? 'Max attempts reached' : 'Try Again'}
               </Button>
+              {fetchAttempts >= MAX_FETCH_ATTEMPTS && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Please refresh the page to try again
+                </p>
+              )}
             </div>
           ) : (
             <div className="rounded-md border">
