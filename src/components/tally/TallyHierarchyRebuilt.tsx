@@ -216,7 +216,7 @@ function TallyMenuSection({ section, level }: TallyMenuSectionProps) {
         <SidebarMenuButton 
           onClick={() => setIsExpanded(!isExpanded)}
           className={`
-            flex items-center gap-2 w-full text-blue-700 hover:bg-blue-50/50 transition-colors
+            flex items-center gap-2 w-full text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-colors
             ${level > 0 ? `ml-${level}` : ''}
           `}
           aria-expanded={isExpanded}
