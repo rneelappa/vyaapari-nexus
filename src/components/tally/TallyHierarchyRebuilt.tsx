@@ -336,7 +336,7 @@ export function TallyHierarchyRebuilt() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="text-blue-700 font-semibold">
+      <SidebarGroupLabel className="text-sidebar-foreground/70 font-semibold">
         Tally Workspace
       </SidebarGroupLabel>
       <SidebarGroupContent>

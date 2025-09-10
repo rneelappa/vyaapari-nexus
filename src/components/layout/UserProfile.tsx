@@ -44,9 +44,9 @@ export const UserProfile = () => {
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium truncate">{displayName}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                <p className="text-xs text-sidebar-foreground/60 truncate">{user.email}</p>
               </div>
-              <Settings size={16} className="text-muted-foreground" />
+              <Settings size={16} className="text-sidebar-foreground/60" />
             </div>
           </Button>
         </DropdownMenuTrigger>
