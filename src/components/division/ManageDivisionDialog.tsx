@@ -24,6 +24,7 @@ interface Division {
   status: string;
   tally_enabled?: boolean;
   tally_url?: string;
+  tally_company_id?: string;
   company_id: string;
 }
 
@@ -44,12 +45,14 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
   
   const [tallyEnabled, setTallyEnabled] = useState(division.tally_enabled || false);
   const [tallyUrl, setTallyUrl] = useState(division.tally_url || "");
+  const [tallyCompanyId, setTallyCompanyId] = useState(division.tally_company_id || "");
   const { toast } = useToast();
 
   // Update state when division prop changes
   useEffect(() => {
     setTallyEnabled(division.tally_enabled || false);
     setTallyUrl(division.tally_url || "");
+    setTallyCompanyId(division.tally_company_id || "");
   }, [division]);
 
   const handleSave = async () => {
@@ -64,6 +67,7 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
           budget: parseFloat(formData.budget.replace(/[₹,\s]/g, '')) || 0,
           tally_enabled: tallyEnabled,
           tally_url: tallyEnabled ? tallyUrl : null,
+          tally_company_id: tallyEnabled ? tallyCompanyId : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', division.id);
@@ -77,6 +81,7 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
         ...formData,
         tally_enabled: tallyEnabled,
         tally_url: tallyEnabled ? tallyUrl : null,
+        tally_company_id: tallyEnabled ? tallyCompanyId : null,
       };
       
       onDivisionUpdate(updatedDivision);
@@ -234,6 +239,19 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Enter the URL of your Tally server (e.g., http://localhost:9000)
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="tallyCompanyId">Tally Company ID</Label>
+                    <Input
+                      id="tallyCompanyId"
+                      value={tallyCompanyId}
+                      onChange={(e) => setTallyCompanyId(e.target.value)}
+                      placeholder="Enter Tally Company ID (e.g., bc90d453-0c64-4f6f-8bbe-dca32aba40d1)"
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Unique identifier for the company in Tally
                     </p>
                   </div>
 

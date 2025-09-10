@@ -62,6 +62,7 @@ export type Database = {
           parent_division_id: string | null
           performance_score: number | null
           status: string | null
+          tally_company_id: string | null
           tally_enabled: boolean
           tally_last_sync: string | null
           tally_url: string | null
@@ -81,6 +82,7 @@ export type Database = {
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
+          tally_company_id?: string | null
           tally_enabled?: boolean
           tally_last_sync?: string | null
           tally_url?: string | null
@@ -100,6 +102,7 @@ export type Database = {
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
+          tally_company_id?: string | null
           tally_enabled?: boolean
           tally_last_sync?: string | null
           tally_url?: string | null
