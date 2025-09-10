@@ -163,7 +163,7 @@ function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
       {isExpanded && !collapsed && (
         <div className="ml-2 space-y-1">
           {/* Blue gradient Tally workspace block - PRESERVED STYLING */}
-          <div className="bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-200/20 rounded-md p-2 space-y-1">
+          <div className="bg-card border border-border rounded-md p-2 space-y-1">
             {Object.entries(tallyMenuStructure).map(([key, section]) => (
               <TallyMenuSection 
                 key={key} 
