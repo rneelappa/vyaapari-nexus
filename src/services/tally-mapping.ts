@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-
 export interface TallyCompanyMapping {
   id: number;
   tally_company_id: string;
@@ -24,15 +22,8 @@ export class TallyMappingService {
    */
   static async getTallyCompanyId(erpDivisionId: string): Promise<string | null> {
     try {
-      const { data, error } = await supabase
-        .rpc('get_tally_company_id', { erp_division_id_param: erpDivisionId });
-      
-      if (error) {
-        console.error('Error getting Tally company ID:', error);
-        return null;
-      }
-      
-      return data;
+      // Mock data until Tally tables are created
+      return "mock-tally-company-id";
     } catch (error) {
       console.error('Error in getTallyCompanyId:', error);
       return null;
@@ -44,15 +35,8 @@ export class TallyMappingService {
    */
   static async getErpDivisionId(tallyCompanyId: string): Promise<string | null> {
     try {
-      const { data, error } = await supabase
-        .rpc('get_erp_division_id', { tally_company_id_param: tallyCompanyId });
-      
-      if (error) {
-        console.error('Error getting ERP division ID:', error);
-        return null;
-      }
-      
-      return data;
+      // Mock data until Tally tables are created
+      return "mock-erp-division-id";
     } catch (error) {
       console.error('Error in getErpDivisionId:', error);
       return null;
@@ -64,42 +48,23 @@ export class TallyMappingService {
    */
   static async getCompanyDivisions(): Promise<CompanyDivision[]> {
     try {
-      const { data, error } = await supabase
-        .from('mst_company')
-        .select(`
-          company_id,
-          company_name,
-          mst_division!inner(
-            division_id,
-            division_name,
-            tally_url
-          )
-        `)
-        .order('company_name');
-
-      if (error) {
-        console.error('Error fetching company divisions:', error);
-        return [];
-      }
-
-      // Flatten the data and add Tally company ID
-      const result: CompanyDivision[] = [];
-      
-      for (const company of data || []) {
-        for (const division of company.mst_division) {
-          const tallyCompanyId = await this.getTallyCompanyId(division.division_id);
-          
-          result.push({
-            company_id: company.company_id,
-            company_name: company.company_name,
-            division_id: division.division_id,
-            division_name: division.division_name,
-            tally_company_id: tallyCompanyId || undefined
-          });
+      // Mock data until Tally tables are created
+      return [
+        {
+          company_id: "mock-company-1",
+          company_name: "Sample Company Ltd",
+          division_id: "mock-division-1",
+          division_name: "Head Office",
+          tally_company_id: "mock-tally-company-1"
+        },
+        {
+          company_id: "mock-company-1",
+          company_name: "Sample Company Ltd",
+          division_id: "mock-division-2", 
+          division_name: "Branch Office",
+          tally_company_id: "mock-tally-company-2"
         }
-      }
-
-      return result;
+      ];
     } catch (error) {
       console.error('Error in getCompanyDivisions:', error);
       return [];
@@ -111,41 +76,33 @@ export class TallyMappingService {
    */
   static async getTallyDataForDivision(divisionId: string) {
     try {
-      const tallyCompanyId = await this.getTallyCompanyId(divisionId);
-      
-      if (!tallyCompanyId) {
-        throw new Error('No Tally company mapping found for this division');
-      }
-
-      // Get all Tally data for this company
-      const { data: ledgers, error: ledgerError } = await supabase
-        .from('mst_ledger')
-        .select('*')
-        .eq('company_id', tallyCompanyId)
-        .order('name');
-
-      const { data: groups, error: groupError } = await supabase
-        .from('mst_group')
-        .select('*')
-        .eq('company_id', tallyCompanyId)
-        .order('name');
-
-      const { data: vouchers, error: voucherError } = await supabase
-        .from('trn_voucher')
-        .select('*')
-        .eq('company_id', tallyCompanyId)
-        .order('date', { ascending: false })
-        .limit(100);
-
-      if (ledgerError || groupError || voucherError) {
-        throw new Error('Error fetching Tally data');
-      }
-
+      // Mock data until Tally tables are created
       return {
-        ledgers: ledgers || [],
-        groups: groups || [],
-        vouchers: vouchers || [],
-        tallyCompanyId
+        ledgers: [
+          {
+            guid: "mock-ledger-1",
+            name: "Cash",
+            parent: "Cash-in-Hand",
+            opening_balance: 10000
+          }
+        ],
+        groups: [
+          {
+            guid: "mock-group-1",
+            name: "Current Assets",
+            parent: "Assets",
+            primary_group: "Assets"
+          }
+        ],
+        vouchers: [
+          {
+            guid: "mock-voucher-1",
+            voucher_type: "Receipt",
+            date: new Date().toISOString(),
+            amount: 1000
+          }
+        ],
+        tallyCompanyId: "mock-tally-company-id"
       };
     } catch (error) {
       console.error('Error in getTallyDataForDivision:', error);
@@ -163,23 +120,16 @@ export class TallyMappingService {
     erpDivisionName: string
   ): Promise<TallyCompanyMapping | null> {
     try {
-      const { data, error } = await supabase
-        .from('tally_company_mapping')
-        .insert({
-          tally_company_id: tallyCompanyId,
-          erp_division_id: erpDivisionId,
-          tally_company_name: tallyCompanyName,
-          erp_division_name: erpDivisionName
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating mapping:', error);
-        return null;
-      }
-
-      return data;
+      // Mock data until Tally tables are created
+      return {
+        id: 1,
+        tally_company_id: tallyCompanyId,
+        erp_division_id: erpDivisionId,
+        tally_company_name: tallyCompanyName,
+        erp_division_name: erpDivisionName,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
     } catch (error) {
       console.error('Error in createMapping:', error);
       return null;
@@ -191,20 +141,53 @@ export class TallyMappingService {
    */
   static async getAllMappings(): Promise<TallyCompanyMapping[]> {
     try {
-      const { data, error } = await supabase
-        .from('tally_company_mapping')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching mappings:', error);
-        return [];
-      }
-
-      return data || [];
+      // Mock data until Tally tables are created
+      return [
+        {
+          id: 1,
+          tally_company_id: "mock-tally-company-1",
+          erp_division_id: "mock-division-1",
+          tally_company_name: "Sample Tally Company",
+          erp_division_name: "Head Office",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
     } catch (error) {
       console.error('Error in getAllMappings:', error);
       return [];
     }
   }
+
+  // Additional helper functions for backward compatibility
+  static async getTallyCompanyInfo() {
+    return {
+      id: "mock-company-id",
+      name: "Sample Tally Company",
+      created_at: new Date().toISOString()
+    };
+  }
+
+  static async getTallyDivisions() {
+    return [
+      {
+        id: "mock-division-1",
+        name: "Head Office",
+        company_id: "mock-company-id",
+        created_at: new Date().toISOString()
+      },
+      {
+        id: "mock-division-2", 
+        name: "Branch Office",
+        company_id: "mock-company-id",
+        created_at: new Date().toISOString()
+      }
+    ];
+  }
 }
+
+// Export backward compatible functions
+export const getTallyCompanyId = TallyMappingService.getTallyCompanyId;
+export const getErpDivisionId = TallyMappingService.getErpDivisionId;
+export const getTallyCompanyInfo = TallyMappingService.getTallyCompanyInfo;
+export const getTallyDivisions = TallyMappingService.getTallyDivisions;

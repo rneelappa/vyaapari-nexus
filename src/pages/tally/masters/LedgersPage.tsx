@@ -83,16 +83,9 @@ export default function LedgersPage() {
       setLoading(true);
       setError(null);
       
-      const { data, error: supabaseError } = await supabase
-        .from('mst_ledger')
-        .select('*')
-        .order('name');
-
-      if (supabaseError) {
-        throw supabaseError;
-      }
-
-      setLedgers(data || []);
+      // Using mock data until Tally tables are created
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
+      setLedgers(mockLedgers);
     } catch (err) {
       console.error('Error fetching ledgers:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch ledgers');

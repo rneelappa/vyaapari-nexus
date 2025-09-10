@@ -67,16 +67,9 @@ export default function GroupsPage() {
       setLoading(true);
       setError(null);
       
-      const { data, error: supabaseError } = await supabase
-        .from('mst_group')
-        .select('*')
-        .order('name');
-
-      if (supabaseError) {
-        throw supabaseError;
-      }
-
-      setGroups(data || []);
+      // Using mock data until Tally tables are created
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
+      setGroups(mockGroups);
     } catch (err) {
       console.error('Error fetching groups:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch groups');
@@ -216,8 +209,8 @@ export default function GroupsPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
-              )
+                </Table>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
