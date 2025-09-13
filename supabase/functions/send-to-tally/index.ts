@@ -130,8 +130,9 @@ function buildSalesVoucherXml(voucherData: any): string {
 </ENVELOPE>`;
 }
 
-async function postToTally(xml: string, tallyUrl: string): Promise<{ success: boolean; response?: string; error?: string }> {
+async function postToTally(xml: string, tallyUrl: string): Promise<{ success: boolean; response?: string; error?: string; endpoint?: string; allResponses?: any[] }> {
   const endpoints = ['/', '/vouchers/0/import', '/Import'];
+  const allResponses: any[] = [];
   
   for (const endpoint of endpoints) {
     try {
@@ -149,24 +150,36 @@ async function postToTally(xml: string, tallyUrl: string): Promise<{ success: bo
       const responseText = await response.text();
       console.log(`Response from ${endpoint}:`, responseText);
 
+      const responseInfo = {
+        endpoint,
+        status: response.status,
+        response: responseText,
+        success: response.ok
+      };
+      allResponses.push(responseInfo);
+
       if (response.ok) {
         // Check for Tally success indicators
         if (responseText.includes('<CREATED>') || responseText.includes('<ALTERED>') || 
             responseText.toUpperCase().includes('SUCCESS')) {
-          return { success: true, response: responseText };
+          return { success: true, response: responseText, endpoint, allResponses };
         }
-        // Check for errors
-        if (responseText.includes('<ERROR>') || responseText.includes('<LINEERROR>')) {
-          return { success: false, error: responseText };
-        }
+        // Even if it's not a success, return the response for debugging
+        return { success: false, response: responseText, endpoint, allResponses };
       }
     } catch (error) {
       console.error(`Error with endpoint ${endpoint}:`, error);
+      allResponses.push({
+        endpoint,
+        status: 0,
+        error: error.message,
+        success: false
+      });
       continue;
     }
   }
 
-  return { success: false, error: 'Failed to post to any Tally endpoint' };
+  return { success: false, error: 'Failed to post to any Tally endpoint', allResponses };
 }
 
 serve(async (req) => {
@@ -201,7 +214,9 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           message: 'Voucher sent to Tally successfully',
-          tallyResponse: result.response 
+          tallyResponse: result.response,
+          endpoint: result.endpoint,
+          allResponses: result.allResponses
         }),
         { 
           status: 200, 
@@ -212,10 +227,13 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: result.error || 'Failed to send voucher to Tally' 
+          error: result.error || 'Failed to send voucher to Tally',
+          tallyResponse: result.response,
+          endpoint: result.endpoint,
+          allResponses: result.allResponses
         }),
         { 
-          status: 400, 
+          status: 200, // Still return 200 so we can show the response
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );

@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { VoucherSuccessView } from '@/components/tally/VoucherSuccessView';
+import { TallyResponseView } from '@/components/tally/TallyResponseView';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -85,6 +86,8 @@ export default function SalesVoucherCreate() {
   const [showSuccessView, setShowSuccessView] = useState(false);
   const [savedVoucherData, setSavedVoucherData] = useState<any>(null);
   const [isSendingToTally, setIsSendingToTally] = useState(false);
+  const [showTallyResponse, setShowTallyResponse] = useState(false);
+  const [tallyResponseData, setTallyResponseData] = useState<any>(null);
   
   // Load master data
   useEffect(() => {
@@ -473,21 +476,22 @@ export default function SalesVoucherCreate() {
 
       if (error) throw error;
       
-      if (data.success) {
-        toast({
-          title: "Success",
-          description: "Voucher sent to Tally successfully!",
-        });
-      } else {
-        throw new Error(data.error || 'Failed to send voucher to Tally');
-      }
+      // Store the response data and show the response view
+      setTallyResponseData(data);
+      setShowTallyResponse(true);
+      setShowSuccessView(false);
+      
     } catch (error: any) {
       console.error('Error sending to Tally:', error);
-      toast({
-        title: "Error",
-        description: error.message || 'Failed to send voucher to Tally',
-        variant: "destructive",
+      
+      // Even on error, show the response view with error details
+      setTallyResponseData({
+        success: false,
+        error: error.message || 'Failed to send voucher to Tally',
+        tallyResponse: error.message
       });
+      setShowTallyResponse(true);
+      setShowSuccessView(false);
     } finally {
       setIsSendingToTally(false);
     }
@@ -499,15 +503,34 @@ export default function SalesVoucherCreate() {
   };
 
   const handleBackToList = () => {
-    // Reset form and go back to create view
+    // Reset all states and go back to create view
     setShowSuccessView(false);
+    setShowTallyResponse(false);
     setSavedVoucherData(null);
+    setTallyResponseData(null);
     setLines([]);
     setPartyLedger('');
     setSalesLedger('');
     setNarration('');
     generateVoucherNumber();
   };
+
+  const handleRetryTally = () => {
+    setShowTallyResponse(false);
+    setShowSuccessView(true);
+    setTallyResponseData(null);
+  };
+
+  if (showTallyResponse && tallyResponseData) {
+    return (
+      <TallyResponseView
+        responseData={tallyResponseData}
+        voucherData={savedVoucherData}
+        onBack={handleBackToList}
+        onRetry={handleRetryTally}
+      />
+    );
+  }
 
   if (showSuccessView && savedVoucherData) {
     return (
