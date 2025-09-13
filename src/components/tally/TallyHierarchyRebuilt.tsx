@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronRight, ChevronDown, Building2, Folder, FileText, Settings, TrendingUp, Database, Package, Users, Calculator, Warehouse } from "lucide-react";
+import { ChevronRight, ChevronDown, Building2, Folder, FileText, Settings, TrendingUp, Database, Package, Users, Calculator, Warehouse, RefreshCw } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
 import { sidebarDataService, type CompanyData } from "@/services/sidebar-data-service";
@@ -31,7 +31,8 @@ const tallyMenuStructure = {
       { name: "Accounting", path: "/tally/transactions/accounting", icon: Calculator },
       { name: "Sales Voucher Create", path: "/tally/transactions/sales/create", icon: FileText },
       { name: "Inventory", path: "/tally/transactions/inventory", icon: Package },
-      { name: "Non-Accounting", path: "/tally/transactions/non-accounting", icon: FileText }
+      { name: "Non-Accounting", path: "/tally/transactions/non-accounting", icon: FileText },
+      { name: "Sync Tally", path: "/tally/transactions/sync", icon: RefreshCw }
     ]
   },
   display: {

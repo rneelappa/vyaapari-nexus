@@ -44,6 +44,7 @@ import ConfigurationPage from "@/pages/tally/utilities/ConfigurationPage";
 import TestApiPage from "@/pages/tally/TestApiPage";
 import DataManagementPage from "@/pages/tally/data/DataManagementPage";
 import AnalyticsDashboard from "@/pages/tally/analytics/AnalyticsDashboard";
+import TallySyncPage from "@/pages/tally/transactions/TallySyncPage";
 
 const queryClient = new QueryClient();
 
@@ -244,9 +245,17 @@ function App() {
                     <SalesVoucherCreate />
                   </MainLayout>
                 </AuthGuard>
-              } />
-              
-              <Route path="/tally/display/day-book" element={
+                } />
+                
+                <Route path="/tally/transactions/sync" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <TallySyncPage />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/tally/display/day-book" element={
                 <AuthGuard>
                   <MainLayout>
                     <DayBookPage />
@@ -381,9 +390,17 @@ function App() {
                      <SalesVoucherCreate />
                    </MainLayout>
                  </AuthGuard>
-               } />
-               
-               <Route path="/company/:companyId/division/:divisionId/tally/transactions/inventory" element={
+                } />
+                
+                <Route path="/company/:companyId/division/:divisionId/tally/transactions/sync" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <TallySyncPage />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/company/:companyId/division/:divisionId/tally/transactions/inventory" element={
                  <AuthGuard>
                    <MainLayout>
                      <InventoryPage />

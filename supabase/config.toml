@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.send-to-tally]
 verify_jwt = false
+
+[functions.get-recent-vouchers]
+verify_jwt = false
