@@ -71,8 +71,10 @@ export type Database = {
           created_by: string | null
           description: string | null
           employee_count: number | null
+          health_check_response_time: number | null
           id: string
           is_active: boolean
+          last_health_check: string | null
           last_sync_attempt: string | null
           last_sync_success: string | null
           manager_name: string | null
@@ -84,6 +86,7 @@ export type Database = {
           sync_status: string | null
           tally_company_id: string | null
           tally_enabled: boolean | null
+          tally_health_status: string | null
           tally_url: string | null
           updated_at: string
         }
@@ -95,8 +98,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           employee_count?: number | null
+          health_check_response_time?: number | null
           id?: string
           is_active?: boolean
+          last_health_check?: string | null
           last_sync_attempt?: string | null
           last_sync_success?: string | null
           manager_name?: string | null
@@ -108,6 +113,7 @@ export type Database = {
           sync_status?: string | null
           tally_company_id?: string | null
           tally_enabled?: boolean | null
+          tally_health_status?: string | null
           tally_url?: string | null
           updated_at?: string
         }
@@ -119,8 +125,10 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           employee_count?: number | null
+          health_check_response_time?: number | null
           id?: string
           is_active?: boolean
+          last_health_check?: string | null
           last_sync_attempt?: string | null
           last_sync_success?: string | null
           manager_name?: string | null
@@ -132,6 +140,7 @@ export type Database = {
           sync_status?: string | null
           tally_company_id?: string | null
           tally_enabled?: boolean | null
+          tally_health_status?: string | null
           tally_url?: string | null
           updated_at?: string
         }
