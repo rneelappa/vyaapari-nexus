@@ -17,6 +17,7 @@ interface LedgerWithTransactions extends LedgerData {
   total_debit: number;
   total_credit: number;
   net_balance: number;
+  latest_voucher_date: string | null;
 }
 
 export const useAccountingLedgers = () => {
@@ -24,25 +25,6 @@ export const useAccountingLedgers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { companyId, divisionId } = useParams();
-
-  // Define accounting ledger groups (these are the parent groups for accounting ledgers)
-  const accountingGroups = [
-    'Current Assets',
-    'Fixed Assets', 
-    'Current Liabilities',
-    'Capital Account',
-    'Loans (Liability)',
-    'Bank Accounts',
-    'Cash-in-Hand',
-    'Sundry Debtors',
-    'Sundry Creditors',
-    'Sales Accounts',
-    'Purchase Accounts',
-    'Direct Expenses',
-    'Indirect Expenses',
-    'Direct Incomes',
-    'Indirect Incomes'
-  ];
 
   useEffect(() => {
     fetchAccountingLedgers();
@@ -61,11 +43,10 @@ export const useAccountingLedgers = () => {
 
       console.log('Fetching ledgers for:', { companyId, divisionId });
 
-      // First, let's try to fetch ALL ledgers to see what data exists
+      // Fetch ALL ledgers (remove limit)
       const { data: allLedgers, error: ledgersError } = await supabase
         .from('mst_ledger')
-        .select('guid, name, parent, opening_balance, closing_balance, company_id, division_id')
-        .limit(100); // Get some data to see what's available
+        .select('guid, name, parent, opening_balance, closing_balance, company_id, division_id');
 
       if (ledgersError) {
         console.error('Error fetching ledgers:', ledgersError);
@@ -79,7 +60,7 @@ export const useAccountingLedgers = () => {
         console.log('Division IDs found:', [...new Set(allLedgers.map(l => l.division_id))]);
       }
 
-      // Now filter by company and division
+      // Filter by company and division
       const companyDivisionLedgers = allLedgers?.filter(ledger => 
         ledger.company_id === companyId && ledger.division_id === divisionId
       ) || [];
@@ -87,17 +68,18 @@ export const useAccountingLedgers = () => {
       console.log('Ledgers for company/division:', companyDivisionLedgers.length);
 
       if (companyDivisionLedgers.length === 0) {
-        // Try with any available company/division if no exact match
-        const anyAvailableLedgers = allLedgers?.slice(0, 10) || [];
-        console.log('Using sample ledgers since no exact match found');
+        // Use all available ledgers as fallback
+        const availableLedgers = allLedgers || [];
+        console.log('Using all available ledgers since no exact match found');
         
-        if (anyAvailableLedgers.length > 0) {
-          setLedgers(anyAvailableLedgers.map(ledger => ({
+        if (availableLedgers.length > 0) {
+          setLedgers(availableLedgers.map(ledger => ({
             ...ledger,
             voucher_count: 0,
             total_debit: ledger.opening_balance > 0 ? ledger.opening_balance : 0,
             total_credit: ledger.opening_balance < 0 ? Math.abs(ledger.opening_balance) : 0,
-            net_balance: ledger.closing_balance || ledger.opening_balance || 0
+            net_balance: ledger.closing_balance || ledger.opening_balance || 0,
+            latest_voucher_date: null
           })));
         } else {
           setError('No ledger data found in the database');
@@ -105,16 +87,17 @@ export const useAccountingLedgers = () => {
         return;
       }
 
-      // Fetch transaction data for each ledger
+      // Fetch transaction data for each ledger with latest voucher date
       const ledgersWithTransactions = await Promise.all(
         companyDivisionLedgers.map(async (ledger) => {
-          // Get voucher count and transaction totals
+          // Get voucher count, transaction totals, and latest voucher date
           const { data: transactions, error: transError } = await supabase
             .from('trn_accounting')
-            .select('amount, is_deemed_positive')
+            .select('amount, is_deemed_positive, voucher_date')
             .ilike('ledger', ledger.name)
             .eq('company_id', companyId)
-            .eq('division_id', divisionId);
+            .eq('division_id', divisionId)
+            .order('voucher_date', { ascending: false });
 
           if (transError) {
             console.warn(`Error fetching transactions for ${ledger.name}:`, transError);
@@ -122,6 +105,7 @@ export const useAccountingLedgers = () => {
 
           const transactionData = transactions || [];
           const voucherCount = transactionData.length;
+          const latestVoucherDate = transactionData.length > 0 ? transactionData[0]?.voucher_date : null;
           
           // Calculate debit and credit totals
           let totalDebit = 0;
@@ -143,13 +127,22 @@ export const useAccountingLedgers = () => {
             voucher_count: voucherCount,
             total_debit: totalDebit + (ledger.opening_balance > 0 ? ledger.opening_balance : 0),
             total_credit: totalCredit + (ledger.opening_balance < 0 ? Math.abs(ledger.opening_balance) : 0),
-            net_balance: netBalance
+            net_balance: netBalance,
+            latest_voucher_date: latestVoucherDate
           };
         })
       );
 
-      console.log('Final ledgers with transactions:', ledgersWithTransactions.length);
-      setLedgers(ledgersWithTransactions);
+      // Sort by latest voucher date (most recent first)
+      const sortedLedgers = ledgersWithTransactions.sort((a, b) => {
+        if (!a.latest_voucher_date && !b.latest_voucher_date) return 0;
+        if (!a.latest_voucher_date) return 1;
+        if (!b.latest_voucher_date) return -1;
+        return new Date(b.latest_voucher_date).getTime() - new Date(a.latest_voucher_date).getTime();
+      });
+
+      console.log('Final ledgers with transactions:', sortedLedgers.length);
+      setLedgers(sortedLedgers);
     } catch (err) {
       console.error('Error fetching accounting ledgers:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch accounting ledgers');

@@ -4,20 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, RefreshCw, FileText, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Plus, RefreshCw, FileText, TrendingUp, TrendingDown, DollarSign, Eye, Calendar } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useAccountingLedgers } from "@/hooks/useAccountingLedgers";
+import { useLedgerVouchers } from "@/hooks/useLedgerVouchers";
 
 export default function AccountingPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLedger, setSelectedLedger] = useState<string | null>(null);
+  const [isVoucherDialogOpen, setIsVoucherDialogOpen] = useState(false);
   
   // Use the accounting ledgers hook
   const { ledgers, loading, error, refresh } = useAccountingLedgers();
+  
+  // Use the voucher hook
+  const { vouchers, loading: vouchersLoading, fetchVouchersForLedger } = useLedgerVouchers();
 
   const handleCreateTransaction = (ledgerName: string) => {
     const pathParts = location.pathname.split('/');
@@ -33,6 +40,20 @@ export default function AccountingPage() {
         description: `Create transaction for ${ledgerName} - Feature coming soon`,
       });
     }
+  };
+
+  const handleLedgerClick = async (ledgerName: string) => {
+    setSelectedLedger(ledgerName);
+    setIsVoucherDialogOpen(true);
+    await fetchVouchersForLedger(ledgerName);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const filteredLedgers = ledgers.filter(ledger =>
@@ -189,6 +210,7 @@ export default function AccountingPage() {
                     <TableRow 
                       key={ledger.guid}
                       className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleLedgerClick(ledger.name)}
                     >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
@@ -243,6 +265,75 @@ export default function AccountingPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Voucher Dialog */}
+      <Dialog open={isVoucherDialogOpen} onOpenChange={setIsVoucherDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Vouchers for {selectedLedger}
+            </DialogTitle>
+            <DialogDescription>
+              All vouchers and transactions for this ledger
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-auto max-h-[60vh]">
+            {vouchersLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">Loading vouchers...</span>
+              </div>
+            ) : vouchers.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No vouchers found for this ledger.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Voucher #</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Party</TableHead>
+                    <TableHead>Narration</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vouchers.map((voucher) => (
+                    <TableRow key={voucher.guid}>
+                      <TableCell className="font-medium">
+                        {voucher.voucher_number}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {voucher.voucher_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {formatDate(voucher.date)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={voucher.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                          {formatCurrency(Math.abs(voucher.amount))}
+                        </span>
+                      </TableCell>
+                      <TableCell>{voucher.party_ledger_name}</TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {voucher.narration}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
