@@ -109,36 +109,38 @@ function buildSalesVoucherXml(voucherData: any): string {
     }
   });
 
-  return `<?xml version="1.0" encoding="UTF-16"?>
+  return `<?xml version="1.0"?>
 <ENVELOPE>
-  <HEADER>
-    <TALLYREQUEST>Import Data</TALLYREQUEST>
-  </HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>Vouchers</REPORTNAME>
-        <STATICVARIABLES>
-          <SVCURRENTCOMPANY>${companyName}</SVCURRENTCOMPANY>
-        </STATICVARIABLES>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-          <VOUCHER VCHTYPE="Sales" ACTION="Create" OBJVIEW="Accounting Voucher View">
-            <DATE>${tallyDate}</DATE>
-            <EFFECTIVEDATE>${tallyDate}</EFFECTIVEDATE>
-            <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
-            <VOUCHERNUMBER>${voucherNumber}</VOUCHERNUMBER>
-            <PARTYLEDGERNAME>${partyLedger.name}</PARTYLEDGERNAME>
-            <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
-            <NARRATION>${narration}</NARRATION>
-            ${ledgerEntries}
-            ${inventoryEntries}
-          </VOUCHER>
-        </TALLYMESSAGE>
-      </REQUESTDATA>
-    </IMPORTDATA>
-  </BODY>
+    <HEADER>
+        <VERSION>1</VERSION>
+        <TALLYREQUEST>Import</TALLYREQUEST>
+        <TYPE>Data</TYPE>
+        <ID>Vouchers</ID>
+    </HEADER>
+    <BODY>
+        <DESC>
+            <STATICVARIABLES>
+                <SVCURRENTCOMPANY>${companyName}</SVCURRENTCOMPANY>
+                <IMPORTDUPS>@@DUPCOMBINE</IMPORTDUPS>
+            </STATICVARIABLES>
+        </DESC>
+        <DATA>
+            <TALLYMESSAGE xmlns:UDF="TallyUDF">
+                <VOUCHER VCHTYPE="SALES" ACTION="Create" OBJVIEW="Accounting Voucher View">
+                    <DATE>${tallyDate}</DATE>
+                    <EFFECTIVEDATE>${tallyDate}</EFFECTIVEDATE>
+                    <VCHSTATUSDATE>${tallyDate}</VCHSTATUSDATE>
+                    <VOUCHERTYPENAME>SALES</VOUCHERTYPENAME>
+                    <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
+                    <REFERENCE>${narration || 'Sales voucher from Vyaapari360'}</REFERENCE>
+                    <NARRATION>${narration || 'Sales voucher from Vyaapari360'}</NARRATION>
+                    <PARTYLEDGERNAME>${partyLedger.name}</PARTYLEDGERNAME>
+                    ${ledgerEntries}
+                    ${inventoryEntries}
+                </VOUCHER>
+            </TALLYMESSAGE>
+        </DATA>
+    </BODY>
 </ENVELOPE>`;
 }
 
