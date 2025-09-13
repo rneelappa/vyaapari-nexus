@@ -119,6 +119,8 @@ serve(async (req) => {
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
 
+    let finalVouchers = vouchers || [];
+
     console.log('Query results:', { vouchersCount: vouchers?.length, error: vouchersError });
 
     console.log('Vouchers query result:', { vouchers: vouchers?.length, vouchersError });
@@ -158,7 +160,7 @@ serve(async (req) => {
     const tallyCompany = companyName || division?.tally_company_id || 'Unknown Company';
     let tallyInfo: any = null;
 
-    if ((vouchers?.length || 0) === 0 && division?.tally_url) {
+    if ((finalVouchers.length || 0) === 0 && division?.tally_url) {
       try {
         console.log('No DB vouchers found. Attempting Tally DayBook fetch...', { tallyCompany, tallyUrl: division.tally_url });
         const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?>\n<ENVELOPE>\n  <HEADER>\n    <VERSION>1</VERSION>\n    <TALLYREQUEST>Export</TALLYREQUEST>\n    <TYPE>Data</TYPE>\n    <ID>DayBook</ID>\n  </HEADER>\n  <BODY>\n    <DESC>\n      <STATICVARIABLES>\n        <SVFROMDATE>${startDate}</SVFROMDATE>\n        <SVTODATE>${endDate}</SVTODATE>\n        <SVCURRENTCOMPANY>${tallyCompany}</SVCURRENTCOMPANY>\n      </STATICVARIABLES>\n    </DESC>\n  </BODY>\n</ENVELOPE>`;
@@ -207,7 +209,7 @@ serve(async (req) => {
         
         // Use Tally vouchers if database is empty
         if (tallyVouchers.length > 0) {
-          vouchers = tallyVouchers;
+          finalVouchers = tallyVouchers;
         }
         
       } catch (tallyError) {
@@ -218,7 +220,7 @@ serve(async (req) => {
 
     const responseData = {
       success: true,
-      vouchers: vouchers || [],
+      vouchers: finalVouchers,
       division: division || null,
       tally: tallyInfo,
       filters: {
@@ -230,17 +232,17 @@ serve(async (req) => {
         endDate
       },
       summary: {
-        totalVouchers: vouchers?.length || 0,
+        totalVouchers: finalVouchers.length || 0,
         tallyVoucherCount: tallyInfo?.voucherCount || 0,
         dateRange: fromDate && toDate 
           ? `${startDate} to ${endDate}` 
           : `Last ${days || 1} day(s) from ${startDate}`,
-        source: vouchers?.length > 0 && vouchers[0].guid?.startsWith('tally-temp-') ? 'tally' : 'database'
+        source: finalVouchers.length > 0 && (finalVouchers[0] as any).guid?.startsWith('tally-temp-') ? 'tally' : 'database'
       }
     };
 
     console.log('Returning response:', { 
-      voucherCount: vouchers?.length, 
+      voucherCount: finalVouchers.length, 
       divisionName: division?.name 
     });
     
