@@ -154,7 +154,7 @@ serve(async (req) => {
     }
 
     // Fallback: If no DB vouchers, try fetching from Tally DayBook using division.tally_url
-    const tallyCompany = division?.tally_company_id || companyName;
+    const tallyCompany = companyName || division?.tally_company_id || 'Unknown Company';
     let tallyInfo: any = null;
 
     if ((vouchers?.length || 0) === 0 && division?.tally_url) {
