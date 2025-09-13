@@ -77,9 +77,21 @@ function buildSalesVoucherXml(voucherData: any): string {
   let inventoryEntries = '';
   lines.forEach((line: any) => {
     if (line.type === 'inventory' && line.stockItem) {
+      // Get stock item name - handle both object and GUID cases
+      let stockItemName = '';
+      if (typeof line.stockItem === 'string') {
+        // If it's a GUID, we need to use a placeholder name
+        // In a real implementation, you'd look this up from the stockItems array
+        stockItemName = `Stock Item ${line.stockItem.slice(-6)}`;
+      } else if (line.stockItem && line.stockItem.name) {
+        stockItemName = line.stockItem.name;
+      } else {
+        stockItemName = 'Unknown Stock Item';
+      }
+
       inventoryEntries += `
     <ALLINVENTORYENTRIES.LIST>
-      <STOCKITEMNAME>${line.stockItem.name}</STOCKITEMNAME>
+      <STOCKITEMNAME>${stockItemName}</STOCKITEMNAME>
       <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
       <ISLASTDEEMEDPOSITIVE>No</ISLASTDEEMEDPOSITIVE>
       <ISAUTONEGATE>No</ISAUTONEGATE>

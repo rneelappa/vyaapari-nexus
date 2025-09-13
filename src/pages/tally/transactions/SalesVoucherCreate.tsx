@@ -417,13 +417,23 @@ export default function SalesVoucherCreate() {
         description: `Sales voucher ${voucherNumber} created successfully`,
       });
 
-      // Prepare voucher data for success view
+      // Prepare voucher data for success view with full object references
       const savedVoucherInfo = {
         voucherNumber,
         date: format(date, 'yyyy-MM-dd'),
         partyLedger: selectedPartyLedger,
         salesLedger: selectedSalesLedger,
-        lines,
+        lines: lines.map(line => ({
+          ...line,
+          // Ensure stock item has full object reference
+          stockItem: line.type === 'inventory' && line.stockItem 
+            ? stockItems.find(s => s.guid === line.stockItem) || { name: 'Unknown Stock Item', guid: line.stockItem }
+            : line.stockItem,
+          // Ensure ledger has full object reference  
+          ledger: line.type === 'ledger' && line.ledger
+            ? ledgers.find(l => l.guid === line.ledger) || { name: 'Unknown Ledger', guid: line.ledger }
+            : line.ledger
+        })),
         narration,
         totalAmount
       };
