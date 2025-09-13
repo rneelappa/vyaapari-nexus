@@ -15,7 +15,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { manual_trigger } = body || {};
+    const { manual_trigger, division_id } = body || {};
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -40,9 +40,9 @@ serve(async (req) => {
       .not('tally_url', 'is', null);
 
     // If manual trigger for specific division, ignore auto_sync_enabled and frequency
-    if (manual_trigger) {
-      query = query.eq('id', manual_trigger);
-      console.log(`Manual trigger requested for division: ${manual_trigger}`);
+    if (manual_trigger && division_id) {
+      query = query.eq('id', division_id);
+      console.log(`Manual trigger requested for division: ${division_id}`);
     } else {
       query = query
         .eq('auto_sync_enabled', true)
