@@ -236,6 +236,7 @@ export default function SalesVoucherCreate() {
   };
 
   const { totalDebit, totalCredit, totalAmount } = calculateTotals();
+  const inventoryValue = lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0);
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
   const saveVoucher = async () => {
@@ -836,6 +837,46 @@ export default function SalesVoucherCreate() {
               </TableBody>
             </Table>
           )}
+        </CardContent>
+      </Card>
+      {/* Summary & Narration (Footer) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Summary</CardTitle>
+          <CardDescription>Total and final narration</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <Label>Total Amount</Label>
+              <div className="text-2xl font-bold">₹{totalAmount.toFixed(2)}</div>
+              <div className="text-sm text-muted-foreground">
+                Inventory: ₹{inventoryValue.toFixed(2)} | Additions: ₹{(totalAmount - inventoryValue).toFixed(2)}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Posting</Label>
+              <div className="text-sm">
+                Party Dr ₹{totalDebit.toFixed(2)} → Sales Cr ₹{inventoryValue.toFixed(2)}
+              </div>
+              <div className="text-xs text-muted-foreground">Taxes/charges posted to their respective ledgers</div>
+            </div>
+            <div className="space-y-1">
+              <Label>Status</Label>
+              <Badge variant={isBalanced ? 'default' : 'destructive'}>
+                {isBalanced ? 'Balanced' : 'Unbalanced'}
+              </Badge>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Final Narration</Label>
+            <Textarea
+              value={narration}
+              onChange={(e) => setNarration(e.target.value)}
+              placeholder="Enter overall voucher narration"
+              rows={3}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
