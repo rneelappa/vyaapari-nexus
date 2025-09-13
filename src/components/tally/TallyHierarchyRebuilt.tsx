@@ -29,6 +29,7 @@ const tallyMenuStructure = {
     icon: FileText,
     items: [
       { name: "Accounting", path: "/tally/transactions/accounting", icon: Calculator },
+      { name: "Sales Voucher Create", path: "/tally/transactions/sales/create", icon: FileText },
       { name: "Inventory", path: "/tally/transactions/inventory", icon: Package },
       { name: "Non-Accounting", path: "/tally/transactions/non-accounting", icon: FileText }
     ]
@@ -125,10 +126,10 @@ function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
 
   // Auto-expand if current route is within Tally
   useEffect(() => {
-    if (location.pathname.startsWith('/tally/')) {
+    if (location.pathname.startsWith('/tally/') || location.pathname.includes(`/division/${division.id}/tally/`)) {
       setIsExpanded(true);
     }
-  }, [location.pathname]);
+  }, [location.pathname, division.id]);
 
   return (
     <div>
@@ -169,6 +170,7 @@ function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
                 key={key} 
                 section={section} 
                 level={2}
+                division={division}
               />
             ))}
           </div>
@@ -189,9 +191,10 @@ interface TallyMenuSectionProps {
     }>;
   };
   level: number;
+  division: Division;
 }
 
-function TallyMenuSection({ section, level }: TallyMenuSectionProps) {
+function TallyMenuSection({ section, level, division }: TallyMenuSectionProps) {
   console.log('[TallyHierarchy] TallyMenuSection rendering for section:', section.name);
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
@@ -201,12 +204,13 @@ function TallyMenuSection({ section, level }: TallyMenuSectionProps) {
   // Auto-expand if current route is within this section
   useEffect(() => {
     const isInSection = section.items.some(item => 
-      location.pathname.startsWith(item.path)
+      location.pathname.startsWith(item.path) || 
+      location.pathname.includes(`/division/${division.id}${item.path}`)
     );
     if (isInSection) {
       setIsExpanded(true);
     }
-  }, [location.pathname, section.items]);
+  }, [location.pathname, section.items, division.id]);
 
   const SectionIcon = section.icon;
 
@@ -240,13 +244,15 @@ function TallyMenuSection({ section, level }: TallyMenuSectionProps) {
         <div className="ml-4 space-y-1">
           {section.items.map((item) => {
             const ItemIcon = item.icon;
-            const isActive = location.pathname === item.path;
+            // Build path with division context
+            const itemPath = `/company/${division.company_id}/division/${division.id}${item.path}`;
+            const isActive = location.pathname === item.path || location.pathname === itemPath;
             
             return (
               <SidebarMenuItem key={item.path}>
                 <SidebarMenuButton asChild>
                   <NavLink 
-                    to={item.path}
+                    to={itemPath}
                     className={`
                       flex items-center gap-2 text-sm
                       ${isActive 
