@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useEnhancedTallySync } from '@/hooks/useEnhancedTallySync';
 import { EnhancedProcessingView } from '@/components/tally/EnhancedProcessingView';
+import { XmlDataAnalysis } from '@/components/tally/XmlDataAnalysis';
 
 interface Voucher {
   guid: string;
@@ -394,6 +395,7 @@ export default function TallySyncPage() {
         <TabsList>
           <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
           <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="data-analysis">Data Analysis</TabsTrigger>
           {syncData?.parseResults && (
             <TabsTrigger value="parse-results">Parse Results</TabsTrigger>
           )}
@@ -538,6 +540,20 @@ export default function TallySyncPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="data-analysis">
+          <Card>
+            <CardHeader>
+              <CardTitle>XML Data Structure Analysis</CardTitle>
+              <CardDescription>
+                Comprehensive analysis of Tally XML fields and database mapping gaps
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <XmlDataAnalysis xmlData={syncData?.tally?.responseXml} />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {syncData?.parseResults && (
