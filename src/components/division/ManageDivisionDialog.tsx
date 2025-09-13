@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Database, AlertTriangle, ExternalLink } from "lucide-react";
+import { Settings, Database, AlertTriangle, ExternalLink, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Division {
@@ -28,6 +29,11 @@ interface Division {
   tally_enabled?: boolean;
   tally_url?: string;
   tally_company_id?: string;
+  auto_sync_enabled?: boolean;
+  sync_frequency?: string;
+  last_sync_attempt?: string;
+  last_sync_success?: string;
+  sync_status?: string;
   company_id: string;
 }
 
@@ -45,7 +51,24 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
   
   const [tallyEnabled, setTallyEnabled] = useState(division.tally_enabled || false);
   const [tallyUrl, setTallyUrl] = useState(division.tally_url || "");
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(division.auto_sync_enabled || false);
+  const [syncFrequency, setSyncFrequency] = useState(division.sync_frequency || 'disabled');
   const { toast } = useToast();
+
+  const syncFrequencyOptions = [
+    { value: 'disabled', label: 'Disabled' },
+    { value: '1min', label: 'Every 1 minute' },
+    { value: '5min', label: 'Every 5 minutes' },
+    { value: '15min', label: 'Every 15 minutes' },
+    { value: '30min', label: 'Every 30 minutes' },
+    { value: '1hour', label: 'Every 1 hour' },
+    { value: '3hours', label: 'Every 3 hours' },
+    { value: '6hours', label: 'Every 6 hours' },
+    { value: '12hours', label: 'Every 12 hours' },
+    { value: '24hours', label: 'Every 24 hours' },
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'monthly', label: 'Monthly' }
+  ];
 
   // Update state when division prop changes
   useEffect(() => {
@@ -54,6 +77,8 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
     });
     setTallyEnabled(division.tally_enabled || false);
     setTallyUrl(division.tally_url || "");
+    setAutoSyncEnabled(division.auto_sync_enabled || false);
+    setSyncFrequency(division.sync_frequency || 'disabled');
   }, [division]);
 
   const handleSave = async () => {
@@ -81,6 +106,8 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
           name: formData.name,
           tally_enabled: tallyEnabled,
           tally_url: tallyEnabled ? tallyUrl : null,
+          auto_sync_enabled: autoSyncEnabled,
+          sync_frequency: autoSyncEnabled ? syncFrequency : 'disabled',
         })
         .eq('id', division.id)
         .select()
@@ -98,6 +125,8 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
         ...formData,
         tally_enabled: tallyEnabled,
         tally_url: tallyEnabled ? tallyUrl : null,
+        auto_sync_enabled: autoSyncEnabled,
+        sync_frequency: autoSyncEnabled ? syncFrequency : 'disabled',
       };
       
       onDivisionUpdate(updatedDivision);
@@ -235,6 +264,84 @@ const ManageDivisionDialog = ({ open, onOpenChange, division, onDivisionUpdate }
               )}
             </CardContent>
           </Card>
+
+          {/* Auto Sync Scheduler */}
+          {tallyEnabled && tallyUrl && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Auto Sync Scheduler
+                </CardTitle>
+                <CardDescription>
+                  Automatically sync data from Tally at regular intervals
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label>Enable Auto Sync</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically fetch and sync data from Tally
+                    </p>
+                  </div>
+                  <Switch
+                    checked={autoSyncEnabled}
+                    onCheckedChange={setAutoSyncEnabled}
+                  />
+                </div>
+
+                {autoSyncEnabled && (
+                  <div className="space-y-4 pt-4 border-t">
+                    <div className="space-y-2">
+                      <Label htmlFor="syncFrequency">Sync Frequency</Label>
+                      <Select value={syncFrequency} onValueChange={setSyncFrequency}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {syncFrequencyOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        How often should the system sync data from Tally?
+                      </p>
+                    </div>
+
+                    {division.last_sync_attempt && (
+                      <div className="space-y-2">
+                        <Label>Sync Status</Label>
+                        <div className="flex flex-col gap-2">
+                          <Badge 
+                            variant={division.sync_status === 'completed' ? 'default' : 
+                                    division.sync_status === 'running' ? 'secondary' : 
+                                    division.sync_status === 'failed' ? 'destructive' : 'outline'}
+                            className="w-fit"
+                          >
+                            {division.sync_status || 'idle'}
+                          </Badge>
+                          {division.last_sync_success && (
+                            <p className="text-sm text-muted-foreground">
+                              Last successful sync: {new Date(division.last_sync_success).toLocaleString()}
+                            </p>
+                          )}
+                          {division.last_sync_attempt && (
+                            <p className="text-sm text-muted-foreground">
+                              Last attempt: {new Date(division.last_sync_attempt).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Data Import */}
           {tallyEnabled && tallyUrl && (

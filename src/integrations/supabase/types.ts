@@ -64,6 +64,7 @@ export type Database = {
       }
       divisions: {
         Row: {
+          auto_sync_enabled: boolean | null
           budget: number | null
           company_id: string
           created_at: string
@@ -72,17 +73,22 @@ export type Database = {
           employee_count: number | null
           id: string
           is_active: boolean
+          last_sync_attempt: string | null
+          last_sync_success: string | null
           manager_name: string | null
           name: string
           parent_division_id: string | null
           performance_score: number | null
           status: string | null
+          sync_frequency: string | null
+          sync_status: string | null
           tally_company_id: string | null
           tally_enabled: boolean | null
           tally_url: string | null
           updated_at: string
         }
         Insert: {
+          auto_sync_enabled?: boolean | null
           budget?: number | null
           company_id: string
           created_at?: string
@@ -91,17 +97,22 @@ export type Database = {
           employee_count?: number | null
           id?: string
           is_active?: boolean
+          last_sync_attempt?: string | null
+          last_sync_success?: string | null
           manager_name?: string | null
           name: string
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
+          sync_frequency?: string | null
+          sync_status?: string | null
           tally_company_id?: string | null
           tally_enabled?: boolean | null
           tally_url?: string | null
           updated_at?: string
         }
         Update: {
+          auto_sync_enabled?: boolean | null
           budget?: number | null
           company_id?: string
           created_at?: string
@@ -110,11 +121,15 @@ export type Database = {
           employee_count?: number | null
           id?: string
           is_active?: boolean
+          last_sync_attempt?: string | null
+          last_sync_success?: string | null
           manager_name?: string | null
           name?: string
           parent_division_id?: string | null
           performance_score?: number | null
           status?: string | null
+          sync_frequency?: string | null
+          sync_status?: string | null
           tally_company_id?: string | null
           tally_enabled?: boolean | null
           tally_url?: string | null
@@ -1935,6 +1950,53 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_tally_mst_stock_item_division_id"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tally_sync_jobs: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string | null
+          division_id: string
+          error_message: string | null
+          id: string
+          job_type: string
+          records_processed: number | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          division_id: string
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          records_processed?: number | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          division_id?: string
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          records_processed?: number | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tally_sync_jobs_division_id_fkey"
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
