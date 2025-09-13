@@ -27,7 +27,7 @@ import { format } from 'date-fns';
 interface SyncJob {
   id: string;
   job_type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'offline';
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
@@ -35,6 +35,7 @@ interface SyncJob {
   error_message: string | null;
   division_id: string;
   company_id: string;
+  tally_connection_status?: 'online' | 'offline';
 }
 
 interface SyncJobDetails {
@@ -177,6 +178,8 @@ export default function TallySyncLogs() {
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'failed':
         return <AlertCircle className="h-4 w-4 text-red-600" />;
+      case 'offline':
+        return <AlertCircle className="h-4 w-4 text-orange-600" />;
       case 'running':
         return <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />;
       default:
@@ -190,6 +193,8 @@ export default function TallySyncLogs() {
         return <Badge variant="default">Completed</Badge>;
       case 'failed':
         return <Badge variant="destructive">Failed</Badge>;
+      case 'offline':
+        return <Badge variant="outline" className="border-orange-600 text-orange-600">Tally Offline</Badge>;
       case 'running':
         return <Badge variant="secondary">Running</Badge>;
       default:
@@ -329,8 +334,15 @@ export default function TallySyncLogs() {
                     )}
 
                     {job.error_message && (
-                      <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded">
-                        {job.error_message}
+                      <div className={`mt-2 text-xs p-2 rounded ${
+                        job.status === 'offline' 
+                          ? 'text-orange-700 bg-orange-50' 
+                          : 'text-red-600 bg-red-50'
+                      }`}>
+                        {job.status === 'offline' && job.error_message.includes('ECONNREFUSED') 
+                          ? 'Tally server is offline or unreachable' 
+                          : job.error_message
+                        }
                       </div>
                     )}
                   </div>
@@ -466,9 +478,9 @@ export default function TallySyncLogs() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Failed</p>
+                <p className="text-sm text-muted-foreground">Failed/Offline</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {syncJobs.filter(j => j.status === 'failed').length}
+                  {syncJobs.filter(j => j.status === 'failed' || j.status === 'offline').length}
                 </p>
               </div>
               <AlertCircle className="h-8 w-8 text-red-600" />

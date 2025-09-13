@@ -66,6 +66,9 @@ interface Division {
   company_id: string;
   tally_enabled: boolean;
   is_active: boolean;
+  tally_url?: string | null;
+  last_sync_success?: string | null;
+  sync_status?: string;
 }
 
 interface CompanyHierarchyItemProps {
@@ -121,9 +124,41 @@ interface DivisionHierarchyItemProps {
 function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
   console.log('[TallyHierarchy] DivisionHierarchyItem rendering for division:', division.id);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'checking'>('checking');
   const location = useLocation();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+
+  // Check Tally connection status
+  useEffect(() => {
+    const checkTallyConnection = async () => {
+      if (!division.tally_url) {
+        setConnectionStatus('offline');
+        return;
+      }
+
+      try {
+        // Simple ping to check if Tally server is responsive
+        const response = await fetch(division.tally_url, {
+          method: 'HEAD',
+          mode: 'no-cors'
+        });
+        setConnectionStatus('online');
+      } catch (error) {
+        console.log(`Tally server offline for division ${division.name}:`, error);
+        setConnectionStatus('offline');
+      }
+    };
+
+    if (division.tally_enabled && division.tally_url) {
+      checkTallyConnection();
+      // Check every 30 seconds
+      const interval = setInterval(checkTallyConnection, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setConnectionStatus('offline');
+    }
+  }, [division.tally_url, division.tally_enabled, division.name]);
 
   // Auto-expand if current route is within Tally
   useEffect(() => {
@@ -147,9 +182,27 @@ function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
               <span className="flex-1 text-left truncate">{division.name}</span>
               <div className="flex items-center gap-1">
                 <div 
-                  className="w-2 h-2 rounded-full bg-green-500" 
-                  title="Tally Enabled"
-                  aria-label="Tally Enabled"
+                  className={`w-2 h-2 rounded-full ${
+                    connectionStatus === 'online' 
+                      ? 'bg-green-500' 
+                      : connectionStatus === 'offline' 
+                        ? 'bg-red-500' 
+                        : 'bg-yellow-500 animate-pulse'
+                  }`}
+                  title={
+                    connectionStatus === 'online' 
+                      ? 'Tally Online' 
+                      : connectionStatus === 'offline' 
+                        ? 'Tally Offline' 
+                        : 'Checking Tally Status'
+                  }
+                  aria-label={
+                    connectionStatus === 'online' 
+                      ? 'Tally Online' 
+                      : connectionStatus === 'offline' 
+                        ? 'Tally Offline' 
+                        : 'Checking Tally Status'
+                  }
                 />
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4" />

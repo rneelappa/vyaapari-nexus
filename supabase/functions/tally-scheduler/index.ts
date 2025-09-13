@@ -126,10 +126,17 @@ serve(async (req) => {
           throw new Error(`Failed to create sync job: ${jobError.message}`);
         }
 
-        // Calculate date range for sync (last 7 days)
+        // Calculate date range for sync - from last successful sync or 7 days, whichever is more recent
         const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 7);
+        let startDate = new Date();
+        
+        if (division.last_sync_success) {
+          const lastSuccessDate = new Date(division.last_sync_success);
+          startDate = lastSuccessDate;
+        } else {
+          // If never synced, get last 7 days
+          startDate.setDate(startDate.getDate() - 7);
+        }
 
         // Call the get-recent-vouchers function to fetch and sync data
         // This function will use the division's specific Tally URL
@@ -142,7 +149,39 @@ serve(async (req) => {
         });
 
         if (syncResult.error) {
-          throw new Error(`Sync API error: ${syncResult.error.message}`);
+          // Check if error indicates Tally is offline
+          const errorMessage = syncResult.error.message || '';
+          const isOffline = errorMessage.includes('ECONNREFUSED') || 
+                           errorMessage.includes('connection') || 
+                           errorMessage.includes('timeout') ||
+                           errorMessage.includes('unreachable');
+          
+          if (isOffline) {
+            // Update job status to indicate Tally is offline
+            await supabase
+              .from('tally_sync_jobs')
+              .update({
+                status: 'offline',
+                completed_at: new Date().toISOString(),
+                error_message: 'Tally server is offline or unreachable'
+              })
+              .eq('id', job.id);
+
+            await supabase
+              .from('divisions')
+              .update({ sync_status: 'offline' })
+              .eq('id', division.id);
+
+            return {
+              division_id: division.id,
+              division_name: division.name,
+              tally_url: division.tally_url,
+              status: 'offline',
+              error: 'Tally server is offline or unreachable'
+            };
+          }
+          
+          throw new Error(`Sync API error: ${errorMessage}`);
         }
 
         const recordsProcessed = syncResult.data?.voucherCount || 0;
