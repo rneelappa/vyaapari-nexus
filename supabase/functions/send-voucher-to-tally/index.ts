@@ -155,9 +155,9 @@ serve(async (req) => {
     } catch (parseError) {
       console.error('Error parsing request body:', parseError);
       return new Response(
-        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        JSON.stringify({ success: false, error: 'Invalid JSON in request body' }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -174,9 +174,9 @@ serve(async (req) => {
     if (!voucherData || !divisionId) {
       console.error('Missing required data:', { voucherData: !!voucherData, divisionId });
       return new Response(
-        JSON.stringify({ error: 'Voucher data and division ID are required' }),
+        JSON.stringify({ success: false, error: 'Voucher data and division ID are required' }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -185,14 +185,14 @@ serve(async (req) => {
     // Initialize Supabase client
     console.log('Initializing Supabase client...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY')!
     
     if (!supabaseUrl || !supabaseKey) {
       console.error('Missing Supabase environment variables');
       return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
+        JSON.stringify({ success: false, error: 'Server configuration error: missing Supabase credentials' }),
         { 
-          status: 500, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -214,9 +214,9 @@ serve(async (req) => {
     if (divisionError) {
       console.error('Division query error:', divisionError);
       return new Response(
-        JSON.stringify({ error: `Database error: ${divisionError.message}` }),
+        JSON.stringify({ success: false, error: `Database error: ${divisionError.message}` }),
         { 
-          status: 500, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -225,9 +225,9 @@ serve(async (req) => {
     if (!division) {
       console.error('Division not found for ID:', divisionId);
       return new Response(
-        JSON.stringify({ error: 'Division not found' }),
+        JSON.stringify({ success: false, error: 'Division not found', divisionId }),
         { 
-          status: 404, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -245,9 +245,9 @@ serve(async (req) => {
         tally_url: !!division.tally_url 
       });
       return new Response(
-        JSON.stringify({ error: 'Tally integration not enabled or URL not configured for this division' }),
+        JSON.stringify({ success: false, error: 'Tally integration not enabled or URL not configured for this division', tallyUrl: division.tally_url ?? null }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -284,7 +284,7 @@ serve(async (req) => {
           divisionName: division.name
         }),
         { 
-          status: 500, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -314,7 +314,7 @@ serve(async (req) => {
         error: `Internal server error: ${error.message}` 
       }),
       { 
-        status: 500, 
+        status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
