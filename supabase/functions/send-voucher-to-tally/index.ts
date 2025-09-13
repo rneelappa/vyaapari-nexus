@@ -137,15 +137,42 @@ function generateVoucherXML(voucherData: any, companyName: string): string {
 }
 
 serve(async (req) => {
+  console.log('send-voucher-to-tally function called');
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { voucherData, divisionId, companyName = 'Default Company' } = await req.json();
+    console.log('Request method:', req.method);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+    
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Request body received:', JSON.stringify(requestBody, null, 2));
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    const { voucherData, divisionId, companyName = 'Default Company' } = requestBody;
+    
+    console.log('Extracted data:', { 
+      hasVoucherData: !!voucherData, 
+      divisionId, 
+      companyName 
+    });
     
     if (!voucherData || !divisionId) {
+      console.error('Missing required data:', { voucherData: !!voucherData, divisionId });
       return new Response(
         JSON.stringify({ error: 'Voucher data and division ID are required' }),
         { 
@@ -156,18 +183,47 @@ serve(async (req) => {
     }
 
     // Initialize Supabase client
+    console.log('Initializing Supabase client...');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase environment variables');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey)
+    console.log('Supabase client initialized');
 
     // Get division and its Tally URL
+    console.log('Fetching division data for ID:', divisionId);
     const { data: division, error: divisionError } = await supabase
       .from('divisions')
       .select('tally_url, tally_enabled, name')
       .eq('id', divisionId)
       .single();
 
-    if (divisionError || !division) {
+    console.log('Division query result:', { division, divisionError });
+
+    if (divisionError) {
+      console.error('Division query error:', divisionError);
+      return new Response(
+        JSON.stringify({ error: `Database error: ${divisionError.message}` }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!division) {
+      console.error('Division not found for ID:', divisionId);
       return new Response(
         JSON.stringify({ error: 'Division not found' }),
         { 
@@ -177,7 +233,17 @@ serve(async (req) => {
       );
     }
 
+    console.log('Division found:', { 
+      name: division.name, 
+      tally_enabled: division.tally_enabled, 
+      hasUrl: !!division.tally_url 
+    });
+
     if (!division.tally_enabled || !division.tally_url) {
+      console.error('Tally not configured:', { 
+        tally_enabled: division.tally_enabled, 
+        tally_url: !!division.tally_url 
+      });
       return new Response(
         JSON.stringify({ error: 'Tally integration not enabled or URL not configured for this division' }),
         { 
@@ -193,19 +259,39 @@ serve(async (req) => {
     console.log('Sending to Tally URL:', division.tally_url);
 
     // Send XML directly to Tally
-    const response = await fetch(division.tally_url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/xml',
-        'Content-Length': xmlContent.length.toString()
-      },
-      body: xmlContent
-    });
-
-    const responseText = await response.text();
-    console.log('Tally response:', responseText);
+    console.log('Sending XML to Tally...');
+    let response, responseText;
+    try {
+      response = await fetch(division.tally_url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/xml',
+          'Content-Length': xmlContent.length.toString()
+        },
+        body: xmlContent
+      });
+      console.log('Tally response status:', response.status, response.statusText);
+      
+      responseText = await response.text();
+      console.log('Tally response body:', responseText);
+    } catch (fetchError) {
+      console.error('Error sending to Tally:', fetchError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Failed to connect to Tally: ${fetchError.message}`,
+          tallyUrl: division.tally_url,
+          divisionName: division.name
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     const success = response.ok && !responseText.toLowerCase().includes('error');
+    console.log('Request success:', success);
     
     return new Response(JSON.stringify({
       success,
