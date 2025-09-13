@@ -92,6 +92,8 @@ serve(async (req) => {
     console.log('Fetching vouchers from date range:', { startDate, endDate });
 
     // Get vouchers from the division within the date range
+    console.log('Querying with params:', { divisionId, startDate, endDate });
+    
     const { data: vouchers, error: vouchersError } = await supabase
       .from('tally_trn_voucher')
       .select('*')
@@ -100,6 +102,8 @@ serve(async (req) => {
       .lte('date', endDate)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
+
+    console.log('Query results:', { vouchersCount: vouchers?.length, error: vouchersError });
 
     console.log('Vouchers query result:', { vouchers: vouchers?.length, vouchersError });
 
