@@ -22,6 +22,7 @@ import { WorkspaceDrive } from "@/components/workspace/WorkspaceDrive";
 import { WorkspaceTasks } from "@/components/workspace/WorkspaceTasks";
 
 // Tally pages
+import SalesVoucherCreate from "@/pages/tally/transactions/SalesVoucherCreate";
 import GroupsPage from "@/pages/tally/masters/GroupsPage";
 import LedgersPage from "@/pages/tally/masters/LedgersPage";
 import StockItemsPage from "@/pages/tally/masters/StockItemsPage";
@@ -224,6 +225,14 @@ function App() {
                 <AuthGuard>
                   <MainLayout>
                     <InventoryPage />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              
+              <Route path="/tally/transactions/sales/create" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <SalesVoucherCreate />
                   </MainLayout>
                 </AuthGuard>
               } />

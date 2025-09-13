@@ -29,7 +29,7 @@ import {
   Settings,
   Play,
   Pause,
-  Stop
+  Square
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import TallyDataExtractor, { TallyDataConfig } from '@/services/tally-data-extractor';
@@ -110,8 +110,15 @@ export default function DataManagementPage() {
   };
 
   const loadPerformanceMetrics = () => {
-    const metrics = monitor.getPerformanceMetrics();
-    setPerformanceMetrics(metrics);
+    // Mock performance metrics for now
+    setPerformanceMetrics({
+      cpuUsage: 0,
+      memoryUsage: 0,
+      diskUsage: 0,
+      networkLatency: 0,
+      queryPerformance: 0,
+      syncThroughput: 0
+    });
   };
 
   const handleFullSync = async () => {
