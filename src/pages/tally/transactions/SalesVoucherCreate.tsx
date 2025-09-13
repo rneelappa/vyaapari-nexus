@@ -146,7 +146,7 @@ export default function SalesVoucherCreate() {
         .from('trn_voucher')
         .select('voucher_number')
         .like('voucher_number', `%/${year}%`)
-        .order('created_at', { ascending: false })
+        .order('voucher_number', { ascending: false })
         .limit(1);
 
       let nextNumber = 1;
@@ -230,6 +230,13 @@ export default function SalesVoucherCreate() {
 
     setIsSaving(true);
     try {
+      // Get current company and division from the authenticated user's profile or use first available
+      const { data: companies } = await supabase.from('companies').select('id').limit(1);
+      const { data: divisions } = await supabase.from('divisions').select('id').limit(1);
+      
+      const companyId = companies?.[0]?.id || 'bc90d453-0c64-4f6f-8bbe-dca32aba40d1';
+      const divisionId = divisions?.[0]?.id || 'b38bfb72-3dd7-4aa5-b970-71b919d5ded4';
+
       // Insert main voucher with all required fields
       const voucherGuid = `voucher-${Date.now()}`;
       const { data: voucherData, error: voucherError } = await supabase
@@ -238,49 +245,51 @@ export default function SalesVoucherCreate() {
           guid: voucherGuid,
           voucher_number: voucherNumber,
           date: format(date, 'yyyy-MM-dd'),
-          narration,
-          voucher_type: 'Sales',
-          _voucher_type: 'Sales',
-          party_name: partyLedger,
+          narration: narration || '',
+          voucher_type: 'SALES',
+          _voucher_type: 'SALES',
+          party_name: ledgers.find(l => l.guid === partyLedger)?.name || '',
           _party_name: ledgers.find(l => l.guid === partyLedger)?.name || '',
           place_of_supply: 'Local',
+          reference_number: '',
           is_invoice: 1,
           is_accounting_voucher: 1,
           is_inventory_voucher: 1,
           is_order_voucher: 0,
-          company_id: 'default',
-          division_id: 'default'
+          company_id: companyId,
+          division_id: divisionId
         })
         .select()
         .single();
 
-      if (voucherError) throw voucherError;
-
-      // voucherGuid is already defined above
+      if (voucherError) {
+        console.error('Voucher error:', voucherError);
+        throw voucherError;
+      }
 
       // Insert accounting entries
       const accountingEntries = [
         // Party ledger - Debit
         {
           guid: voucherGuid,
-          ledger: partyLedger,
+          ledger: ledgers.find(l => l.guid === partyLedger)?.name || '',
           _ledger: ledgers.find(l => l.guid === partyLedger)?.name || '',
           amount: totalAmount,
           amount_forex: totalAmount,
-          currency: 'INR',
-          company_id: 'default',
-          division_id: 'default'
+          currency: '₹',
+          company_id: companyId,
+          division_id: divisionId
         },
         // Sales ledger - Credit  
         {
           guid: voucherGuid,
-          ledger: salesLedger,
+          ledger: ledgers.find(l => l.guid === salesLedger)?.name || '',
           _ledger: ledgers.find(l => l.guid === salesLedger)?.name || '',
           amount: -totalAmount, // Negative for credit
           amount_forex: -totalAmount,
-          currency: 'INR',
-          company_id: 'default',
-          division_id: 'default'
+          currency: '₹',
+          company_id: companyId,
+          division_id: divisionId
         }
       ];
 
@@ -288,7 +297,10 @@ export default function SalesVoucherCreate() {
         .from('trn_accounting')
         .insert(accountingEntries);
 
-      if (accountingError) throw accountingError;
+      if (accountingError) {
+        console.error('Accounting error:', accountingError);
+        throw accountingError;
+      }
 
       // Insert inventory entries
       for (const line of lines.filter(l => l.type === 'inventory')) {
@@ -297,20 +309,23 @@ export default function SalesVoucherCreate() {
             .from('trn_inventory')
             .insert({
               guid: voucherGuid,
-              item: line.stockItem,
+              item: stockItems.find(s => s.guid === line.stockItem)?.name || '',
               _item: stockItems.find(s => s.guid === line.stockItem)?.name || '',
-              godown: line.godown || '',
+              godown: godowns.find(g => g.guid === line.godown)?.name || '',
               _godown: godowns.find(g => g.guid === line.godown)?.name || '',
               quantity: -line.quantity, // Negative for outward sale
               rate: line.rate,
               amount: line.amount,
               additional_amount: 0,
               discount_amount: 0,
-              company_id: 'default',
-              division_id: 'default'
+              company_id: companyId,
+              division_id: divisionId
             });
 
-          if (inventoryError) throw inventoryError;
+          if (inventoryError) {
+            console.error('Inventory error:', inventoryError);
+            throw inventoryError;
+          }
 
           // Insert batch tracking if tracking number provided
           if (line.trackingNumber) {
@@ -319,15 +334,15 @@ export default function SalesVoucherCreate() {
               .insert({
                 guid: voucherGuid,
                 name: line.trackingNumber,
-                item: line.stockItem,
+                item: stockItems.find(s => s.guid === line.stockItem)?.name || '',
                 _item: stockItems.find(s => s.guid === line.stockItem)?.name || '',
-                godown: line.godown || '',
+                godown: godowns.find(g => g.guid === line.godown)?.name || '',
                 _godown: godowns.find(g => g.guid === line.godown)?.name || '',
                 quantity: -line.quantity,
                 amount: line.amount,
                 tracking_number: line.trackingNumber,
-                company_id: 'default',
-                division_id: 'default'
+                company_id: companyId,
+                division_id: divisionId
               });
           }
         }
@@ -349,7 +364,7 @@ export default function SalesVoucherCreate() {
       console.error('Error saving voucher:', error);
       toast({
         title: "Error",
-        description: "Failed to save voucher",
+        description: `Failed to save Voucher (SALES): ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
