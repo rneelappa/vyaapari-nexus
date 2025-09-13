@@ -821,6 +821,9 @@ export default function SalesVoucherCreate() {
                   <p className="text-xs text-blue-600 font-medium">
                     Will be debited: ₹{totalAmount.toFixed(2)}
                   </p>
+                  <p className="text-xs text-orange-600 font-semibold">
+                    Final Balance: ₹{(selectedPartyLedger.closing_balance + totalAmount).toFixed(2)} Dr
+                  </p>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Select party account</p>
@@ -837,7 +840,10 @@ export default function SalesVoucherCreate() {
                     {selectedSalesLedger.closing_balance >= 0 ? ' Dr' : ' Cr'}
                   </p>
                   <p className="text-xs text-green-600 font-medium">
-                    Will be credited: ₹{inventoryValue.toFixed(2)}
+                    Will be credited: ₹{totalAmount.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-orange-600 font-semibold">
+                    Final Balance: ₹{Math.abs(selectedSalesLedger.closing_balance - totalAmount).toFixed(2)} {(selectedSalesLedger.closing_balance - totalAmount) >= 0 ? 'Dr' : 'Cr'}
                   </p>
                 </div>
               ) : (
