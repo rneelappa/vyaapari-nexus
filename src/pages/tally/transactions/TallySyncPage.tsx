@@ -37,6 +37,20 @@ interface SyncData {
     requestXml?: string;
     responseXml?: string;
   } | null;
+  parseResults?: {
+    results: {
+      table: string;
+      action: 'inserted' | 'updated' | 'ignored';
+      guid: string;
+      details?: any;
+    }[];
+    summary: {
+      total: number;
+      inserted: number;
+      updated: number;
+      ignored: number;
+    };
+  } | null;
   summary: {
     totalVouchers: number;
     dateRange: string;
@@ -161,6 +175,38 @@ export default function TallySyncPage() {
         return 'outline';
       default:
         return 'outline';
+    }
+  };
+
+  const getVoucherStatus = (guid: string) => {
+    if (!syncData?.parseResults?.results) return null;
+    const result = syncData.parseResults.results.find(r => r.guid === guid && r.table === 'tally_trn_voucher');
+    return result?.action || null;
+  };
+
+  const getStatusBadgeVariant = (status: string | null) => {
+    switch (status) {
+      case 'inserted':
+        return 'default';
+      case 'updated':
+        return 'secondary';
+      case 'ignored':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getStatusLabel = (status: string | null) => {
+    switch (status) {
+      case 'inserted':
+        return 'Inserted';
+      case 'updated':
+        return 'Updated';
+      case 'ignored':
+        return 'Already Exists';
+      default:
+        return 'N/A';
     }
   };
 
@@ -305,6 +351,9 @@ export default function TallySyncPage() {
         <TabsList>
           <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
           <TabsTrigger value="summary">Summary</TabsTrigger>
+          {syncData?.parseResults && (
+            <TabsTrigger value="parse-results">Parse Results</TabsTrigger>
+          )}
           <TabsTrigger value="tally">Tally Debug</TabsTrigger>
         </TabsList>
 
@@ -326,33 +375,42 @@ export default function TallySyncPage() {
                         <TableHead>Type</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Narration</TableHead>
+                        <TableHead>Status</TableHead>
                         <TableHead>Created At</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {syncData.vouchers.map((voucher) => (
-                        <TableRow key={voucher.guid}>
-                          <TableCell className="font-medium">
-                            {voucher.voucher_number || 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getVoucherTypeBadgeVariant(voucher.voucher_type)}>
-                              {voucher.voucher_type || 'Unknown'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(voucher.date)}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {voucher.narration || '-'}
-                          </TableCell>
-                          <TableCell>{formatDateTime(voucher.created_at)}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {syncData.vouchers.map((voucher) => {
+                        const status = getVoucherStatus(voucher.guid);
+                        return (
+                          <TableRow key={voucher.guid}>
+                            <TableCell className="font-medium">
+                              {voucher.voucher_number || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getVoucherTypeBadgeVariant(voucher.voucher_type)}>
+                                {voucher.voucher_type || 'Unknown'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatDate(voucher.date)}</TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {voucher.narration || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(status)}>
+                                {getStatusLabel(status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatDateTime(voucher.created_at)}</TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm">
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -416,6 +474,70 @@ export default function TallySyncPage() {
             </Card>
           </div>
         </TabsContent>
+
+        {syncData?.parseResults && (
+          <TabsContent value="parse-results">
+            <Card>
+              <CardHeader>
+                <CardTitle>XML Parse Results</CardTitle>
+                <CardDescription>
+                  Shows the results of parsing Tally XML and upserting to database tables
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-4 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Total Records</CardTitle></CardHeader>
+                      <CardContent className="pt-0 text-lg font-bold">{syncData.parseResults.summary.total}</CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Inserted</CardTitle></CardHeader>
+                      <CardContent className="pt-0 text-lg font-bold text-green-600">{syncData.parseResults.summary.inserted}</CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Updated</CardTitle></CardHeader>
+                      <CardContent className="pt-0 text-lg font-bold text-blue-600">{syncData.parseResults.summary.updated}</CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Already Exists</CardTitle></CardHeader>
+                      <CardContent className="pt-0 text-lg font-bold text-gray-600">{syncData.parseResults.summary.ignored}</CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Table</TableHead>
+                          <TableHead>GUID</TableHead>
+                          <TableHead>Action</TableHead>
+                          <TableHead>Details</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {syncData.parseResults.results.map((result, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{result.table}</TableCell>
+                            <TableCell className="font-mono text-xs">{result.guid}</TableCell>
+                            <TableCell>
+                              <Badge variant={getStatusBadgeVariant(result.action)}>
+                                {getStatusLabel(result.action)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {result.details ? JSON.stringify(result.details) : '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="tally">
           <Card>
