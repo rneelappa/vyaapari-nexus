@@ -1,12 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-const RAILWAY_BACKEND_URL = "https://vyaapari-xml-parser-q7f7wy4qyq-el.a.run.app"
-const RAILWAY_API_KEY = Deno.env.get('RAILWAY_API_KEY')
 
 function normalizeEducationModeDate(inputIso?: string): string {
   // Education Mode allowed: 1st, 2nd, or last day of month
@@ -145,11 +143,43 @@ serve(async (req) => {
   }
 
   try {
-    const { voucherData, companyName = 'SKM IMPEX-CHENNAI-(24-25)' } = await req.json();
+    const { voucherData, divisionId, companyName = 'Default Company' } = await req.json();
     
-    if (!voucherData) {
+    if (!voucherData || !divisionId) {
       return new Response(
-        JSON.stringify({ error: 'Voucher data is required' }),
+        JSON.stringify({ error: 'Voucher data and division ID are required' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Get division and its Tally URL
+    const { data: division, error: divisionError } = await supabase
+      .from('divisions')
+      .select('tally_url, tally_enabled, name')
+      .eq('id', divisionId)
+      .single();
+
+    if (divisionError || !division) {
+      return new Response(
+        JSON.stringify({ error: 'Division not found' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!division.tally_enabled || !division.tally_url) {
+      return new Response(
+        JSON.stringify({ error: 'Tally integration not enabled or URL not configured for this division' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -160,43 +190,31 @@ serve(async (req) => {
     // Generate XML from voucher data
     const xmlContent = generateVoucherXML(voucherData, companyName);
     console.log('Generated XML:', xmlContent);
+    console.log('Sending to Tally URL:', division.tally_url);
 
-    if (!RAILWAY_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'Railway API key not configured' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    // Call Railway backend
-    const railwayUrl = `${RAILWAY_BACKEND_URL}/tally-send-xml?xml_content=${encodeURIComponent(xmlContent)}`;
-    console.log('Calling Railway backend:', railwayUrl);
-    
-    const response = await fetch(railwayUrl, {
-      method: 'GET',
+    // Send XML directly to Tally
+    const response = await fetch(division.tally_url, {
+      method: 'POST',
       headers: {
-        'x-api-key': RAILWAY_API_KEY,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/xml',
+        'Content-Length': xmlContent.length.toString()
+      },
+      body: xmlContent
     });
 
-    const result = await response.json();
-    console.log('Railway backend response:', result);
+    const responseText = await response.text();
+    console.log('Tally response:', responseText);
 
+    const success = response.ok && !responseText.toLowerCase().includes('error');
+    
     return new Response(JSON.stringify({
-      success: result.ok || false,
-      message: result.ok ? 'Voucher sent to Tally successfully via Railway backend' : 'Failed to send voucher to Tally',
-      response: result.response,
-      error: result.error,
+      success,
+      message: success ? 'Voucher sent to Tally successfully' : 'Failed to send voucher to Tally',
+      response: responseText,
+      error: success ? null : `Tally returned status ${response.status}`,
       xmlSent: xmlContent,
-      railwayResult: result,
-      railwayBackendUrl: RAILWAY_BACKEND_URL,
-      ngrokUrl: result.response && result.response.includes('ngrok') ? 
-        result.response.match(/(\w+\.ngrok-free\.app)/)?.[0] || 'Not found in response' : 
-        'No ngrok URL detected'
+      tallyUrl: division.tally_url,
+      divisionName: division.name
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200

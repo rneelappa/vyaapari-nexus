@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,6 +66,7 @@ interface GodownOption {
 
 export default function SalesVoucherCreate() {
   const { toast } = useToast();
+  const { divisionId } = useParams<{ divisionId: string }>();
   
   // Form state
   const [date, setDate] = useState<Date>(new Date());
@@ -476,13 +478,14 @@ export default function SalesVoucherCreate() {
   );
 
   const handleSendToTally = async () => {
-    if (!savedVoucherData) return;
+    if (!savedVoucherData || !divisionId) return;
 
     setIsSendingToTally(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-voucher-to-tally', {
         body: { 
           voucherData: savedVoucherData,
+          divisionId: divisionId,
           companyName: 'SKM IMPEX-CHENNAI-(24-25)'
         }
       });

@@ -13,6 +13,8 @@ interface TallyResponseData {
   response?: string;
   endpoint?: string;
   xmlSent?: string;
+  tallyUrl?: string;
+  divisionName?: string;
   railwayBackendUrl?: string;
   ngrokUrl?: string;
   railwayResult?: any;
@@ -96,33 +98,23 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Endpoint Used</p>
-              <p className="font-semibold text-sm">{responseData.endpoint || 'Railway Backend'}</p>
+              <p className="font-semibold text-sm">{responseData.endpoint || 'Direct Tally'}</p>
             </div>
           </div>
           
-          {/* Railway Backend URL */}
-          {responseData.railwayBackendUrl && (
+          {/* Tally URL */}
+          {responseData.tallyUrl && (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Railway Backend URL</p>
-              <p className="text-sm font-mono bg-blue-50 p-2 rounded border break-all">{responseData.railwayBackendUrl}</p>
+              <p className="text-sm font-medium text-muted-foreground">Tally URL</p>
+              <p className="text-sm font-mono bg-blue-50 p-2 rounded border break-all">{responseData.tallyUrl}</p>
             </div>
           )}
           
-          {/* Ngrok URL */}
-          {responseData.ngrokUrl && responseData.ngrokUrl !== 'No ngrok URL detected' && (
+          {/* Division Name */}
+          {responseData.divisionName && (
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Ngrok Endpoint</p>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-mono bg-yellow-50 p-2 rounded border break-all flex-1">
-                  {responseData.ngrokUrl}
-                </p>
-                {responseData.ngrokUrl.includes('offline') && (
-                  <Badge variant="destructive" className="text-xs">Offline</Badge>
-                )}
-              </div>
-              {responseData.ngrokUrl.includes('offline') && (
-                <p className="text-xs text-red-600 mt-1">⚠️ This ngrok endpoint appears to be offline</p>
-              )}
+              <p className="text-sm font-medium text-muted-foreground">Division</p>
+              <p className="text-sm font-mono bg-green-50 p-2 rounded border">{responseData.divisionName}</p>
             </div>
           )}
           
@@ -186,7 +178,7 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
                 Copy
               </Button>
             </CardTitle>
-            <CardDescription>Raw response from Tally server (via Railway backend)</CardDescription>
+            <CardDescription>Raw response from Tally server</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="bg-red-50 p-4 rounded-lg border border-red-200">
