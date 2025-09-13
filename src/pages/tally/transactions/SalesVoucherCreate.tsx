@@ -480,8 +480,11 @@ export default function SalesVoucherCreate() {
 
     setIsSendingToTally(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-to-tally', {
-        body: { voucherData: savedVoucherData }
+      const { data, error } = await supabase.functions.invoke('send-voucher-to-tally', {
+        body: { 
+          voucherData: savedVoucherData,
+          companyName: 'SKM IMPEX-CHENNAI-(24-25)'
+        }
       });
 
       if (error) throw error;
