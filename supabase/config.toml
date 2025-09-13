@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.get-recent-vouchers]
 verify_jwt = false
+
+[functions.tally-health-check]
+verify_jwt = false
