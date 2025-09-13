@@ -1,10 +1,10 @@
 /**
- * Sales Voucher Creation Page
- * Creates sales vouchers with party account, sales account, inventory items, and delivery tracking
- * Ensures debit equals credit for balanced vouchers
+ * Sales Voucher Edit/View Page
+ * View and edit existing sales vouchers - exact replica of create page
  */
 
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { CalendarIcon, Plus, Trash2, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Save, AlertCircle, CheckCircle, Edit, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -61,7 +61,9 @@ interface GodownOption {
   address: string;
 }
 
-export default function SalesVoucherCreate() {
+export default function SalesVoucherEdit() {
+  const { voucherId } = useParams<{ voucherId: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   // Form state
@@ -76,17 +78,19 @@ export default function SalesVoucherCreate() {
   const [ledgers, setLedgers] = useState<LedgerOption[]>([]);
   const [stockItems, setStockItems] = useState<StockItemOption[]>([]);
   const [godowns, setGodowns] = useState<GodownOption[]>([]);
-  const [voucherTypes, setVoucherTypes] = useState<any[]>([]);
   
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Load master data
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Load master data and voucher data
   useEffect(() => {
     loadMasterData();
-    generateVoucherNumber();
-  }, []);
+    if (voucherId) {
+      loadVoucherData();
+    }
+  }, [voucherId]);
 
   const loadMasterData = async () => {
     setIsLoading(true);
@@ -115,15 +119,6 @@ export default function SalesVoucherCreate() {
       
       if (godownData) setGodowns(godownData);
 
-      // Load voucher types
-      const { data: voucherTypeData } = await supabase
-        .from('mst_vouchertype')
-        .select('guid, name, parent')
-        .eq('parent', 'Sales')
-        .order('name');
-      
-      if (voucherTypeData) setVoucherTypes(voucherTypeData);
-
     } catch (error) {
       console.error('Error loading master data:', error);
       toast({
@@ -136,29 +131,77 @@ export default function SalesVoucherCreate() {
     }
   };
 
-  const generateVoucherNumber = async () => {
+  const loadVoucherData = async () => {
+    if (!voucherId) return;
+    
     try {
-      const year = new Date().getFullYear();
-      const month = String(new Date().getMonth() + 1).padStart(2, '0');
-      
-      // Get last voucher number for current period
-      const { data } = await supabase
+      // Load voucher header
+      const { data: voucherData } = await supabase
         .from('trn_voucher')
-        .select('voucher_number')
-        .like('voucher_number', `%/${year}%`)
-        .order('voucher_number', { ascending: false })
-        .limit(1);
+        .select('*')
+        .eq('guid', voucherId)
+        .single();
 
-      let nextNumber = 1;
-      if (data && data.length > 0) {
-        const lastNumber = data[0].voucher_number;
-        const numberPart = lastNumber.split('/')[0];
-        nextNumber = parseInt(numberPart) + 1;
+      if (voucherData) {
+        setVoucherNumber(voucherData.voucher_number || '');
+        setDate(new Date(voucherData.date || new Date()));
+        setNarration(voucherData.narration || '');
+        
+        // Find party and sales ledgers
+        const partyLedgerData = ledgers.find(l => l.name === voucherData.party_name);
+        if (partyLedgerData) setPartyLedger(partyLedgerData.guid);
       }
 
-      setVoucherNumber(`${String(nextNumber).padStart(4, '0')}/${month}${year.toString().slice(-2)}`);
+      // Load accounting entries to find sales ledger
+      const { data: accountingData } = await supabase
+        .from('trn_accounting')
+        .select('*')
+        .eq('guid', voucherId);
+
+      if (accountingData) {
+        // Find sales ledger (the one with negative amount)
+        const salesEntry = accountingData.find(entry => entry.amount < 0);
+        if (salesEntry) {
+          const salesLedgerData = ledgers.find(l => l.name === salesEntry.ledger);
+          if (salesLedgerData) setSalesLedger(salesLedgerData.guid);
+        }
+      }
+
+      // Load inventory entries
+      const { data: inventoryData } = await supabase
+        .from('trn_inventory')
+        .select('*')
+        .eq('guid', voucherId);
+
+      const inventoryLines: VoucherLine[] = [];
+      if (inventoryData) {
+        inventoryData.forEach((inv, index) => {
+          const stockItem = stockItems.find(s => s.name === inv.item);
+          const godown = godowns.find(g => g.name === inv.godown);
+          
+          inventoryLines.push({
+            id: `inv-${index}`,
+            type: 'inventory',
+            stockItem: stockItem?.guid || '',
+            godown: godown?.guid || '',
+            quantity: Math.abs(inv.quantity || 0),
+            rate: inv.rate || 0,
+            amount: inv.amount || 0,
+            debit: 0,
+            credit: inv.amount || 0
+          });
+        });
+      }
+
+      setLines(inventoryLines);
+
     } catch (error) {
-      console.error('Error generating voucher number:', error);
+      console.error('Error loading voucher data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load voucher data",
+        variant: "destructive",
+      });
     }
   };
 
@@ -294,34 +337,48 @@ export default function SalesVoucherCreate() {
         throw new Error('No company configured. Please create/select a company.');
       }
 
-      // Insert main voucher with all required fields
-      const voucherGuid = `voucher-${Date.now()}`;
-      const { data: voucherData, error: voucherError } = await supabase
-        .from('trn_voucher')
-        .insert({
-          guid: voucherGuid,
-          voucher_number: voucherNumber,
-          date: format(date, 'yyyy-MM-dd'),
-          narration: narration || '',
-          voucher_type: 'SALES',
-          _voucher_type: 'SALES',
-          party_name: ledgers.find(l => l.guid === partyLedger)?.name || '',
-          _party_name: ledgers.find(l => l.guid === partyLedger)?.name || '',
-          place_of_supply: 'Local',
-          reference_number: '',
-          is_invoice: 1,
-          is_accounting_voucher: 1,
-          is_inventory_voucher: 1,
-          is_order_voucher: 0,
-          company_id: companyId,
-          division_id: divisionId
-        })
-        .select()
-        .single();
+      const voucherGuid = voucherId || `voucher-${Date.now()}`;
+      
+      // Update or insert voucher
+      const voucherData = {
+        guid: voucherGuid,
+        voucher_number: voucherNumber,
+        date: format(date, 'yyyy-MM-dd'),
+        narration: narration || '',
+        voucher_type: 'SALES',
+        _voucher_type: 'SALES',
+        party_name: ledgers.find(l => l.guid === partyLedger)?.name || '',
+        _party_name: ledgers.find(l => l.guid === partyLedger)?.name || '',
+        place_of_supply: 'Local',
+        reference_number: '',
+        is_invoice: 1,
+        is_accounting_voucher: 1,
+        is_inventory_voucher: 1,
+        is_order_voucher: 0,
+        company_id: companyId,
+        division_id: divisionId
+      };
 
-      if (voucherError) {
-        console.error('Voucher error:', voucherError);
-        throw voucherError;
+      if (voucherId) {
+        // Update existing voucher
+        const { error: voucherError } = await supabase
+          .from('trn_voucher')
+          .update(voucherData)
+          .eq('guid', voucherId);
+
+        if (voucherError) throw voucherError;
+
+        // Delete existing accounting and inventory entries
+        await supabase.from('trn_accounting').delete().eq('guid', voucherId);
+        await supabase.from('trn_inventory').delete().eq('guid', voucherId);
+        await supabase.from('trn_batch').delete().eq('guid', voucherId);
+      } else {
+        // Insert new voucher
+        const { error: voucherError } = await supabase
+          .from('trn_voucher')
+          .insert(voucherData);
+
+        if (voucherError) throw voucherError;
       }
 
       // Insert accounting entries - Simplified for sales voucher
@@ -407,15 +464,18 @@ export default function SalesVoucherCreate() {
 
       toast({
         title: "Success",
-        description: `Sales voucher ${voucherNumber} created successfully`,
+        description: `Sales voucher ${voucherNumber} ${voucherId ? 'updated' : 'created'} successfully`,
       });
 
-      // Reset form
-      setLines([]);
-      setPartyLedger('');
-      setSalesLedger('');
-      setNarration('');
-      generateVoucherNumber();
+      if (!voucherId) {
+        // Reset form for new voucher
+        setLines([]);
+        setPartyLedger('');
+        setSalesLedger('');
+        setNarration('');
+      } else {
+        setIsEditing(false);
+      }
 
     } catch (error) {
       console.error('Error saving voucher:', error);
@@ -456,11 +516,22 @@ export default function SalesVoucherCreate() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Create Sales Voucher</h1>
+          <h1 className="text-3xl font-bold">
+            {voucherId ? (isEditing ? 'Edit Sales Voucher' : 'View Sales Voucher') : 'Create Sales Voucher'}
+          </h1>
           <p className="text-muted-foreground">
-            Create sales vouchers with party accounts, inventory items, and delivery tracking
+            {voucherId ? (isEditing ? 'Edit existing sales voucher' : 'View sales voucher details') : 'Create sales vouchers with party accounts, inventory items, and delivery tracking'}
           </p>
         </div>
+        {voucherId && !isEditing && (
+          <Button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2"
+          >
+            <Edit className="h-4 w-4" />
+            Edit Voucher
+          </Button>
+        )}
       </div>
 
       {/* Balance Status */}
@@ -504,6 +575,7 @@ export default function SalesVoucherCreate() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
+                      disabled={(!isEditing && !!voucherId)}
                       className={cn(
                         "justify-start text-left font-normal",
                         !date && "text-muted-foreground"
@@ -528,7 +600,7 @@ export default function SalesVoucherCreate() {
 
             <div className="space-y-2">
               <Label>Party Account</Label>
-              <Select value={partyLedger} onValueChange={setPartyLedger}>
+              <Select value={partyLedger} onValueChange={setPartyLedger} disabled={(!isEditing && !!voucherId)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select party account" />
                 </SelectTrigger>
@@ -544,7 +616,7 @@ export default function SalesVoucherCreate() {
 
             <div className="space-y-2">
               <Label>Sales Account</Label>
-              <Select value={salesLedger} onValueChange={setSalesLedger}>
+              <Select value={salesLedger} onValueChange={setSalesLedger} disabled={(!isEditing && !!voucherId)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select sales account" />
                 </SelectTrigger>
@@ -560,155 +632,152 @@ export default function SalesVoucherCreate() {
           </CardContent>
         </Card>
 
+        {/* Line Items */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Inventory Line Items</CardTitle>
+                <CardDescription>Add stock items for sale</CardDescription>
+              </div>
+              {(isEditing || !voucherId) && (
+                <Button onClick={addInventoryLine} size="sm" className="flex items-center gap-1">
+                  <Plus className="h-4 w-4" />
+                  Add Item
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {lines.filter(l => l.type === 'inventory').length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">No inventory items added</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Stock Item</TableHead>
+                    <TableHead>Godown</TableHead>
+                    <TableHead>Qty</TableHead>
+                    <TableHead>Rate</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Tracking#</TableHead>
+                    {(isEditing || !voucherId) && <TableHead>Action</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lines.filter(l => l.type === 'inventory').map(line => (
+                    <TableRow key={line.id}>
+                      <TableCell>
+                        <Select
+                          value={line.stockItem || ''}
+                          onValueChange={(value) => updateLine(line.id, { stockItem: value })}
+                          disabled={(!isEditing && !!voucherId)}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Select item" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {stockItems.map(item => (
+                              <SelectItem key={item.guid} value={item.guid}>
+                                {item.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={line.godown || ''}
+                          onValueChange={(value) => updateLine(line.id, { godown: value })}
+                          disabled={(!isEditing && !!voucherId)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue placeholder="Godown" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {godowns.map(godown => (
+                              <SelectItem key={godown.guid} value={godown.guid}>
+                                {godown.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={line.quantity || ''}
+                          onChange={(e) => updateLine(line.id, { quantity: Number(e.target.value) })}
+                          className="w-20"
+                          disabled={(!isEditing && !!voucherId)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={line.rate || ''}
+                          onChange={(e) => updateLine(line.id, { rate: Number(e.target.value) })}
+                          className="w-20"
+                          disabled={(!isEditing && !!voucherId)}
+                        />
+                      </TableCell>
+                      <TableCell>₹{line.amount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Input
+                          value={line.trackingNumber || ''}
+                          onChange={(e) => updateLine(line.id, { trackingNumber: e.target.value })}
+                          className="w-24"
+                          placeholder="Batch#"
+                          disabled={(!isEditing && !!voucherId)}
+                        />
+                      </TableCell>
+                      {(isEditing || !voucherId) && (
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeLine(line.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Line Items */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Inventory Line Items</CardTitle>
-              <CardDescription>Add products with godown and delivery tracking</CardDescription>
-            </div>
-            <Button onClick={addInventoryLine} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Item
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {lines.filter(l => l.type === 'inventory').length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No inventory items added. Click "Add Item" to start.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Stock Item</TableHead>
-                  <TableHead>Godown</TableHead>
-                  <TableHead>Qty</TableHead>
-                  <TableHead>Rate</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Tracking</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lines.filter(l => l.type === 'inventory').map(line => (
-                  <TableRow key={line.id}>
-                    <TableCell>
-                      <Select
-                        value={line.stockItem || ''}
-                        onValueChange={(value) => updateLine(line.id, { stockItem: value })}
-                      >
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder="Select item" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {stockItems.map(item => (
-                            <SelectItem key={item.guid} value={item.guid}>
-                              {item.name} ({item.uom})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={line.godown || ''}
-                        onValueChange={(value) => updateLine(line.id, { godown: value })}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue placeholder="Select godown" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {godowns.map(godown => (
-                            <SelectItem key={godown.guid} value={godown.guid}>
-                              {godown.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={line.quantity || ''}
-                        onChange={(e) => updateLine(line.id, { quantity: parseFloat(e.target.value) || 0 })}
-                        className="w-20"
-                        min="0"
-                        step="0.01"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={line.rate || ''}
-                        onChange={(e) => updateLine(line.id, { rate: parseFloat(e.target.value) || 0 })}
-                        className="w-24"
-                        min="0"
-                        step="0.01"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">₹{line.amount.toFixed(2)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        value={line.trackingNumber || ''}
-                        onChange={(e) => updateLine(line.id, { trackingNumber: e.target.value })}
-                        placeholder="Tracking #"
-                        className="w-32"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeLine(line.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Additional Ledger Entries */}
+      {/* Additional Charges */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Additional Charges & Taxes</CardTitle>
-              <CardDescription>Add GST, cutting charges, loading charges, and other ledger entries</CardDescription>
+              <CardDescription>Add GST, transport charges, etc.</CardDescription>
             </div>
-            <Button onClick={addLedgerLine} variant="outline" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Ledger Entry
-            </Button>
+            {(isEditing || !voucherId) && (
+              <Button onClick={addLedgerLine} size="sm" className="flex items-center gap-1">
+                <Plus className="h-4 w-4" />
+                Add Charge
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           {lines.filter(l => l.type === 'ledger').length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No additional charges added. Click "Add Ledger Entry" to add taxes, charges, etc.
-            </div>
+            <p className="text-muted-foreground text-center py-4">No additional charges added</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Ledger Account</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Debit</TableHead>
-                  <TableHead>Credit</TableHead>
                   <TableHead>Narration</TableHead>
-                  <TableHead>Actions</TableHead>
+                  {(isEditing || !voucherId) && <TableHead>Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -718,37 +787,17 @@ export default function SalesVoucherCreate() {
                       <Select
                         value={line.ledger || ''}
                         onValueChange={(value) => updateLine(line.id, { ledger: value })}
+                        disabled={(!isEditing && !!voucherId)}
                       >
-                        <SelectTrigger className="w-64">
-                          <SelectValue placeholder="Select ledger account" />
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Select account" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60 overflow-y-auto">
-                          {/* GST Accounts */}
-                          <SelectItem value="CGST">CGST (Central GST)</SelectItem>
-                          <SelectItem value="SGST">SGST (State GST)</SelectItem>
-                          <SelectItem value="IGST">IGST (Integrated GST)</SelectItem>
-                          
-                          {/* Common Charges */}
-                          <SelectItem value="CUTTING CHARGES">CUTTING CHARGES</SelectItem>
-                          <SelectItem value="LOADING CHARGES">LOADING CHARGES</SelectItem>
-                          <SelectItem value="FREIGHT CHARGES-EXPS">FREIGHT CHARGES</SelectItem>
-                          <SelectItem value="COURIER CHARGES">COURIER CHARGES</SelectItem>
-                          
-                          {/* Other Common Ledgers from Database */}
-                          {ledgers
-                            .filter(l => 
-                              l.name.includes('GST') || 
-                              l.name.includes('CHARGES') || 
-                              l.name.includes('Duties') ||
-                              l.parent.includes('Duties') ||
-                              l.parent.includes('Sales') ||
-                              l.parent.includes('Expenses')
-                            )
-                            .map(ledger => (
-                              <SelectItem key={ledger.guid} value={ledger.name}>
-                                {ledger.name} ({ledger.parent})
-                              </SelectItem>
-                            ))}
+                        <SelectContent>
+                          {getChargesAndTaxLedgers().map(ledger => (
+                            <SelectItem key={ledger.guid} value={ledger.name}>
+                              {ledger.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
@@ -756,40 +805,31 @@ export default function SalesVoucherCreate() {
                       <Input
                         type="number"
                         value={line.amount || ''}
-                        onChange={(e) => {
-                          const amount = parseFloat(e.target.value) || 0;
-                          updateLine(line.id, { amount });
-                        }}
-                        className="w-28"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
+                        onChange={(e) => updateLine(line.id, { amount: Number(e.target.value) })}
+                        className="w-32"
+                        disabled={(!isEditing && !!voucherId)}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-green-600">₹{line.debit.toFixed(2)}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-red-600">₹{line.credit.toFixed(2)}</div>
                     </TableCell>
                     <TableCell>
                       <Input
                         value={line.narration || ''}
                         onChange={(e) => updateLine(line.id, { narration: e.target.value })}
-                        placeholder="Description"
                         className="w-40"
+                        placeholder="Description"
+                        disabled={(!isEditing && !!voucherId)}
                       />
                     </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeLine(line.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+                    {(isEditing || !voucherId) && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeLine(line.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -797,11 +837,12 @@ export default function SalesVoucherCreate() {
           )}
         </CardContent>
       </Card>
+
       {/* Summary & Narration (Footer) */}
       <Card>
         <CardHeader>
           <CardTitle>Summary</CardTitle>
-          <CardDescription>Total and final narration</CardDescription>
+          <CardDescription>Account details and transaction summary</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Account Details */}
@@ -840,7 +881,7 @@ export default function SalesVoucherCreate() {
                     Will be credited: ₹{totalAmount.toFixed(2)}
                   </p>
                   <p className="text-xs text-orange-600 font-semibold">
-                    Final Balance: ₹{Math.abs(selectedSalesLedger.closing_balance - totalAmount).toFixed(2)} {(selectedSalesLedger.closing_balance - totalAmount) >= 0 ? 'Dr' : 'Cr'}
+                    Final Balance: ₹{Math.abs(salesFinalBalance).toFixed(2)} {salesFinalBalance >= 0 ? 'Dr' : 'Cr'}
                   </p>
                 </div>
               ) : (
@@ -879,23 +920,26 @@ export default function SalesVoucherCreate() {
               onChange={(e) => setNarration(e.target.value)}
               placeholder="Enter overall voucher narration"
               rows={3}
+              disabled={(!isEditing && !!voucherId)}
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Save Button */}
-      <div className="flex justify-end">
-        <Button
-          onClick={saveVoucher}
-          disabled={isSaving || isLoading || !isBalanced || !partyLedger || !salesLedger || lines.length === 0}
-          className="flex items-center gap-2"
-          size="lg"
-        >
-          <Save className="h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save Voucher'}
-        </Button>
-      </div>
+      {(isEditing || !voucherId) && (
+        <div className="flex justify-end">
+          <Button
+            onClick={saveVoucher}
+            disabled={isSaving || isLoading || !isBalanced || !partyLedger || !salesLedger || lines.length === 0}
+            className="flex items-center gap-2"
+            size="lg"
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? 'Saving...' : (voucherId ? 'Update Voucher' : 'Save Voucher')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
