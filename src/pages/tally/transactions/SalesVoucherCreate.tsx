@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 
 interface VoucherLine {
   id: string;
-  type: 'party' | 'sales' | 'inventory';
+  type: 'party' | 'sales' | 'inventory' | 'ledger';
   ledger?: string;
   stockItem?: string;
   godown?: string;
@@ -175,6 +175,17 @@ export default function SalesVoucherCreate() {
     setLines([...lines, newLine]);
   };
 
+  const addLedgerLine = () => {
+    const newLine: VoucherLine = {
+      id: Date.now().toString() + '-ledger',
+      type: 'ledger',
+      amount: 0,
+      debit: 0,
+      credit: 0
+    };
+    setLines([...lines, newLine]);
+  };
+
   const updateLine = (id: string, updates: Partial<VoucherLine>) => {
     setLines(lines.map(line => {
       if (line.id === id) {
@@ -185,6 +196,21 @@ export default function SalesVoucherCreate() {
           updatedLine.amount = updatedLine.quantity * updatedLine.rate;
           updatedLine.credit = updatedLine.amount; // Sales inventory credited
           updatedLine.debit = 0; // No debit for inventory lines in sales
+        }
+        
+        // Handle ledger line calculations
+        if (updatedLine.type === 'ledger' && updatedLine.amount) {
+          // For sales voucher: most additional charges are debited (increase receivable)
+          // GST accounts are usually credited (tax liability)
+          const isGstAccount = updatedLine.ledger?.includes('GST');
+          if (isGstAccount) {
+            updatedLine.credit = Math.abs(updatedLine.amount);
+            updatedLine.debit = 0;
+          } else {
+            // Other charges like cutting, loading etc. are usually debited 
+            updatedLine.debit = Math.abs(updatedLine.amount);
+            updatedLine.credit = 0;
+          }
         }
         
         return updatedLine;
@@ -199,11 +225,14 @@ export default function SalesVoucherCreate() {
 
   const calculateTotals = () => {
     const totalAmount = lines.reduce((sum, line) => sum + line.amount, 0);
-    // For sales voucher: Party account is debited, Sales account is credited
-    const totalDebit = totalAmount; // Party owes us
-    const totalCredit = totalAmount; // Sales revenue
+    const inventoryTotal = lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0);
+    const ledgerTotal = lines.filter(l => l.type === 'ledger').reduce((sum, line) => sum + line.amount, 0);
     
-    return { totalDebit, totalCredit, totalAmount };
+    // For sales voucher: Party account is debited (including additional charges), Sales account + taxes are credited
+    const totalDebit = inventoryTotal + lines.filter(l => l.type === 'ledger' && l.debit > 0).reduce((sum, line) => sum + line.debit, 0);
+    const totalCredit = inventoryTotal + lines.filter(l => l.type === 'ledger' && l.credit > 0).reduce((sum, line) => sum + line.credit, 0);
+    
+    return { totalDebit, totalCredit, totalAmount: inventoryTotal + ledgerTotal };
   };
 
   const { totalDebit, totalCredit, totalAmount } = calculateTotals();
@@ -269,29 +298,43 @@ export default function SalesVoucherCreate() {
 
       // Insert accounting entries
       const accountingEntries = [
-        // Party ledger - Debit
+        // Party ledger - Debit (total amount including all charges)
         {
           guid: voucherGuid,
           ledger: ledgers.find(l => l.guid === partyLedger)?.name || '',
           _ledger: ledgers.find(l => l.guid === partyLedger)?.name || '',
-          amount: totalAmount,
+          amount: totalAmount, // Total including inventory + additional charges
           amount_forex: totalAmount,
           currency: '₹',
           company_id: companyId,
           division_id: divisionId
         },
-        // Sales ledger - Credit  
+        // Sales ledger - Credit (inventory value only)
         {
           guid: voucherGuid,
           ledger: ledgers.find(l => l.guid === salesLedger)?.name || '',
           _ledger: ledgers.find(l => l.guid === salesLedger)?.name || '',
-          amount: -totalAmount, // Negative for credit
-          amount_forex: -totalAmount,
+          amount: -lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0), // Negative for credit
+          amount_forex: -lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0),
           currency: '₹',
           company_id: companyId,
           division_id: divisionId
         }
       ];
+
+      // Add ledger entries (taxes, charges, etc.)
+      lines.filter(l => l.type === 'ledger' && l.ledger && l.amount > 0).forEach(line => {
+        accountingEntries.push({
+          guid: voucherGuid,
+          ledger: line.ledger,
+          _ledger: line.ledger,
+          amount: line.credit > 0 ? -line.amount : line.amount, // Negative if credit, positive if debit
+          amount_forex: line.credit > 0 ? -line.amount : line.amount,
+          currency: '₹',
+          company_id: companyId,
+          division_id: divisionId
+        });
+      });
 
       const { error: accountingError } = await supabase
         .from('trn_accounting')
@@ -382,6 +425,16 @@ export default function SalesVoucherCreate() {
     l.parent?.toLowerCase().includes('sales') ||
     l.parent?.toLowerCase().includes('income') ||
     l.parent?.toLowerCase().includes('revenue')
+  );
+
+  const getChargesAndTaxLedgers = () => ledgers.filter(l => 
+    l.name.includes('GST') || 
+    l.name.includes('CHARGES') || 
+    l.name.includes('Duties') ||
+    l.parent.includes('Duties') ||
+    l.parent.includes('Sales') ||
+    l.parent.includes('Expenses') ||
+    l.parent.includes('Finance Cost')
   );
 
   return (
@@ -565,9 +618,9 @@ export default function SalesVoucherCreate() {
           </div>
         </CardHeader>
         <CardContent>
-          {lines.length === 0 ? (
+          {lines.filter(l => l.type === 'inventory').length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No line items added. Click "Add Item" to start.
+              No inventory items added. Click "Add Item" to start.
             </div>
           ) : (
             <Table>
@@ -583,7 +636,7 @@ export default function SalesVoucherCreate() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lines.map(line => (
+                {lines.filter(l => l.type === 'inventory').map(line => (
                   <TableRow key={line.id}>
                     <TableCell>
                       <Select
@@ -648,6 +701,125 @@ export default function SalesVoucherCreate() {
                         onChange={(e) => updateLine(line.id, { trackingNumber: e.target.value })}
                         placeholder="Tracking #"
                         className="w-32"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeLine(line.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Additional Ledger Entries */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Additional Charges & Taxes</CardTitle>
+              <CardDescription>Add GST, cutting charges, loading charges, and other ledger entries</CardDescription>
+            </div>
+            <Button onClick={addLedgerLine} variant="outline" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Ledger Entry
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {lines.filter(l => l.type === 'ledger').length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No additional charges added. Click "Add Ledger Entry" to add taxes, charges, etc.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ledger Account</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Debit</TableHead>
+                  <TableHead>Credit</TableHead>
+                  <TableHead>Narration</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lines.filter(l => l.type === 'ledger').map(line => (
+                  <TableRow key={line.id}>
+                    <TableCell>
+                      <Select
+                        value={line.ledger || ''}
+                        onValueChange={(value) => updateLine(line.id, { ledger: value })}
+                      >
+                        <SelectTrigger className="w-64">
+                          <SelectValue placeholder="Select ledger account" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          <SelectItem value="">-- Select Account --</SelectItem>
+                          {/* GST Accounts */}
+                          <SelectItem value="CGST">CGST (Central GST)</SelectItem>
+                          <SelectItem value="SGST">SGST (State GST)</SelectItem>
+                          <SelectItem value="IGST">IGST (Integrated GST)</SelectItem>
+                          
+                          {/* Common Charges */}
+                          <SelectItem value="CUTTING CHARGES">CUTTING CHARGES</SelectItem>
+                          <SelectItem value="LOADING CHARGES">LOADING CHARGES</SelectItem>
+                          <SelectItem value="FREIGHT CHARGES-EXPS">FREIGHT CHARGES</SelectItem>
+                          <SelectItem value="COURIER CHARGES">COURIER CHARGES</SelectItem>
+                          
+                          {/* Other Common Ledgers from Database */}
+                          {ledgers
+                            .filter(l => 
+                              l.name.includes('GST') || 
+                              l.name.includes('CHARGES') || 
+                              l.name.includes('Duties') ||
+                              l.parent.includes('Duties') ||
+                              l.parent.includes('Sales') ||
+                              l.parent.includes('Expenses')
+                            )
+                            .map(ledger => (
+                              <SelectItem key={ledger.guid} value={ledger.name}>
+                                {ledger.name} ({ledger.parent})
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={line.amount || ''}
+                        onChange={(e) => {
+                          const amount = parseFloat(e.target.value) || 0;
+                          updateLine(line.id, { amount });
+                        }}
+                        className="w-28"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-green-600">₹{line.debit.toFixed(2)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-red-600">₹{line.credit.toFixed(2)}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        value={line.narration || ''}
+                        onChange={(e) => updateLine(line.id, { narration: e.target.value })}
+                        placeholder="Description"
+                        className="w-40"
                       />
                     </TableCell>
                     <TableCell>
