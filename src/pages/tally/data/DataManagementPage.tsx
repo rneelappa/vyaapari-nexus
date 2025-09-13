@@ -110,15 +110,8 @@ export default function DataManagementPage() {
   };
 
   const loadPerformanceMetrics = () => {
-    // Mock performance metrics for now
-    setPerformanceMetrics({
-      cpuUsage: 0,
-      memoryUsage: 0,
-      diskUsage: 0,
-      networkLatency: 0,
-      queryPerformance: 0,
-      syncThroughput: 0
-    });
+    // Set to null for now since we don't have the metrics structure
+    setPerformanceMetrics(null);
   };
 
   const handleFullSync = async () => {
