@@ -94,7 +94,7 @@ export const useAccountingLedgers = () => {
           const { data: transactions, error: transError } = await supabase
             .from('trn_accounting')
             .select('amount, is_deemed_positive, voucher_date')
-            .ilike('ledger', ledger.name)
+            .ilike('ledger', `%${ledger.name}%`)
             .eq('company_id', companyId)
             .eq('division_id', divisionId)
             .order('voucher_date', { ascending: false });
