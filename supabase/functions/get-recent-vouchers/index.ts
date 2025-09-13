@@ -109,6 +109,7 @@ serve(async (req) => {
     // Get vouchers from the division within the date range
     console.log('Querying with params:', { divisionId, startDate, endDate, companyName });
     
+    
     const { data: vouchers, error: vouchersError } = await supabase
       .from('tally_trn_voucher')
       .select('*')

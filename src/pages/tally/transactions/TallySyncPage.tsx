@@ -303,7 +303,7 @@ export default function TallySyncPage() {
 
       <Tabs defaultValue="vouchers" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="vouchers">Recent Vouchers</TabsTrigger>
+          <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
           <TabsTrigger value="summary">Summary</TabsTrigger>
           <TabsTrigger value="tally">Tally Debug</TabsTrigger>
         </TabsList>
