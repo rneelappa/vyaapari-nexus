@@ -618,29 +618,50 @@ export type Database = {
         Row: {
           _parent: string
           address: string
+          capacity: number | null
+          capacity_unit: string | null
           company_id: string | null
+          contact_number: string | null
           division_id: string | null
+          godown_type: string | null
           guid: string
+          location_code: string | null
+          manager_name: string | null
           name: string
           parent: string
+          storage_type: string | null
         }
         Insert: {
           _parent?: string
           address?: string
+          capacity?: number | null
+          capacity_unit?: string | null
           company_id?: string | null
+          contact_number?: string | null
           division_id?: string | null
+          godown_type?: string | null
           guid: string
+          location_code?: string | null
+          manager_name?: string | null
           name?: string
           parent?: string
+          storage_type?: string | null
         }
         Update: {
           _parent?: string
           address?: string
+          capacity?: number | null
+          capacity_unit?: string | null
           company_id?: string | null
+          contact_number?: string | null
           division_id?: string | null
+          godown_type?: string | null
           guid?: string
+          location_code?: string | null
+          manager_name?: string | null
           name?: string
           parent?: string
+          storage_type?: string | null
         }
         Relationships: [
           {
@@ -838,20 +859,30 @@ export type Database = {
           bank_name: string
           bank_swift: string
           bill_credit_period: number
+          buyer_category: string | null
+          buyer_type: string | null
           closing_balance: number | null
           company_id: string | null
+          credit_days: number | null
+          credit_limit: number | null
           description: string
           division_id: string | null
           email: string
+          excise_registration_number: string | null
           gst_duty_head: string
           gst_registration_type: string
           gst_supply_type: string
           gstn: string
           guid: string
           id: number
+          income_tax_number: string | null
           is_deemedpositive: number | null
           is_revenue: number | null
           it_pan: string
+          ledger_contact: string | null
+          ledger_fax: string | null
+          ledger_mobile: string | null
+          ledger_website: string | null
           mailing_address: string
           mailing_country: string
           mailing_name: string
@@ -861,6 +892,8 @@ export type Database = {
           notes: string
           opening_balance: number | null
           parent: string
+          sales_tax_number: string | null
+          service_tax_number: string | null
           tax_rate: number | null
         }
         Insert: {
@@ -873,20 +906,30 @@ export type Database = {
           bank_name?: string
           bank_swift?: string
           bill_credit_period?: number
+          buyer_category?: string | null
+          buyer_type?: string | null
           closing_balance?: number | null
           company_id?: string | null
+          credit_days?: number | null
+          credit_limit?: number | null
           description?: string
           division_id?: string | null
           email?: string
+          excise_registration_number?: string | null
           gst_duty_head?: string
           gst_registration_type?: string
           gst_supply_type?: string
           gstn?: string
           guid: string
           id?: never
+          income_tax_number?: string | null
           is_deemedpositive?: number | null
           is_revenue?: number | null
           it_pan?: string
+          ledger_contact?: string | null
+          ledger_fax?: string | null
+          ledger_mobile?: string | null
+          ledger_website?: string | null
           mailing_address?: string
           mailing_country?: string
           mailing_name?: string
@@ -896,6 +939,8 @@ export type Database = {
           notes?: string
           opening_balance?: number | null
           parent?: string
+          sales_tax_number?: string | null
+          service_tax_number?: string | null
           tax_rate?: number | null
         }
         Update: {
@@ -908,20 +953,30 @@ export type Database = {
           bank_name?: string
           bank_swift?: string
           bill_credit_period?: number
+          buyer_category?: string | null
+          buyer_type?: string | null
           closing_balance?: number | null
           company_id?: string | null
+          credit_days?: number | null
+          credit_limit?: number | null
           description?: string
           division_id?: string | null
           email?: string
+          excise_registration_number?: string | null
           gst_duty_head?: string
           gst_registration_type?: string
           gst_supply_type?: string
           gstn?: string
           guid?: string
           id?: never
+          income_tax_number?: string | null
           is_deemedpositive?: number | null
           is_revenue?: number | null
           it_pan?: string
+          ledger_contact?: string | null
+          ledger_fax?: string | null
+          ledger_mobile?: string | null
+          ledger_website?: string | null
           mailing_address?: string
           mailing_country?: string
           mailing_name?: string
@@ -931,6 +986,8 @@ export type Database = {
           notes?: string
           opening_balance?: number | null
           parent?: string
+          sales_tax_number?: string | null
+          service_tax_number?: string | null
           tax_rate?: number | null
         }
         Relationships: [
@@ -1237,9 +1294,11 @@ export type Database = {
           _uom: string
           alias: string
           alternate_uom: string
+          brand: string | null
           closing_balance: number | null
           closing_rate: number | null
           closing_value: number | null
+          color: string | null
           company_id: string | null
           conversion: number
           costing_method: string
@@ -1251,6 +1310,12 @@ export type Database = {
           gst_taxability: string | null
           gst_type_of_supply: string | null
           guid: string
+          item_category: string | null
+          item_classification: string | null
+          manufacturer: string | null
+          maximum_level: number | null
+          minimum_level: number | null
+          model: string | null
           name: string
           notes: string
           opening_balance: number | null
@@ -1258,7 +1323,14 @@ export type Database = {
           opening_value: number | null
           parent: string
           part_number: string
+          reorder_level: number | null
+          shelf_life_days: number | null
+          size: string | null
           uom: string
+          volume: number | null
+          volume_unit: string | null
+          weight: number | null
+          weight_unit: string | null
         }
         Insert: {
           _alternate_uom?: string
@@ -1266,9 +1338,11 @@ export type Database = {
           _uom?: string
           alias?: string
           alternate_uom?: string
+          brand?: string | null
           closing_balance?: number | null
           closing_rate?: number | null
           closing_value?: number | null
+          color?: string | null
           company_id?: string | null
           conversion?: number
           costing_method?: string
@@ -1280,6 +1354,12 @@ export type Database = {
           gst_taxability?: string | null
           gst_type_of_supply?: string | null
           guid: string
+          item_category?: string | null
+          item_classification?: string | null
+          manufacturer?: string | null
+          maximum_level?: number | null
+          minimum_level?: number | null
+          model?: string | null
           name?: string
           notes?: string
           opening_balance?: number | null
@@ -1287,7 +1367,14 @@ export type Database = {
           opening_value?: number | null
           parent?: string
           part_number?: string
+          reorder_level?: number | null
+          shelf_life_days?: number | null
+          size?: string | null
           uom?: string
+          volume?: number | null
+          volume_unit?: string | null
+          weight?: number | null
+          weight_unit?: string | null
         }
         Update: {
           _alternate_uom?: string
@@ -1295,9 +1382,11 @@ export type Database = {
           _uom?: string
           alias?: string
           alternate_uom?: string
+          brand?: string | null
           closing_balance?: number | null
           closing_rate?: number | null
           closing_value?: number | null
+          color?: string | null
           company_id?: string | null
           conversion?: number
           costing_method?: string
@@ -1309,6 +1398,12 @@ export type Database = {
           gst_taxability?: string | null
           gst_type_of_supply?: string | null
           guid?: string
+          item_category?: string | null
+          item_classification?: string | null
+          manufacturer?: string | null
+          maximum_level?: number | null
+          minimum_level?: number | null
+          model?: string | null
           name?: string
           notes?: string
           opening_balance?: number | null
@@ -1316,7 +1411,14 @@ export type Database = {
           opening_value?: number | null
           parent?: string
           part_number?: string
+          reorder_level?: number | null
+          shelf_life_days?: number | null
+          size?: string | null
           uom?: string
+          volume?: number | null
+          volume_unit?: string | null
+          weight?: number | null
+          weight_unit?: string | null
         }
         Relationships: [
           {
@@ -1842,33 +1944,96 @@ export type Database = {
       }
       tally_trn_voucher: {
         Row: {
+          altered_by: string | null
+          altered_on: string | null
+          basic_amount: number | null
           company_id: string | null
+          consignment_note: string | null
           created_at: string | null
+          currency: string | null
           date: string | null
+          discount_amount: number | null
           division_id: string | null
+          due_date: string | null
+          exchange_rate: number | null
+          final_amount: number | null
           guid: string
+          is_cancelled: number | null
+          is_optional: number | null
           narration: string | null
+          net_amount: number | null
+          order_reference: string | null
+          party_ledger_name: string | null
+          persistedview: number | null
+          receipt_reference: string | null
+          reference: string | null
+          tax_amount: number | null
+          total_amount: number | null
           voucher_number: string | null
+          voucher_number_prefix: string | null
+          voucher_number_suffix: string | null
           voucher_type: string | null
         }
         Insert: {
+          altered_by?: string | null
+          altered_on?: string | null
+          basic_amount?: number | null
           company_id?: string | null
+          consignment_note?: string | null
           created_at?: string | null
+          currency?: string | null
           date?: string | null
+          discount_amount?: number | null
           division_id?: string | null
+          due_date?: string | null
+          exchange_rate?: number | null
+          final_amount?: number | null
           guid: string
+          is_cancelled?: number | null
+          is_optional?: number | null
           narration?: string | null
+          net_amount?: number | null
+          order_reference?: string | null
+          party_ledger_name?: string | null
+          persistedview?: number | null
+          receipt_reference?: string | null
+          reference?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
           voucher_number?: string | null
+          voucher_number_prefix?: string | null
+          voucher_number_suffix?: string | null
           voucher_type?: string | null
         }
         Update: {
+          altered_by?: string | null
+          altered_on?: string | null
+          basic_amount?: number | null
           company_id?: string | null
+          consignment_note?: string | null
           created_at?: string | null
+          currency?: string | null
           date?: string | null
+          discount_amount?: number | null
           division_id?: string | null
+          due_date?: string | null
+          exchange_rate?: number | null
+          final_amount?: number | null
           guid?: string
+          is_cancelled?: number | null
+          is_optional?: number | null
           narration?: string | null
+          net_amount?: number | null
+          order_reference?: string | null
+          party_ledger_name?: string | null
+          persistedview?: number | null
+          receipt_reference?: string | null
+          reference?: string | null
+          tax_amount?: number | null
+          total_amount?: number | null
           voucher_number?: string | null
+          voucher_number_prefix?: string | null
+          voucher_number_suffix?: string | null
           voucher_type?: string | null
         }
         Relationships: [
@@ -1962,32 +2127,62 @@ export type Database = {
         Row: {
           _ledger: string
           amount: number
+          amount_cleared: number | null
           amount_forex: number
+          bill_allocations: string | null
           company_id: string | null
+          cost_category: string | null
+          cost_centre: string | null
           currency: string
           division_id: string | null
           guid: string
+          is_deemed_positive: number | null
+          is_party_ledger: number | null
           ledger: string
+          voucher_date: string | null
+          voucher_guid: string | null
+          voucher_number: string | null
+          voucher_type: string | null
         }
         Insert: {
           _ledger?: string
           amount?: number
+          amount_cleared?: number | null
           amount_forex?: number
+          bill_allocations?: string | null
           company_id?: string | null
+          cost_category?: string | null
+          cost_centre?: string | null
           currency?: string
           division_id?: string | null
           guid?: string
+          is_deemed_positive?: number | null
+          is_party_ledger?: number | null
           ledger?: string
+          voucher_date?: string | null
+          voucher_guid?: string | null
+          voucher_number?: string | null
+          voucher_type?: string | null
         }
         Update: {
           _ledger?: string
           amount?: number
+          amount_cleared?: number | null
           amount_forex?: number
+          bill_allocations?: string | null
           company_id?: string | null
+          cost_category?: string | null
+          cost_centre?: string | null
           currency?: string
           division_id?: string | null
           guid?: string
+          is_deemed_positive?: number | null
+          is_party_ledger?: number | null
           ledger?: string
+          voucher_date?: string | null
+          voucher_guid?: string | null
+          voucher_number?: string | null
+          voucher_type?: string | null
         }
         Relationships: [
           {
@@ -2019,6 +2214,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trn_address_details: {
+        Row: {
+          address_line1: string
+          address_line2: string
+          address_line3: string
+          address_line4: string
+          address_type: string
+          city: string
+          company_id: string | null
+          contact_person: string
+          country: string
+          created_at: string | null
+          division_id: string | null
+          email: string
+          guid: string
+          id: string
+          phone: string
+          pincode: string
+          state: string
+          voucher_guid: string
+        }
+        Insert: {
+          address_line1?: string
+          address_line2?: string
+          address_line3?: string
+          address_line4?: string
+          address_type?: string
+          city?: string
+          company_id?: string | null
+          contact_person?: string
+          country?: string
+          created_at?: string | null
+          division_id?: string | null
+          email?: string
+          guid: string
+          id?: string
+          phone?: string
+          pincode?: string
+          state?: string
+          voucher_guid: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string
+          address_line3?: string
+          address_line4?: string
+          address_type?: string
+          city?: string
+          company_id?: string | null
+          contact_person?: string
+          country?: string
+          created_at?: string | null
+          division_id?: string | null
+          email?: string
+          guid?: string
+          id?: string
+          phone?: string
+          pincode?: string
+          state?: string
+          voucher_guid?: string
+        }
+        Relationships: []
       }
       trn_attendance: {
         Row: {
@@ -2161,46 +2419,85 @@ export type Database = {
           _destination_godown: string
           _godown: string
           _item: string
+          actual_quantity: number | null
+          additional_details: string | null
           amount: number
+          batch_serial_number: string | null
+          billed_quantity: number | null
           company_id: string | null
           destination_godown: string | null
+          discount_amount: number | null
+          discount_percent: number | null
           division_id: string | null
+          expiry_date: string | null
           godown: string | null
           guid: string
           item: string
+          manufactured_date: string | null
           name: string
           quantity: number
+          rate: number | null
           tracking_number: string | null
+          voucher_date: string | null
+          voucher_guid: string | null
+          voucher_number: string | null
+          voucher_type: string | null
         }
         Insert: {
           _destination_godown?: string
           _godown?: string
           _item?: string
+          actual_quantity?: number | null
+          additional_details?: string | null
           amount?: number
+          batch_serial_number?: string | null
+          billed_quantity?: number | null
           company_id?: string | null
           destination_godown?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
           division_id?: string | null
+          expiry_date?: string | null
           godown?: string | null
           guid?: string
           item?: string
+          manufactured_date?: string | null
           name?: string
           quantity?: number
+          rate?: number | null
           tracking_number?: string | null
+          voucher_date?: string | null
+          voucher_guid?: string | null
+          voucher_number?: string | null
+          voucher_type?: string | null
         }
         Update: {
           _destination_godown?: string
           _godown?: string
           _item?: string
+          actual_quantity?: number | null
+          additional_details?: string | null
           amount?: number
+          batch_serial_number?: string | null
+          billed_quantity?: number | null
           company_id?: string | null
           destination_godown?: string | null
+          discount_amount?: number | null
+          discount_percent?: number | null
           division_id?: string | null
+          expiry_date?: string | null
           godown?: string | null
           guid?: string
           item?: string
+          manufactured_date?: string | null
           name?: string
           quantity?: number
+          rate?: number | null
           tracking_number?: string | null
+          voucher_date?: string | null
+          voucher_guid?: string | null
+          voucher_number?: string | null
+          voucher_type?: string | null
         }
         Relationships: [
           {
@@ -2297,6 +2594,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trn_category_allocation: {
+        Row: {
+          allocation_amount: number | null
+          allocation_percentage: number | null
+          company_id: string | null
+          cost_category: string
+          cost_centre: string
+          created_at: string | null
+          division_id: string | null
+          guid: string
+          id: string
+          voucher_guid: string
+        }
+        Insert: {
+          allocation_amount?: number | null
+          allocation_percentage?: number | null
+          company_id?: string | null
+          cost_category?: string
+          cost_centre?: string
+          created_at?: string | null
+          division_id?: string | null
+          guid: string
+          id?: string
+          voucher_guid: string
+        }
+        Update: {
+          allocation_amount?: number | null
+          allocation_percentage?: number | null
+          company_id?: string | null
+          cost_category?: string
+          cost_centre?: string
+          created_at?: string | null
+          division_id?: string | null
+          guid?: string
+          id?: string
+          voucher_guid?: string
+        }
+        Relationships: []
       }
       trn_closingstock_ledger: {
         Row: {
@@ -2558,6 +2894,45 @@ export type Database = {
           },
         ]
       }
+      trn_due_date: {
+        Row: {
+          bill_name: string
+          company_id: string | null
+          created_at: string | null
+          credit_period: number | null
+          division_id: string | null
+          due_date: string | null
+          guid: string
+          id: string
+          overdue_days: number | null
+          voucher_guid: string
+        }
+        Insert: {
+          bill_name?: string
+          company_id?: string | null
+          created_at?: string | null
+          credit_period?: number | null
+          division_id?: string | null
+          due_date?: string | null
+          guid: string
+          id?: string
+          overdue_days?: number | null
+          voucher_guid: string
+        }
+        Update: {
+          bill_name?: string
+          company_id?: string | null
+          created_at?: string | null
+          credit_period?: number | null
+          division_id?: string | null
+          due_date?: string | null
+          guid?: string
+          id?: string
+          overdue_days?: number | null
+          voucher_guid?: string
+        }
+        Relationships: []
+      }
       trn_employee: {
         Row: {
           _category: string
@@ -2622,6 +2997,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trn_gst_details: {
+        Row: {
+          cess_amount: number | null
+          cess_rate: number | null
+          cgst_amount: number | null
+          cgst_rate: number | null
+          company_id: string | null
+          created_at: string | null
+          division_id: string | null
+          gst_class: string
+          gst_registration_type: string
+          guid: string
+          hsn_code: string
+          hsn_description: string
+          id: string
+          igst_amount: number | null
+          igst_rate: number | null
+          reverse_charge_applicable: number | null
+          sgst_amount: number | null
+          sgst_rate: number | null
+          taxable_amount: number | null
+          voucher_guid: string
+        }
+        Insert: {
+          cess_amount?: number | null
+          cess_rate?: number | null
+          cgst_amount?: number | null
+          cgst_rate?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          gst_class?: string
+          gst_registration_type?: string
+          guid: string
+          hsn_code?: string
+          hsn_description?: string
+          id?: string
+          igst_amount?: number | null
+          igst_rate?: number | null
+          reverse_charge_applicable?: number | null
+          sgst_amount?: number | null
+          sgst_rate?: number | null
+          taxable_amount?: number | null
+          voucher_guid: string
+        }
+        Update: {
+          cess_amount?: number | null
+          cess_rate?: number | null
+          cgst_amount?: number | null
+          cgst_rate?: number | null
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          gst_class?: string
+          gst_registration_type?: string
+          guid?: string
+          hsn_code?: string
+          hsn_description?: string
+          id?: string
+          igst_amount?: number | null
+          igst_rate?: number | null
+          reverse_charge_applicable?: number | null
+          sgst_amount?: number | null
+          sgst_rate?: number | null
+          taxable_amount?: number | null
+          voucher_guid?: string
+        }
+        Relationships: []
       }
       trn_inventory: {
         Row: {
@@ -2722,6 +3166,57 @@ export type Database = {
           },
         ]
       }
+      trn_party_details: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          division_id: string | null
+          gstin: string
+          guid: string
+          id: string
+          party_address: string
+          party_country: string
+          party_ledger_name: string
+          party_name: string
+          party_pincode: string
+          party_state: string
+          place_of_supply: string
+          voucher_guid: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          gstin?: string
+          guid: string
+          id?: string
+          party_address?: string
+          party_country?: string
+          party_ledger_name?: string
+          party_name?: string
+          party_pincode?: string
+          party_state?: string
+          place_of_supply?: string
+          voucher_guid: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          gstin?: string
+          guid?: string
+          id?: string
+          party_address?: string
+          party_country?: string
+          party_ledger_name?: string
+          party_name?: string
+          party_pincode?: string
+          party_state?: string
+          place_of_supply?: string
+          voucher_guid?: string
+        }
+        Relationships: []
+      }
       trn_payhead: {
         Row: {
           _category: string
@@ -2781,6 +3276,144 @@ export type Database = {
             referencedColumns: ["division_id"]
           },
         ]
+      }
+      trn_reference: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          division_id: string | null
+          guid: string
+          id: string
+          reference_amount: number | null
+          reference_date: string | null
+          reference_name: string
+          reference_number: string
+          voucher_guid: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          guid: string
+          id?: string
+          reference_amount?: number | null
+          reference_date?: string | null
+          reference_name?: string
+          reference_number?: string
+          voucher_guid: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          guid?: string
+          id?: string
+          reference_amount?: number | null
+          reference_date?: string | null
+          reference_name?: string
+          reference_number?: string
+          voucher_guid?: string
+        }
+        Relationships: []
+      }
+      trn_shipping_details: {
+        Row: {
+          buyer_address: string
+          buyer_name: string
+          buyer_state: string
+          company_id: string | null
+          consignee_address: string
+          consignee_country: string
+          consignee_name: string
+          consignee_pincode: string
+          consignee_state: string
+          created_at: string | null
+          dispatch_state: string
+          division_id: string | null
+          guid: string
+          id: string
+          ship_to_state: string
+          voucher_guid: string
+        }
+        Insert: {
+          buyer_address?: string
+          buyer_name?: string
+          buyer_state?: string
+          company_id?: string | null
+          consignee_address?: string
+          consignee_country?: string
+          consignee_name?: string
+          consignee_pincode?: string
+          consignee_state?: string
+          created_at?: string | null
+          dispatch_state?: string
+          division_id?: string | null
+          guid: string
+          id?: string
+          ship_to_state?: string
+          voucher_guid: string
+        }
+        Update: {
+          buyer_address?: string
+          buyer_name?: string
+          buyer_state?: string
+          company_id?: string | null
+          consignee_address?: string
+          consignee_country?: string
+          consignee_name?: string
+          consignee_pincode?: string
+          consignee_state?: string
+          created_at?: string | null
+          dispatch_state?: string
+          division_id?: string | null
+          guid?: string
+          id?: string
+          ship_to_state?: string
+          voucher_guid?: string
+        }
+        Relationships: []
+      }
+      trn_tax_details: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          division_id: string | null
+          guid: string
+          id: string
+          tax_amount: number | null
+          tax_ledger: string
+          tax_name: string
+          tax_rate: number | null
+          tax_type: string
+          voucher_guid: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          guid: string
+          id?: string
+          tax_amount?: number | null
+          tax_ledger?: string
+          tax_name?: string
+          tax_rate?: number | null
+          tax_type?: string
+          voucher_guid: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          division_id?: string | null
+          guid?: string
+          id?: string
+          tax_amount?: number | null
+          tax_ledger?: string
+          tax_name?: string
+          tax_rate?: number | null
+          tax_type?: string
+          voucher_guid?: string
+        }
+        Relationships: []
       }
       trn_voucher: {
         Row: {
