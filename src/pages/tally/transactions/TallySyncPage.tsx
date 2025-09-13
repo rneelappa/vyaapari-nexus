@@ -4,10 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Download, Clock, TrendingUp } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { RefreshCw, Download, Clock, TrendingUp, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Voucher {
   guid: string;
@@ -30,14 +34,22 @@ interface SyncData {
   };
 }
 
+interface DateRange {
+  from: Date | undefined;
+  to: Date | undefined;
+}
+
 export default function TallySyncPage() {
   const { divisionId } = useParams();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [syncData, setSyncData] = useState<SyncData | null>(null);
-  const [days, setDays] = useState(1);
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
 
-  const fetchRecentVouchers = async (dayCount: number = 1) => {
+  const fetchVouchersByDateRange = async (fromDate?: Date, toDate?: Date) => {
     if (!divisionId) {
       toast({
         title: "Error",
@@ -49,10 +61,15 @@ export default function TallySyncPage() {
 
     setIsLoading(true);
     try {
+      // Set default date range if not provided
+      const defaultFromDate = fromDate || new Date(Date.now() - 24 * 60 * 60 * 1000); // Yesterday
+      const defaultToDate = toDate || new Date(); // Today
+      
       const { data, error } = await supabase.functions.invoke('get-recent-vouchers', {
         body: { 
           divisionId,
-          days: dayCount 
+          fromDate: defaultFromDate.toISOString().split('T')[0], // YYYY-MM-DD format
+          toDate: defaultToDate.toISOString().split('T')[0]
         }
       });
 
@@ -60,10 +77,12 @@ export default function TallySyncPage() {
 
       if (data.success) {
         setSyncData(data);
-        setDays(dayCount);
+        const dateRangeText = fromDate && toDate 
+          ? `${format(fromDate, 'MMM dd, yyyy')} - ${format(toDate, 'MMM dd, yyyy')}`
+          : `Last day`;
         toast({
           title: "Success",
-          description: `Found ${data.summary.totalVouchers} vouchers from the last ${dayCount} day(s)`,
+          description: `Found ${data.summary.totalVouchers} vouchers for ${dateRangeText}`,
         });
       } else {
         throw new Error(data.error || 'Unknown error occurred');
@@ -78,6 +97,28 @@ export default function TallySyncPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchRecentVouchers = (dayCount: number) => {
+    const toDate = new Date();
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - dayCount);
+    
+    setDateRange({ from: fromDate, to: toDate });
+    fetchVouchersByDateRange(fromDate, toDate);
+  };
+
+  const handleDateRangeSearch = () => {
+    if (!dateRange.from || !dateRange.to) {
+      toast({
+        title: "Error",
+        description: "Please select both start and end dates",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    fetchVouchersByDateRange(dateRange.from, dateRange.to);
   };
 
   const formatDate = (dateString: string) => {
@@ -122,36 +163,117 @@ export default function TallySyncPage() {
             View and sync vouchers between your system and Tally
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => fetchRecentVouchers(1)}
-            disabled={isLoading}
-          >
-            <Clock className="h-4 w-4 mr-2" />
-            Last Day
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => fetchRecentVouchers(7)}
-            disabled={isLoading}
-          >
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Last Week
-          </Button>
-          <Button
-            onClick={() => fetchRecentVouchers(days)}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Refresh
-          </Button>
-        </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Date Range Selection</CardTitle>
+          <CardDescription>
+            Choose a date range to fetch vouchers or use quick options
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">From Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !dateRange.from && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange.from ? format(dateRange.from, "PPP") : <span>Pick start date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateRange.from}
+                    onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">To Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !dateRange.to && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange.to ? format(dateRange.to, "PPP") : <span>Pick end date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateRange.to}
+                    onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleDateRangeSearch}
+                disabled={isLoading || !dateRange.from || !dateRange.to}
+              >
+                {isLoading ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Search
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchRecentVouchers(1)}
+              disabled={isLoading}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Last Day
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchRecentVouchers(7)}
+              disabled={isLoading}
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Last Week
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchRecentVouchers(30)}
+              disabled={isLoading}
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Last Month
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {syncData?.division && (
         <Card>
@@ -180,7 +302,7 @@ export default function TallySyncPage() {
             <CardHeader>
               <CardTitle>Voucher List</CardTitle>
               <CardDescription>
-                Vouchers created in the last {days} day(s)
+                Vouchers for the selected date range
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -226,7 +348,7 @@ export default function TallySyncPage() {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
-                    {syncData ? 'No vouchers found for the selected period.' : 'Click refresh to load vouchers.'}
+                    {syncData ? 'No vouchers found for the selected date range.' : 'Select a date range and click Search to load vouchers.'}
                   </p>
                 </div>
               )}
@@ -244,7 +366,7 @@ export default function TallySyncPage() {
               <CardContent>
                 <div className="text-2xl font-bold">{syncData?.summary.totalVouchers || 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  Last {days} day(s)
+                  Selected range
                 </p>
               </CardContent>
             </Card>
@@ -270,9 +392,14 @@ export default function TallySyncPage() {
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{days}</div>
+                <div className="text-2xl font-bold">
+                  {dateRange.from && dateRange.to ? 
+                    Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)) + 1 : 
+                    0
+                  }
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Days analyzed
+                  Days in range
                 </p>
               </CardContent>
             </Card>

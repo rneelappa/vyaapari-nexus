@@ -33,11 +33,13 @@ serve(async (req) => {
       );
     }
 
-    const { divisionId, days = 1 } = requestBody;
+    const { divisionId, days, fromDate, toDate } = requestBody;
     
     console.log('Extracted data:', { 
       divisionId, 
-      days 
+      days,
+      fromDate,
+      toDate 
     });
     
     if (!divisionId) {
@@ -70,19 +72,32 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
     console.log('Supabase client initialized');
 
-    // Calculate the date cutoff (last N days)
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    const cutoffDateString = cutoffDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+    // Calculate the date range
+    let startDate: string;
+    let endDate: string;
     
-    console.log('Fetching vouchers from date:', cutoffDateString);
+    if (fromDate && toDate) {
+      // Use provided date range
+      startDate = fromDate;
+      endDate = toDate;
+    } else {
+      // Use days parameter (fallback to legacy behavior)
+      const dayCount = days || 1;
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - dayCount);
+      startDate = cutoffDate.toISOString().split('T')[0];
+      endDate = new Date().toISOString().split('T')[0];
+    }
+    
+    console.log('Fetching vouchers from date range:', { startDate, endDate });
 
-    // Get recent vouchers from the division
+    // Get vouchers from the division within the date range
     const { data: vouchers, error: vouchersError } = await supabase
       .from('tally_trn_voucher')
       .select('*')
       .eq('division_id', divisionId)
-      .gte('date', cutoffDateString)
+      .gte('date', startDate)
+      .lte('date', endDate)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -126,11 +141,16 @@ serve(async (req) => {
       filters: {
         divisionId,
         days,
-        cutoffDate: cutoffDateString
+        fromDate,
+        toDate,
+        startDate,
+        endDate
       },
       summary: {
         totalVouchers: vouchers?.length || 0,
-        dateRange: `Last ${days} day(s) from ${cutoffDateString}`
+        dateRange: fromDate && toDate 
+          ? `${startDate} to ${endDate}` 
+          : `Last ${days || 1} day(s) from ${startDate}`
       }
     };
 
