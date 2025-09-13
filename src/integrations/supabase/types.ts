@@ -2654,22 +2654,7 @@ export type Database = {
           rate?: number
           tracking_number?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "trn_inventory_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
-          },
-          {
-            foreignKeyName: "trn_inventory_division_id_fkey"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
-          },
-        ]
+        Relationships: []
       }
       trn_inventory_accounting: {
         Row: {
