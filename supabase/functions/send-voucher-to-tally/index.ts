@@ -207,7 +207,7 @@ serve(async (req) => {
       .from('divisions')
       .select('tally_url, tally_enabled, name')
       .eq('id', divisionId)
-      .single();
+      .maybeSingle();
 
     console.log('Division query result:', { division, divisionError });
 
