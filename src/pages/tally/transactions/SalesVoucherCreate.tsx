@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { VoucherSuccessView } from '@/components/tally/VoucherSuccessView';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -81,6 +82,9 @@ export default function SalesVoucherCreate() {
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSuccessView, setShowSuccessView] = useState(false);
+  const [savedVoucherData, setSavedVoucherData] = useState<any>(null);
+  const [isSendingToTally, setIsSendingToTally] = useState(false);
   
   // Load master data
   useEffect(() => {
@@ -296,7 +300,7 @@ export default function SalesVoucherCreate() {
 
       // Insert main voucher with all required fields
       const voucherGuid = `voucher-${Date.now()}`;
-      const { data: voucherData, error: voucherError } = await supabase
+      const { data: voucherInsertData, error: voucherError } = await supabase
         .from('trn_voucher')
         .insert({
           guid: voucherGuid,
@@ -410,12 +414,19 @@ export default function SalesVoucherCreate() {
         description: `Sales voucher ${voucherNumber} created successfully`,
       });
 
-      // Reset form
-      setLines([]);
-      setPartyLedger('');
-      setSalesLedger('');
-      setNarration('');
-      generateVoucherNumber();
+      // Prepare voucher data for success view
+      const savedVoucherInfo = {
+        voucherNumber,
+        date: format(date, 'yyyy-MM-dd'),
+        partyLedger: selectedPartyLedger,
+        salesLedger: selectedSalesLedger,
+        lines,
+        narration,
+        totalAmount
+      };
+      
+      setSavedVoucherData(savedVoucherInfo);
+      setShowSuccessView(true);
 
     } catch (error) {
       console.error('Error saving voucher:', error);
@@ -450,6 +461,65 @@ export default function SalesVoucherCreate() {
     l.parent.includes('Expenses') ||
     l.parent.includes('Finance Cost')
   );
+
+  const handleSendToTally = async () => {
+    if (!savedVoucherData) return;
+
+    setIsSendingToTally(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-to-tally', {
+        body: { voucherData: savedVoucherData }
+      });
+
+      if (error) throw error;
+      
+      if (data.success) {
+        toast({
+          title: "Success",
+          description: "Voucher sent to Tally successfully!",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to send voucher to Tally');
+      }
+    } catch (error: any) {
+      console.error('Error sending to Tally:', error);
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to send voucher to Tally',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingToTally(false);
+    }
+  };
+
+  const handleEditVoucher = () => {
+    setShowSuccessView(false);
+    setSavedVoucherData(null);
+  };
+
+  const handleBackToList = () => {
+    // Reset form and go back to create view
+    setShowSuccessView(false);
+    setSavedVoucherData(null);
+    setLines([]);
+    setPartyLedger('');
+    setSalesLedger('');
+    setNarration('');
+    generateVoucherNumber();
+  };
+
+  if (showSuccessView && savedVoucherData) {
+    return (
+      <VoucherSuccessView
+        voucherData={savedVoucherData}
+        onSendToTally={handleSendToTally}
+        onEdit={handleEditVoucher}
+        onBack={handleBackToList}
+        isSending={isSendingToTally}
+      />
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
