@@ -150,14 +150,26 @@ export default function AccountingPage() {
           <CardContent>
             {filteredLedgers.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  {searchTerm ? 'No ledgers match your search.' : 'No accounting ledgers found.'}
-                </p>
-                {!searchTerm && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Check if the company and division have ledger data.
+                <div className="mb-4">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground font-medium">
+                    {searchTerm ? 'No ledgers match your search.' : 'No accounting ledgers found.'}
                   </p>
-                )}
+                  {!searchTerm && (
+                    <div className="text-sm text-muted-foreground mt-2 space-y-1">
+                      <p>This could mean:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>No ledger data exists for this company/division</li>
+                        <li>Ledgers may exist but don't match accounting categories</li>
+                        <li>Check the browser console for debugging information</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                <Button onClick={refresh} variant="outline">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reload Data
+                </Button>
               </div>
             ) : (
               <Table>

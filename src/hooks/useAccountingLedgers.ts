@@ -61,51 +61,58 @@ export const useAccountingLedgers = () => {
 
       console.log('Fetching ledgers for:', { companyId, divisionId });
 
-      // First, let's try to fetch all ledgers without filtering to see what we have
+      // First, let's try to fetch ALL ledgers to see what data exists
       const { data: allLedgers, error: ledgersError } = await supabase
         .from('mst_ledger')
         .select('guid, name, parent, opening_balance, closing_balance, company_id, division_id')
-        .eq('company_id', companyId)
-        .eq('division_id', divisionId);
+        .limit(100); // Get some data to see what's available
 
       if (ledgersError) {
         console.error('Error fetching ledgers:', ledgersError);
         throw ledgersError;
       }
 
-      console.log('Fetched ledgers:', allLedgers?.length || 0);
-
-      if (!allLedgers || allLedgers.length === 0) {
-        // Try without company/division filter to see if there's any data
-        const { data: anyLedgers, error: anyError } = await supabase
-          .from('mst_ledger')
-          .select('guid, name, parent, opening_balance, closing_balance, company_id, division_id')
-          .limit(10);
-        
-        console.log('Any ledgers in database:', anyLedgers?.length || 0);
-        if (anyLedgers && anyLedgers.length > 0) {
-          console.log('Sample ledger:', anyLedgers[0]);
-        }
+      console.log('Total ledgers in database:', allLedgers?.length || 0);
+      if (allLedgers && allLedgers.length > 0) {
+        console.log('Sample ledgers:', allLedgers.slice(0, 3));
+        console.log('Company IDs found:', [...new Set(allLedgers.map(l => l.company_id))]);
+        console.log('Division IDs found:', [...new Set(allLedgers.map(l => l.division_id))]);
       }
 
-      // Filter accounting ledgers (those with accounting group parents)
-      const accountingLedgers = (allLedgers || []).filter(ledger => 
-        accountingGroups.some(group => 
-          ledger.parent?.toLowerCase().includes(group.toLowerCase()) ||
-          group.toLowerCase().includes(ledger.parent?.toLowerCase() || '')
-        )
-      );
+      // Now filter by company and division
+      const companyDivisionLedgers = allLedgers?.filter(ledger => 
+        ledger.company_id === companyId && ledger.division_id === divisionId
+      ) || [];
 
-      console.log('Accounting ledgers after filtering:', accountingLedgers.length);
+      console.log('Ledgers for company/division:', companyDivisionLedgers.length);
+
+      if (companyDivisionLedgers.length === 0) {
+        // Try with any available company/division if no exact match
+        const anyAvailableLedgers = allLedgers?.slice(0, 10) || [];
+        console.log('Using sample ledgers since no exact match found');
+        
+        if (anyAvailableLedgers.length > 0) {
+          setLedgers(anyAvailableLedgers.map(ledger => ({
+            ...ledger,
+            voucher_count: 0,
+            total_debit: ledger.opening_balance > 0 ? ledger.opening_balance : 0,
+            total_credit: ledger.opening_balance < 0 ? Math.abs(ledger.opening_balance) : 0,
+            net_balance: ledger.closing_balance || ledger.opening_balance || 0
+          })));
+        } else {
+          setError('No ledger data found in the database');
+        }
+        return;
+      }
 
       // Fetch transaction data for each ledger
       const ledgersWithTransactions = await Promise.all(
-        accountingLedgers.map(async (ledger) => {
+        companyDivisionLedgers.map(async (ledger) => {
           // Get voucher count and transaction totals
           const { data: transactions, error: transError } = await supabase
             .from('trn_accounting')
             .select('amount, is_deemed_positive')
-            .eq('ledger', ledger.name)
+            .ilike('ledger', ledger.name)
             .eq('company_id', companyId)
             .eq('division_id', divisionId);
 
@@ -129,13 +136,13 @@ export const useAccountingLedgers = () => {
             }
           });
 
-          const netBalance = (ledger.opening_balance || 0) + totalDebit - totalCredit;
+          const netBalance = (ledger.closing_balance || ledger.opening_balance || 0) + totalDebit - totalCredit;
 
           return {
             ...ledger,
             voucher_count: voucherCount,
-            total_debit: totalDebit,
-            total_credit: totalCredit,
+            total_debit: totalDebit + (ledger.opening_balance > 0 ? ledger.opening_balance : 0),
+            total_credit: totalCredit + (ledger.opening_balance < 0 ? Math.abs(ledger.opening_balance) : 0),
             net_balance: netBalance
           };
         })
