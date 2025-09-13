@@ -280,6 +280,12 @@ export default function SalesVoucherCreate() {
         if (c && c.length > 0) companyId = c[0].id as string;
       }
       if (!divisionId) {
+        try {
+          const { data: vd } = await (supabase as any).from('vyaapari_divisions').select('id').limit(1);
+          if (vd && vd.length > 0) divisionId = vd[0].id as string;
+        } catch (_) {}
+      }
+      if (!divisionId) {
         const { data: d } = await supabase.from('divisions').select('id').limit(1);
         if (d && d.length > 0) divisionId = d[0].id as string;
       }

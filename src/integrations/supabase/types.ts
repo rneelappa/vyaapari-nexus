@@ -2834,15 +2834,7 @@ export type Database = {
           voucher_number?: string
           voucher_type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "trn_voucher_division_id_fkey"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "mst_division"
-            referencedColumns: ["division_id"]
-          },
-        ]
+        Relationships: []
       }
       user_roles: {
         Row: {
