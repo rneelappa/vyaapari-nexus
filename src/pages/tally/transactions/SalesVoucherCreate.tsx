@@ -194,23 +194,12 @@ export default function SalesVoucherCreate() {
         // Calculate amount for inventory lines
         if (updatedLine.type === 'inventory' && updatedLine.quantity && updatedLine.rate) {
           updatedLine.amount = updatedLine.quantity * updatedLine.rate;
-          updatedLine.credit = updatedLine.amount; // Sales inventory credited
-          updatedLine.debit = 0; // No debit for inventory lines in sales
         }
         
-        // Handle ledger line calculations
+        // Calculate amount for ledger lines
         if (updatedLine.type === 'ledger' && updatedLine.amount) {
-          // For sales voucher: most additional charges are debited (increase receivable)
-          // GST accounts are usually credited (tax liability)
-          const isGstAccount = updatedLine.ledger?.includes('GST');
-          if (isGstAccount) {
-            updatedLine.credit = Math.abs(updatedLine.amount);
-            updatedLine.debit = 0;
-          } else {
-            // Other charges like cutting, loading etc. are usually debited 
-            updatedLine.debit = Math.abs(updatedLine.amount);
-            updatedLine.credit = 0;
-          }
+          // All ledger amounts are simply added to the total
+          updatedLine.amount = Math.abs(updatedLine.amount);
         }
         
         return updatedLine;
@@ -224,15 +213,15 @@ export default function SalesVoucherCreate() {
   };
 
   const calculateTotals = () => {
-    const totalAmount = lines.reduce((sum, line) => sum + line.amount, 0);
     const inventoryTotal = lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0);
     const ledgerTotal = lines.filter(l => l.type === 'ledger').reduce((sum, line) => sum + line.amount, 0);
+    const totalAmount = inventoryTotal + ledgerTotal;
     
-    // For sales voucher: Party account is debited (including additional charges), Sales account + taxes are credited
-    const totalDebit = inventoryTotal + lines.filter(l => l.type === 'ledger' && l.debit > 0).reduce((sum, line) => sum + line.debit, 0);
-    const totalCredit = inventoryTotal + lines.filter(l => l.type === 'ledger' && l.credit > 0).reduce((sum, line) => sum + line.credit, 0);
+    // For sales voucher: Party account is debited with total, Sales account is credited with total
+    const totalDebit = totalAmount; // Party account debit
+    const totalCredit = totalAmount; // Sales account credit (includes inventory + charges)
     
-    return { totalDebit, totalCredit, totalAmount: inventoryTotal + ledgerTotal };
+    return { totalDebit, totalCredit, totalAmount };
   };
 
   const { totalDebit, totalCredit, totalAmount } = calculateTotals();
@@ -301,9 +290,9 @@ export default function SalesVoucherCreate() {
         throw voucherError;
       }
 
-      // Insert accounting entries
+      // Insert accounting entries - Simplified for sales voucher
       const accountingEntries = [
-        // Party ledger - Debit (total amount including all charges)
+        // Party ledger - Debit (total amount)
         {
           guid: voucherGuid,
           ledger: ledgers.find(l => l.guid === partyLedger)?.name || '',
@@ -314,32 +303,18 @@ export default function SalesVoucherCreate() {
           company_id: companyId,
           division_id: divisionId
         },
-        // Sales ledger - Credit (inventory value only)
+        // Sales ledger - Credit (total amount including charges)
         {
           guid: voucherGuid,
           ledger: ledgers.find(l => l.guid === salesLedger)?.name || '',
           _ledger: ledgers.find(l => l.guid === salesLedger)?.name || '',
-          amount: -lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0), // Negative for credit
-          amount_forex: -lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0),
+          amount: -totalAmount, // Negative for credit - includes inventory + charges
+          amount_forex: -totalAmount,
           currency: '₹',
           company_id: companyId,
           division_id: divisionId
         }
       ];
-
-      // Add ledger entries (taxes, charges, etc.)
-      lines.filter(l => l.type === 'ledger' && l.ledger && l.amount > 0).forEach(line => {
-        accountingEntries.push({
-          guid: voucherGuid,
-          ledger: line.ledger,
-          _ledger: line.ledger,
-          amount: line.credit > 0 ? -line.amount : line.amount, // Negative if credit, positive if debit
-          amount_forex: line.credit > 0 ? -line.amount : line.amount,
-          currency: '₹',
-          company_id: companyId,
-          division_id: divisionId
-        });
-      });
 
       const { error: accountingError } = await supabase
         .from('trn_accounting')
