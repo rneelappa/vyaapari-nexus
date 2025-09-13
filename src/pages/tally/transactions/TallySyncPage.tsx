@@ -6,12 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { RefreshCw, Download, Clock, TrendingUp, CalendarIcon } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { RefreshCw, Download, Clock, TrendingUp, CalendarIcon, Play, Database, Package, Building2, FileText, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useEnhancedTallySync } from '@/hooks/useEnhancedTallySync';
+import { EnhancedProcessingView } from '@/components/tally/EnhancedProcessingView';
 
 interface Voucher {
   guid: string;
@@ -20,6 +23,7 @@ interface Voucher {
   voucher_type: string;
   narration?: string;
   created_at: string;
+  company_id?: string;
 }
 
 interface SyncData {
@@ -72,6 +76,19 @@ export default function TallySyncPage() {
     from: undefined,
     to: undefined,
   });
+  
+  // Enhanced sync capabilities
+  const {
+    isProcessing,
+    currentProgress,
+    allResults,
+    summary: enhancedSummary,
+    processXmlData,
+    getRecordsByType,
+    getRecordsByAction
+  } = useEnhancedTallySync();
+  
+  const [showEnhancedProcessing, setShowEnhancedProcessing] = useState(false);
 
   const fetchVouchersByDateRange = async (fromDate?: Date, toDate?: Date) => {
     if (!divisionId) {
@@ -143,6 +160,32 @@ export default function TallySyncPage() {
     }
     
     fetchVouchersByDateRange(dateRange.from, dateRange.to);
+  };
+
+  const handleEnhancedProcessing = async () => {
+    if (!syncData?.tally?.responseXml) {
+      toast({
+        title: "No XML Data",
+        description: "Please fetch vouchers first to get XML data for processing",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowEnhancedProcessing(true);
+    
+    try {
+        await processXmlData(
+        syncData.tally.responseXml,
+        divisionId!,
+        syncData.vouchers[0]?.company_id || null,
+        (update) => {
+          console.log('Progress update:', update);
+        }
+      );
+    } catch (error) {
+      console.error('Enhanced processing failed:', error);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -354,6 +397,9 @@ export default function TallySyncPage() {
           {syncData?.parseResults && (
             <TabsTrigger value="parse-results">Parse Results</TabsTrigger>
           )}
+          {showEnhancedProcessing && (
+            <TabsTrigger value="enhanced-processing">Live Processing</TabsTrigger>
+          )}
           <TabsTrigger value="tally">Tally Debug</TabsTrigger>
         </TabsList>
 
@@ -366,6 +412,25 @@ export default function TallySyncPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {syncData?.tally?.responseXml && (
+                <div className="mb-4">
+                  <Button
+                    onClick={handleEnhancedProcessing}
+                    disabled={isProcessing}
+                    className="mr-2"
+                  >
+                    {isProcessing ? (
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4 mr-2" />
+                    )}
+                    Enhanced Processing
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Process XML with master data creation and live updates
+                  </span>
+                </div>
+              )}
               {syncData?.vouchers?.length ? (
                 <div className="rounded-md border">
                   <Table>
@@ -534,6 +599,27 @@ export default function TallySyncPage() {
                     </Table>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        {showEnhancedProcessing && (
+          <TabsContent value="enhanced-processing">
+            <Card>
+              <CardHeader>
+                <CardTitle>Enhanced XML Processing</CardTitle>
+                <CardDescription>
+                  Live processing with master data creation and detailed status updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EnhancedProcessingView
+                  isProcessing={isProcessing}
+                  currentProgress={currentProgress}
+                  results={allResults}
+                  summary={enhancedSummary}
+                />
               </CardContent>
             </Card>
           </TabsContent>
