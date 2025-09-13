@@ -59,22 +59,30 @@ Deno.serve(async (req) => {
           throw new Error('No Tally URL configured')
         }
 
-        // Construct health check URL (assuming Tally has a simple endpoint)
-        const healthUrl = division.tally_url.endsWith('/') 
-          ? `${division.tally_url}9000/` 
-          : `${division.tally_url}:9000/`
+        // Construct health check URL - for ngrok URLs, don't add port
+        let healthUrl = division.tally_url
+        if (!healthUrl.includes('ngrok')) {
+          // Only add port 9000 for non-ngrok URLs
+          healthUrl = division.tally_url.endsWith('/') 
+            ? `${division.tally_url}9000/` 
+            : `${division.tally_url}:9000/`
+        } else {
+          // For ngrok URLs, ensure proper trailing slash
+          healthUrl = division.tally_url.endsWith('/') ? division.tally_url : `${division.tally_url}/`
+        }
 
         console.log(`Checking health for division ${division.id} at ${healthUrl}`)
 
         // Make a simple request to check if Tally is responding
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
         const response = await fetch(healthUrl, {
           method: 'GET',
           signal: controller.signal,
           headers: {
             'Accept': 'text/xml, application/xml',
+            'User-Agent': 'Supabase-Health-Check/1.0',
           }
         })
 
