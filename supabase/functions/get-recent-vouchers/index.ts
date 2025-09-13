@@ -170,17 +170,46 @@ serve(async (req) => {
         });
 
         const xmlText = await tallyResp.text();
-        const matches = xmlText.match(/<VOUCHER[^>]*>[\s\S]*?<\/VOUCHER>/g) || [];
+        const voucherMatches = xmlText.match(/<VOUCHER[^>]*>[\s\S]*?<\/VOUCHER>/g) || [];
+        
+        // Parse Tally vouchers from XML
+        const tallyVouchers = voucherMatches.map((voucherXml, index) => {
+          // Extract voucher data from XML
+          const dateMatch = voucherXml.match(/<DATE>(.*?)<\/DATE>/);
+          const vchNumMatch = voucherXml.match(/<VOUCHERNUMBER>(.*?)<\/VOUCHERNUMBER>/);
+          const vchTypeMatch = voucherXml.match(/<VOUCHERTYPE>(.*?)<\/VOUCHERTYPE>/);
+          const narrationMatch = voucherXml.match(/<NARRATION>(.*?)<\/NARRATION>/);
+          
+          return {
+            guid: `tally-temp-${Date.now()}-${index}`,
+            voucher_number: vchNumMatch?.[1] || `TALLY-${index + 1}`,
+            date: dateMatch?.[1] || null,
+            voucher_type: vchTypeMatch?.[1] || 'Unknown',
+            narration: narrationMatch?.[1] || null,
+            created_at: new Date().toISOString(),
+            company_id: null,
+            division_id: null
+          };
+        });
+
         tallyInfo = {
           requestedCompany: tallyCompany,
           url: division.tally_url,
           status: tallyResp.status,
-          voucherCount: matches.length,
+          voucherCount: voucherMatches.length,
           responseLength: xmlText.length,
           requestXml: xmlPayload,
           responseXml: xmlText,
         };
+        
         console.log('Tally fallback result:', { ...tallyInfo, responseXml: `len=${xmlText.length}` });
+        console.log('Parsed Tally vouchers:', tallyVouchers.length);
+        
+        // Use Tally vouchers if database is empty
+        if (tallyVouchers.length > 0) {
+          vouchers = tallyVouchers;
+        }
+        
       } catch (tallyError) {
         console.error('Tally fallback error:', tallyError);
         tallyInfo = { requestedCompany: tallyCompany, url: division?.tally_url, error: String(tallyError) };
@@ -205,7 +234,8 @@ serve(async (req) => {
         tallyVoucherCount: tallyInfo?.voucherCount || 0,
         dateRange: fromDate && toDate 
           ? `${startDate} to ${endDate}` 
-          : `Last ${days || 1} day(s) from ${startDate}`
+          : `Last ${days || 1} day(s) from ${startDate}`,
+        source: vouchers?.length > 0 && vouchers[0].guid?.startsWith('tally-temp-') ? 'tally' : 'database'
       }
     };
 
