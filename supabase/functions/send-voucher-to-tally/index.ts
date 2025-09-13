@@ -290,8 +290,19 @@ serve(async (req) => {
       );
     }
 
-    const success = response.ok && !responseText.toLowerCase().includes('error');
-    console.log('Request success:', success);
+    // Parse Tally XML response for success indicators
+    const hasStatusSuccess = responseText.includes('<STATUS>1</STATUS>');
+    const hasCreated = /CREATED>(\d+)<\/CREATED/.test(responseText);
+    const hasErrors = responseText.includes('<ERRORS>0</ERRORS>');
+    const success = response.ok && hasStatusSuccess && hasErrors;
+    
+    console.log('Tally response analysis:', { 
+      httpOk: response.ok,
+      hasStatusSuccess, 
+      hasCreated, 
+      hasErrors,
+      finalSuccess: success 
+    });
     
     return new Response(JSON.stringify({
       success,
