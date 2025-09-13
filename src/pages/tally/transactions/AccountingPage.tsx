@@ -421,7 +421,7 @@ export default function AccountingPage() {
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-background border border-border shadow-md z-50">
+            <DropdownMenuContent className="w-56 max-h-60 overflow-y-auto bg-background border border-border shadow-md z-50">
               {voucherTypes.map((voucherType) => (
                 <DropdownMenuItem 
                   key={voucherType.guid}
