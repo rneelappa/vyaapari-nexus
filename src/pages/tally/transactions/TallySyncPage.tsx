@@ -68,8 +68,8 @@ export default function TallySyncPage() {
       const { data, error } = await supabase.functions.invoke('get-recent-vouchers', {
         body: { 
           divisionId,
-          fromDate: defaultFromDate.toISOString().split('T')[0], // YYYY-MM-DD format
-          toDate: defaultToDate.toISOString().split('T')[0]
+          fromDate: format(defaultFromDate, 'yyyy-MM-dd'), // YYYY-MM-DD format (local)
+          toDate: format(defaultToDate, 'yyyy-MM-dd')
         }
       });
 
