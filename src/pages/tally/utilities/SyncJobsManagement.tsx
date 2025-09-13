@@ -1,312 +1,396 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, RefreshCw, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Settings, 
+  Play, 
+  Pause, 
+  RefreshCw, 
+  Clock,
+  AlertCircle,
+  CheckCircle,
+  Calendar,
+  Database
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useParams } from 'react-router-dom';
 
-interface SyncJob {
-  id: string;
-  division_id: string;
-  company_id: string;
-  job_type: string;
-  status: string;
-  started_at: string;
-  completed_at?: string;
-  error_message?: string;
-  records_processed: number;
-  division?: {
-    name: string;
-  };
-}
-
-interface Division {
+interface DivisionSettings {
   id: string;
   name: string;
   auto_sync_enabled: boolean;
   sync_frequency: string;
-  last_sync_attempt?: string;
-  last_sync_success?: string;
+  last_sync_success: string | null;
+  last_sync_attempt: string | null;
   sync_status: string;
+  tally_enabled: boolean;
+  tally_url: string | null;
 }
 
-const SyncJobsManagement = () => {
-  const [syncJobs, setSyncJobs] = useState<SyncJob[]>([]);
-  const [divisions, setDivisions] = useState<Division[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function SyncJobsManagement() {
+  const { divisionId } = useParams();
   const { toast } = useToast();
+  const [division, setDivision] = useState<DivisionSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const fetchSyncJobs = async () => {
-    const { data, error } = await supabase
-      .from('tally_sync_jobs')
-      .select(`
-        *,
-        divisions:division_id (
-          name
-        )
-      `)
-      .order('started_at', { ascending: false })
-      .limit(50);
+  useEffect(() => {
+    if (divisionId) {
+      fetchDivisionSettings();
+    }
+  }, [divisionId]);
 
-    if (error) {
-      console.error('Error fetching sync jobs:', error);
+  const fetchDivisionSettings = async () => {
+    if (!divisionId) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('divisions')
+        .select('id, name, auto_sync_enabled, sync_frequency, last_sync_success, last_sync_attempt, sync_status, tally_enabled, tally_url')
+        .eq('id', divisionId)
+        .single();
+
+      if (error) throw error;
+
+      setDivision(data as DivisionSettings);
+    } catch (error: any) {
+      console.error('Error fetching division settings:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch sync jobs",
+        description: error.message || "Failed to fetch division settings",
         variant: "destructive",
       });
-    } else {
-      setSyncJobs(data || []);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchDivisions = async () => {
-    const { data, error } = await supabase
-      .from('divisions')
-      .select('id, name, auto_sync_enabled, sync_frequency, last_sync_attempt, last_sync_success, sync_status')
-      .eq('auto_sync_enabled', true);
+  const updateDivisionSettings = async (updates: Partial<DivisionSettings>) => {
+    if (!divisionId || !division) return;
 
-    if (error) {
-      console.error('Error fetching divisions:', error);
-    } else {
-      setDivisions(data || []);
-    }
-  };
-
-  const triggerManualSync = async (divisionId: string) => {
     try {
-      console.log(`Triggering manual sync for division: ${divisionId}`);
+      setSaving(true);
+      const { error } = await supabase
+        .from('divisions')
+        .update(updates)
+        .eq('id', divisionId);
+
+      if (error) throw error;
+
+      setDivision(prev => prev ? { ...prev, ...updates } : null);
       
+      toast({
+        title: "Settings Updated",
+        description: "Sync settings have been saved successfully",
+      });
+    } catch (error: any) {
+      console.error('Error updating division settings:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update settings",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const triggerManualSync = async () => {
+    if (!divisionId) return;
+
+    try {
       const { data, error } = await supabase.functions.invoke('tally-scheduler', {
-        body: { manual_trigger: divisionId }
+        body: { 
+          manual_trigger: true,
+          division_id: divisionId
+        }
       });
 
-      if (error) {
-        console.error('Manual sync error:', error);
-        throw error;
-      }
-
-      console.log('Manual sync response:', data);
+      if (error) throw error;
 
       toast({
         title: "Sync Triggered",
-        description: "Manual sync has been initiated for this division",
+        description: "Manual sync has been initiated",
       });
-
-      // Refresh data after a short delay to show updated status
-      setTimeout(() => {
-        fetchSyncJobs();
-        fetchDivisions();
-      }, 1000);
-    } catch (error) {
-      console.error('Error triggering manual sync:', error);
+      
+      // Refresh settings to see updated status
+      setTimeout(() => fetchDivisionSettings(), 1000);
+    } catch (error: any) {
+      console.error('Error triggering sync:', error);
       toast({
         title: "Error",
-        description: `Failed to trigger sync: ${error.message}`,
+        description: error.message || "Failed to trigger sync",
         variant: "destructive",
       });
     }
   };
-
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([fetchSyncJobs(), fetchDivisions()]);
-      setLoading(false);
-    };
-
-    loadData();
-
-    // Set up real-time subscription for sync jobs
-    const syncJobsSubscription = supabase
-      .channel('sync-jobs-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'tally_sync_jobs' 
-      }, () => {
-        fetchSyncJobs();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(syncJobsSubscription);
-    };
-  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
       case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <AlertCircle className="h-4 w-4 text-red-600" />;
       case 'running':
-        return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+        return <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />;
       default:
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const variant = status === 'completed' ? 'default' : 
-                   status === 'running' ? 'secondary' : 
-                   status === 'failed' ? 'destructive' : 'outline';
-    return <Badge variant={variant}>{status}</Badge>;
+    switch (status) {
+      case 'completed':
+        return <Badge variant="default">Completed</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Failed</Badge>;
+      case 'running':
+        return <Badge variant="secondary">Running</Badge>;
+      default:
+        return <Badge variant="outline">Idle</Badge>;
+    }
   };
 
-  const formatFrequency = (frequency: string) => {
-    const frequencies: Record<string, string> = {
-      '1min': 'Every 1 minute',
-      '5min': 'Every 5 minutes',
-      '15min': 'Every 15 minutes',
-      '30min': 'Every 30 minutes',
-      '1hour': 'Every 1 hour',
-      '3hours': 'Every 3 hours',
-      '6hours': 'Every 6 hours',
-      '12hours': 'Every 12 hours',
-      '24hours': 'Every 24 hours',
-      'weekly': 'Weekly',
-      'monthly': 'Monthly'
-    };
-    return frequencies[frequency] || frequency;
-  };
+  const frequencyOptions = [
+    { value: 'disabled', label: 'Disabled' },
+    { value: '1min', label: 'Every Minute' },
+    { value: '5min', label: 'Every 5 Minutes' },
+    { value: '15min', label: 'Every 15 Minutes' },
+    { value: '30min', label: 'Every 30 Minutes' },
+    { value: '1hour', label: 'Every Hour' },
+    { value: '2hours', label: 'Every 2 Hours' },
+    { value: '6hours', label: 'Every 6 Hours' },
+    { value: '12hours', label: 'Every 12 Hours' },
+    { value: 'daily', label: 'Daily' },
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'monthly', label: 'Monthly' }
+  ];
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Clock className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Sync Jobs Management</h1>
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading sync settings...</p>
         </div>
-        <div className="flex items-center justify-center h-48">
-          <RefreshCw className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!division) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-4" />
+          <p className="text-destructive">Division not found</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Clock className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">Sync Jobs Management</h1>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Sync Jobs Management</h1>
+          <p className="text-muted-foreground">
+            Configure automatic sync settings for {division.name}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={fetchDivisionSettings} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={triggerManualSync}>
+            <Play className="h-4 w-4 mr-2" />
+            Trigger Sync Now
+          </Button>
+        </div>
       </div>
 
-      {/* Active Divisions */}
+      {/* Current Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Active Auto Sync Divisions</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Current Status
+          </CardTitle>
           <CardDescription>
-            Divisions with automatic sync enabled
+            Live sync status and last execution details
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {divisions.length === 0 ? (
-            <p className="text-muted-foreground">No divisions have auto sync enabled</p>
-          ) : (
-            <div className="space-y-4">
-              {divisions.map((division) => (
-                <div key={division.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <h3 className="font-medium">{division.name}</h3>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Frequency: {formatFrequency(division.sync_frequency)}</span>
-                      <span>Status: {getStatusBadge(division.sync_status)}</span>
-                      {division.last_sync_success && (
-                        <span>Last sync: {new Date(division.last_sync_success).toLocaleString()}</span>
-                      )}
-                    </div>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Sync Status</Label>
+              <div className="flex items-center gap-2">
+                {getStatusIcon(division.sync_status)}
+                {getStatusBadge(division.sync_status)}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Auto Sync</Label>
+              <Badge variant={division.auto_sync_enabled ? 'default' : 'secondary'}>
+                {division.auto_sync_enabled ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Frequency</Label>
+              <div className="text-sm font-medium">
+                {frequencyOptions.find(opt => opt.value === division.sync_frequency)?.label || division.sync_frequency}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Tally Connection</Label>
+              <Badge variant={division.tally_enabled ? 'default' : 'destructive'}>
+                {division.tally_enabled ? 'Connected' : 'Disconnected'}
+              </Badge>
+            </div>
+          </div>
+
+          {division.last_sync_success && (
+            <div className="pt-4 border-t">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <Label className="text-muted-foreground">Last Successful Sync</Label>
+                  <div className="font-medium">
+                    {new Date(division.last_sync_success).toLocaleString()}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => triggerManualSync(division.id)}
-                    disabled={division.sync_status === 'running'}
-                  >
-                    {division.sync_status === 'running' ? (
-                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                    )}
-                    Sync Now
-                  </Button>
                 </div>
-              ))}
+                <div>
+                  <Label className="text-muted-foreground">Last Attempt</Label>
+                  <div className="font-medium">
+                    {division.last_sync_attempt 
+                      ? new Date(division.last_sync_attempt).toLocaleString()
+                      : 'Never'
+                    }
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Recent Sync Jobs */}
+      {/* Sync Configuration */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Sync Jobs</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Sync Configuration
+          </CardTitle>
           <CardDescription>
-            Last 50 sync jobs (automatic and manual)
+            Configure automatic sync settings and schedules
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Enable Automatic Sync</Label>
+                <p className="text-sm text-muted-foreground">
+                  Automatically sync data from Tally based on the configured schedule
+                </p>
+              </div>
+              <Switch
+                checked={division.auto_sync_enabled}
+                onCheckedChange={(checked) => 
+                  updateDivisionSettings({ auto_sync_enabled: checked })
+                }
+                disabled={saving}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sync Frequency</Label>
+              <select
+                value={division.sync_frequency}
+                onChange={(e) => 
+                  updateDivisionSettings({ sync_frequency: e.target.value })
+                }
+                disabled={saving || !division.auto_sync_enabled}
+                className="w-full p-2 border rounded-md bg-background"
+              >
+                {frequencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-muted-foreground">
+                How often should the system sync with Tally
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tally Server URL</Label>
+              <Input
+                value={division.tally_url || ''}
+                onChange={(e) => 
+                  updateDivisionSettings({ tally_url: e.target.value })
+                }
+                placeholder="http://localhost:9000"
+                disabled={saving}
+              />
+              <p className="text-sm text-muted-foreground">
+                The URL where your Tally server is running
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <Button onClick={() => fetchDivisionSettings()} disabled={saving}>
+              {saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sync History Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Quick Actions
+          </CardTitle>
+          <CardDescription>
+            Common sync management tasks
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {syncJobs.length === 0 ? (
-            <p className="text-muted-foreground">No sync jobs found</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Division</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Started</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Records</TableHead>
-                  <TableHead>Error</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {syncJobs.map((job) => {
-                  const duration = job.completed_at 
-                    ? Math.round((new Date(job.completed_at).getTime() - new Date(job.started_at).getTime()) / 1000)
-                    : null;
-
-                  return (
-                    <TableRow key={job.id}>
-                      <TableCell className="font-medium">
-                        {job.division?.name || 'Unknown'}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{job.job_type}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(job.status)}
-                          {getStatusBadge(job.status)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(job.started_at).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        {duration ? `${duration}s` : job.status === 'running' ? 'Running...' : '-'}
-                      </TableCell>
-                      <TableCell>{job.records_processed}</TableCell>
-                      <TableCell>
-                        {job.error_message && (
-                          <span className="text-red-500 text-sm truncate max-w-48" title={job.error_message}>
-                            {job.error_message}
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button variant="outline" onClick={triggerManualSync}>
+              <Play className="h-4 w-4 mr-2" />
+              Run Sync Now
+            </Button>
+            
+            <Button variant="outline" disabled>
+              <Pause className="h-4 w-4 mr-2" />
+              Pause All Syncs
+            </Button>
+            
+            <Button variant="outline" disabled>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Reset Sync Status
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default SyncJobsManagement;
+}

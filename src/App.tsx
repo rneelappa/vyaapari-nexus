@@ -45,6 +45,8 @@ import TestApiPage from "@/pages/tally/TestApiPage";
 import DataManagementPage from "@/pages/tally/data/DataManagementPage";
 import AnalyticsDashboard from "@/pages/tally/analytics/AnalyticsDashboard";
 import TallySyncPage from "@/pages/tally/transactions/TallySyncPage";
+import TallySyncLogs from "@/pages/tally/utilities/TallySyncLogs";
+import SyncJobsManagement from "@/pages/tally/utilities/SyncJobsManagement";
 
 const queryClient = new QueryClient();
 
@@ -247,10 +249,11 @@ function App() {
                 </AuthGuard>
                 } />
                 
+                {/* Redirect old sync path to new utilities location */}
                 <Route path="/tally/transactions/sync" element={
                   <AuthGuard>
                     <MainLayout>
-                      <TallySyncPage />
+                      <TallySyncLogs />
                     </MainLayout>
                   </AuthGuard>
                 } />
@@ -287,13 +290,21 @@ function App() {
                 </AuthGuard>
               } />
               
-              <Route path="/tally/utilities/configuration" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <ConfigurationPage />
-                  </MainLayout>
-                </AuthGuard>
-               } />
+                <Route path="/tally/utilities/sync" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <TallySyncPage />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/tally/utilities/sync-jobs" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <TallySyncLogs />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
                
                {/* Division-aware Tally routes */}
                <Route path="/company/:companyId/division/:divisionId/tally/masters/groups" element={
@@ -392,10 +403,11 @@ function App() {
                  </AuthGuard>
                 } />
                 
+                {/* Redirect old sync path to new utilities location */}
                 <Route path="/company/:companyId/division/:divisionId/tally/transactions/sync" element={
                   <AuthGuard>
                     <MainLayout>
-                      <TallySyncPage />
+                      <TallySyncLogs />
                     </MainLayout>
                   </AuthGuard>
                 } />
@@ -448,13 +460,21 @@ function App() {
                  </AuthGuard>
                } />
                
-               <Route path="/company/:companyId/division/:divisionId/tally/utilities/configuration" element={
-                 <AuthGuard>
-                   <MainLayout>
-                     <ConfigurationPage />
-                   </MainLayout>
-                 </AuthGuard>
-               } />
+                <Route path="/company/:companyId/division/:divisionId/tally/utilities/sync" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <TallySyncPage />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/company/:companyId/division/:divisionId/tally/utilities/sync-jobs" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <TallySyncLogs />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
                
                <Route path="/tally/test-api" element={
                  <AuthGuard>

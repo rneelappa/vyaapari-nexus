@@ -31,8 +31,7 @@ const tallyMenuStructure = {
       { name: "Accounting", path: "/tally/transactions/accounting", icon: Calculator },
       { name: "Sales Voucher Create", path: "/tally/transactions/sales/create", icon: FileText },
       { name: "Inventory", path: "/tally/transactions/inventory", icon: Package },
-      { name: "Non-Accounting", path: "/tally/transactions/non-accounting", icon: FileText },
-      { name: "Sync Tally", path: "/tally/transactions/sync", icon: RefreshCw }
+      { name: "Non-Accounting", path: "/tally/transactions/non-accounting", icon: FileText }
     ]
   },
   display: {
@@ -49,7 +48,8 @@ const tallyMenuStructure = {
     name: "Utilities",
     icon: Settings,
     items: [
-      { name: "Configuration", path: "/tally/utilities/configuration", icon: Settings }
+      { name: "Sync Tally", path: "/tally/utilities/sync", icon: RefreshCw },
+      { name: "Sync Jobs Management", path: "/tally/utilities/sync-jobs", icon: Database }
     ]
   }
 };
