@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -209,9 +209,9 @@ const CompanyPage = () => {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{division.name}</CardTitle>
                     <Button variant="ghost" size="sm" asChild>
-                      <a href={`/company/${companyId}/division/${division.id}`}>
+                      <Link to={`/company/${companyId}/division/${division.id}`}>
                         View Details
-                      </a>
+                      </Link>
                     </Button>
                   </div>
                 </CardHeader>

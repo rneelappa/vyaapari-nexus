@@ -84,6 +84,15 @@ function App() {
                 </AuthGuard>
               } />
               
+              {/* Backward compatibility route for division */}
+              <Route path="/division/:divisionId" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <DivisionPage />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              
               <Route path="/workspaces" element={
                 <AuthGuard>
                   <MainLayout>

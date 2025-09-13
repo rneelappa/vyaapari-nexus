@@ -45,7 +45,7 @@ function HierarchyItem({ item, level, type, isExpanded, onToggle, hasChildren, c
 
   const Icon = getIcon();
   const baseUrl = type === 'workspace' ? `/workspace/${item.id}` : 
-                  type === 'division' ? `/division/${item.id}` : 
+                  type === 'division' ? `/company/${(item as DivisionData).company_id}/division/${item.id}` : 
                   `/company/${item.id}`;
   
   const isActive = location.pathname.startsWith(baseUrl);
@@ -136,7 +136,7 @@ function HierarchyItemContainer({ item, level, type, children }: HierarchyItemCo
   // Auto-expand if current route is within this item's hierarchy
   useEffect(() => {
     const baseUrl = type === 'workspace' ? `/workspace/${item.id}` : 
-                    type === 'division' ? `/division/${item.id}` : 
+                    type === 'division' ? `/company/${(item as DivisionData).company_id}/division/${item.id}` : 
                     `/company/${item.id}`;
     
     if (location.pathname.startsWith(baseUrl) && hasChildren) {
