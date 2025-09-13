@@ -176,21 +176,35 @@ serve(async (req) => {
         
         // Parse Tally vouchers from XML
         const tallyVouchers = voucherMatches.map((voucherXml, index) => {
-          // Extract voucher data from XML
+          // Extract voucher data from XML using correct Tally field names
           const dateMatch = voucherXml.match(/<DATE>(.*?)<\/DATE>/);
           const vchNumMatch = voucherXml.match(/<VOUCHERNUMBER>(.*?)<\/VOUCHERNUMBER>/);
-          const vchTypeMatch = voucherXml.match(/<VOUCHERTYPE>(.*?)<\/VOUCHERTYPE>/);
+          const vchTypeMatch = voucherXml.match(/<VOUCHERTYPENAME>(.*?)<\/VOUCHERTYPENAME>/);
           const narrationMatch = voucherXml.match(/<NARRATION>(.*?)<\/NARRATION>/);
+          const partyMatch = voucherXml.match(/<PARTYLEDGERNAME>(.*?)<\/PARTYLEDGERNAME>/);
+          const guidMatch = voucherXml.match(/<GUID>(.*?)<\/GUID>/);
+          
+          // Convert Tally date format (YYYYMMDD) to standard date format
+          let formattedDate = null;
+          if (dateMatch?.[1]) {
+            const dateStr = dateMatch[1];
+            if (dateStr.length === 8) {
+              const year = dateStr.substring(0, 4);
+              const month = dateStr.substring(4, 6);
+              const day = dateStr.substring(6, 8);
+              formattedDate = `${year}-${month}-${day}`;
+            }
+          }
           
           return {
-            guid: `tally-temp-${Date.now()}-${index}`,
+            guid: guidMatch?.[1] || `tally-temp-${Date.now()}-${index}`,
             voucher_number: vchNumMatch?.[1] || `TALLY-${index + 1}`,
-            date: dateMatch?.[1] || null,
+            date: formattedDate,
             voucher_type: vchTypeMatch?.[1] || 'Unknown',
-            narration: narrationMatch?.[1] || null,
+            narration: (narrationMatch?.[1] && narrationMatch[1].trim()) || partyMatch?.[1] || 'No description',
             created_at: new Date().toISOString(),
             company_id: null,
-            division_id: null
+            division_id: divisionId
           };
         });
 
