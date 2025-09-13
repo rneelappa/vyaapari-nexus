@@ -9,7 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Edit, Trash2, Calculator, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Calculator, TrendingUp, TrendingDown, RefreshCw, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -82,6 +84,7 @@ interface AccountingEntry {
 export default function AccountingPage() {
   console.log('[DEBUG] AccountingPage component rendering...');
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [accountingEntries, setAccountingEntries] = useState<AccountingEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +93,7 @@ export default function AccountingPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<AccountingEntry | null>(null);
   const [availableLedgers, setAvailableLedgers] = useState<string[]>([]);
+  const [voucherTypes, setVoucherTypes] = useState<Array<{guid: string, name: string, parent: string}>>([]);
 
   console.log('[DEBUG] Creating form instances...');
   
@@ -122,26 +126,37 @@ export default function AccountingPage() {
   const MAX_FETCH_ATTEMPTS = 3;
   const FETCH_COOLDOWN = 5000; // 5 seconds
 
-  // Fetch available ledgers for the forms
+  // Fetch available ledgers and voucher types for the forms
   useEffect(() => {
-    const fetchLedgers = async () => {
+    const fetchLedgersAndVoucherTypes = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch ledgers
+        const { data: ledgerData, error: ledgerError } = await supabase
           .from('mst_ledger')
           .select('name')
           .order('name');
         
-        if (error) throw error;
+        if (ledgerError) throw ledgerError;
         
-        const ledgerNames = data?.map(ledger => ledger.name) || [];
+        const ledgerNames = ledgerData?.map(ledger => ledger.name) || [];
         setAvailableLedgers(ledgerNames);
+
+        // Fetch voucher types
+        const { data: voucherData, error: voucherError } = await supabase
+          .from('mst_vouchertype')
+          .select('guid, name, parent')
+          .order('name');
+        
+        if (voucherError) throw voucherError;
+        
+        setVoucherTypes(voucherData || []);
       } catch (err) {
-        console.error('Error fetching ledgers:', err);
+        console.error('Error fetching ledgers and voucher types:', err);
       }
     };
     
     if (user) {
-      fetchLedgers();
+      fetchLedgersAndVoucherTypes();
     }
   }, [user]);
 
@@ -325,6 +340,16 @@ export default function AccountingPage() {
     }
   };
 
+  const handleVoucherTypeClick = (voucherType: {guid: string, name: string, parent: string}) => {
+    if (voucherType.name.toLowerCase() === 'sales' || voucherType.parent.toLowerCase() === 'sales') {
+      // Navigate to Sales Voucher Create page
+      navigate('/tally/transactions/sales/create');
+    } else {
+      // Open the default Add Transaction dialog for other voucher types
+      setIsAddDialogOpen(true);
+    }
+  };
+
   const openEditDialog = (entry: AccountingEntry) => {
     console.log('[DEBUG] openEditDialog called with entry:', entry);
     console.log('[DEBUG] editFormInstance available:', !!editFormInstance);
@@ -388,13 +413,37 @@ export default function AccountingPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Transaction
+                <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
-            </DialogTrigger>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 bg-background border border-border shadow-md z-50">
+              {voucherTypes.map((voucherType) => (
+                <DropdownMenuItem 
+                  key={voucherType.guid}
+                  onClick={() => handleVoucherTypeClick(voucherType)}
+                  className="cursor-pointer hover:bg-accent"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{voucherType.name}</span>
+                    {voucherType.parent && (
+                      <span className="text-xs text-muted-foreground">{voucherType.parent}</span>
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+              {voucherTypes.length === 0 && (
+                <DropdownMenuItem disabled>
+                  No voucher types available
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Add New Transaction</DialogTitle>
