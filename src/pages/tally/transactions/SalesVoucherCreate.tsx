@@ -452,14 +452,6 @@ export default function SalesVoucherCreate() {
             Create sales vouchers with party accounts, inventory items, and delivery tracking
           </p>
         </div>
-        <Button
-          onClick={saveVoucher}
-          disabled={isSaving || isLoading || !isBalanced}
-          className="flex items-center gap-2"
-        >
-          <Save className="h-4 w-4" />
-          {isSaving ? 'Saving...' : 'Save Voucher'}
-        </Button>
       </div>
 
       {/* Balance Status */}
@@ -555,16 +547,6 @@ export default function SalesVoucherCreate() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Narration</Label>
-              <Textarea
-                value={narration}
-                onChange={(e) => setNarration(e.target.value)}
-                placeholder="Enter narration"
-                rows={3}
-              />
             </div>
           </CardContent>
         </Card>
@@ -923,6 +905,19 @@ export default function SalesVoucherCreate() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <Button
+          onClick={saveVoucher}
+          disabled={isSaving || isLoading || !isBalanced || !partyLedger || !salesLedger || lines.length === 0}
+          className="flex items-center gap-2"
+          size="lg"
+        >
+          <Save className="h-4 w-4" />
+          {isSaving ? 'Saving...' : 'Save Voucher'}
+        </Button>
+      </div>
     </div>
   );
 }
