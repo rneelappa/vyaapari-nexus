@@ -28,9 +28,19 @@ interface SyncData {
     name: string;
     tally_enabled: boolean;
   } | null;
+  tally?: {
+    requestedCompany?: string;
+    url?: string;
+    status?: number;
+    voucherCount?: number;
+    responseLength?: number;
+    requestXml?: string;
+    responseXml?: string;
+  } | null;
   summary: {
     totalVouchers: number;
     dateRange: string;
+    tallyVoucherCount?: number;
   };
 }
 
@@ -82,7 +92,7 @@ export default function TallySyncPage() {
           : `Last day`;
         toast({
           title: "Success",
-          description: `Found ${data.summary.totalVouchers} vouchers for ${dateRangeText}`,
+          description: `DB: ${data.summary.totalVouchers} • Tally: ${data.summary.tallyVoucherCount ?? 0}`,
         });
       } else {
         throw new Error(data.error || 'Unknown error occurred');
@@ -285,7 +295,7 @@ export default function TallySyncPage() {
               </Badge>
             </CardTitle>
             <CardDescription>
-              {syncData.summary.dateRange} • {syncData.summary.totalVouchers} vouchers found
+              {syncData.summary.dateRange} • DB vouchers: {syncData.summary.totalVouchers} • Tally vouchers: {syncData.summary.tallyVoucherCount ?? 0}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -295,6 +305,7 @@ export default function TallySyncPage() {
         <TabsList>
           <TabsTrigger value="vouchers">Recent Vouchers</TabsTrigger>
           <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="tally">Tally Debug</TabsTrigger>
         </TabsList>
 
         <TabsContent value="vouchers">
@@ -404,6 +415,47 @@ export default function TallySyncPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="tally">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tally Fallback Response</CardTitle>
+              <CardDescription>Shows the exact XML sent to Tally and the raw XML response.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {syncData?.tally ? (
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Requested Company</CardTitle></CardHeader>
+                      <CardContent className="pt-0 text-sm text-muted-foreground">{syncData.tally.requestedCompany || '-'}</CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Tally URL</CardTitle></CardHeader>
+                      <CardContent className="pt-0 text-sm text-muted-foreground">{syncData.tally.url || '-'}</CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Status / Vouchers</CardTitle></CardHeader>
+                      <CardContent className="pt-0 text-sm text-muted-foreground">{syncData.tally.status ?? '-'} / {syncData.tally.voucherCount ?? 0}</CardContent>
+                    </Card>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Request XML</h3>
+                    <pre className="bg-muted p-3 rounded text-xs overflow-x-auto max-h-[300px]">{syncData.tally.requestXml || 'No request XML available'}</pre>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium mb-2">Response XML</h3>
+                    <pre className="bg-muted p-3 rounded text-xs overflow-x-auto max-h-[400px]">{syncData.tally.responseXml || 'No response XML available'}</pre>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No Tally response available. Run a search to trigger the fallback.</div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

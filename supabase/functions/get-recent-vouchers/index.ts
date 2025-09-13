@@ -175,8 +175,10 @@ serve(async (req) => {
           status: tallyResp.status,
           voucherCount: matches.length,
           responseLength: xmlText.length,
+          requestXml: xmlPayload,
+          responseXml: xmlText,
         };
-        console.log('Tally fallback result:', tallyInfo);
+        console.log('Tally fallback result:', { ...tallyInfo, responseXml: `len=${xmlText.length}` });
       } catch (tallyError) {
         console.error('Tally fallback error:', tallyError);
         tallyInfo = { requestedCompany: tallyCompany, url: division?.tally_url, error: String(tallyError) };
