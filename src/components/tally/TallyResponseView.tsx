@@ -11,6 +11,7 @@ interface TallyResponseData {
   error?: string;
   tallyResponse?: string;
   endpoint?: string;
+  xmlSent?: string;
   allResponses?: Array<{
     endpoint: string;
     status: number;
@@ -111,6 +112,34 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
         </CardContent>
       </Card>
 
+      {/* XML Sent to Tally */}
+      {responseData.xmlSent && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              XML Sent to Tally
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(responseData.xmlSent!)}
+                className="flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Copy
+              </Button>
+            </CardTitle>
+            <CardDescription>The XML payload that was sent to Tally server</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <pre className="text-sm whitespace-pre-wrap font-mono text-blue-900">
+                {responseData.xmlSent}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tally Response */}
       {responseData.tallyResponse && (
         <Card>
@@ -130,8 +159,8 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
             <CardDescription>Raw response from Tally server</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="bg-muted p-4 rounded-lg">
-              <pre className="text-sm whitespace-pre-wrap font-mono">
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <pre className="text-sm whitespace-pre-wrap font-mono text-red-900">
                 {parseResponse(responseData.tallyResponse)}
               </pre>
             </div>
@@ -172,8 +201,9 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
                   </div>
                   
                   {resp.response && (
-                    <div className="bg-muted p-3 rounded text-sm">
-                      <pre className="whitespace-pre-wrap font-mono">
+                    <div className="bg-gray-50 p-3 rounded border text-sm">
+                      <p className="font-medium text-gray-600 mb-2">Response:</p>
+                      <pre className="whitespace-pre-wrap font-mono text-gray-800">
                         {parseResponse(resp.response)}
                       </pre>
                     </div>

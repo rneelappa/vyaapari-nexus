@@ -216,7 +216,8 @@ serve(async (req) => {
           message: 'Voucher sent to Tally successfully',
           tallyResponse: result.response,
           endpoint: result.endpoint,
-          allResponses: result.allResponses
+          allResponses: result.allResponses,
+          xmlSent: xml
         }),
         { 
           status: 200, 
@@ -230,7 +231,8 @@ serve(async (req) => {
           error: result.error || 'Failed to send voucher to Tally',
           tallyResponse: result.response,
           endpoint: result.endpoint,
-          allResponses: result.allResponses
+          allResponses: result.allResponses,
+          xmlSent: xml
         }),
         { 
           status: 200, // Still return 200 so we can show the response
