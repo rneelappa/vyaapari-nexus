@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Search, Plus, Edit, Trash2, Calculator, TrendingUp, TrendingDown, RefreshCw, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -85,6 +85,7 @@ export default function AccountingPage() {
   console.log('[DEBUG] AccountingPage component rendering...');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [accountingEntries, setAccountingEntries] = useState<AccountingEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -342,8 +343,19 @@ export default function AccountingPage() {
 
   const handleVoucherTypeClick = (voucherType: {guid: string, name: string, parent: string}) => {
     if (voucherType.name.toLowerCase() === 'sales' || voucherType.parent.toLowerCase() === 'sales') {
-      // Navigate to Sales Voucher Create page
-      navigate('/tally/transactions/sales/create');
+      // Get current division ID from the URL if available
+      const pathParts = location.pathname.split('/');
+      const divisionIndex = pathParts.indexOf('division');
+      const companyIndex = pathParts.indexOf('company');
+      
+      if (divisionIndex > -1 && companyIndex > -1 && pathParts[divisionIndex + 1] && pathParts[companyIndex + 1]) {
+        const divisionId = pathParts[divisionIndex + 1];
+        const companyId = pathParts[companyIndex + 1];
+        navigate(`/company/${companyId}/division/${divisionId}/tally/transactions/sales/create`);
+      } else {
+        // Fallback to old route if no division ID available
+        navigate('/tally/transactions/sales/create');
+      }
     } else {
       // Open the default Add Transaction dialog for other voucher types
       setIsAddDialogOpen(true);

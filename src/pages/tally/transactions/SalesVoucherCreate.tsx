@@ -478,7 +478,17 @@ export default function SalesVoucherCreate() {
   );
 
   const handleSendToTally = async () => {
-    if (!savedVoucherData || !divisionId) return;
+    if (!savedVoucherData) return;
+
+    // Check if we have division ID from the route
+    if (!divisionId) {
+      toast({
+        title: "Division Required",
+        description: "Please navigate from a specific division to send vouchers to Tally",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsSendingToTally(true);
     try {

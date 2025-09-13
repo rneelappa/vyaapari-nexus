@@ -246,6 +246,14 @@ function App() {
                 </AuthGuard>
               } />
               
+              <Route path="/company/:companyId/division/:divisionId/tally/transactions/sales/create" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <SalesVoucherCreate />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              
               <Route path="/tally/display/daybook" element={
                 <AuthGuard>
                   <MainLayout>
