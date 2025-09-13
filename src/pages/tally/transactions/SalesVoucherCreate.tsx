@@ -764,7 +764,6 @@ export default function SalesVoucherCreate() {
                           <SelectValue placeholder="Select ledger account" />
                         </SelectTrigger>
                         <SelectContent className="max-h-60 overflow-y-auto">
-                          <SelectItem value="">-- Select Account --</SelectItem>
                           {/* GST Accounts */}
                           <SelectItem value="CGST">CGST (Central GST)</SelectItem>
                           <SelectItem value="SGST">SGST (State GST)</SelectItem>
