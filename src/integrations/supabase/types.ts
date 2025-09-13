@@ -2836,13 +2836,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "trn_voucher_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "mst_company"
-            referencedColumns: ["company_id"]
-          },
-          {
             foreignKeyName: "trn_voucher_division_id_fkey"
             columns: ["division_id"]
             isOneToOne: false
