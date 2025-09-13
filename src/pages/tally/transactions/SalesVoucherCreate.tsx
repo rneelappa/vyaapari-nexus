@@ -231,6 +231,8 @@ export default function SalesVoucherCreate() {
   // Get selected party and sales ledger details
   const selectedPartyLedger = ledgers.find(l => l.guid === partyLedger);
   const selectedSalesLedger = ledgers.find(l => l.guid === salesLedger);
+  const partyFinalBalance = (selectedPartyLedger?.closing_balance ?? 0) + totalAmount; // debit increases
+  const salesFinalBalance = (selectedSalesLedger?.closing_balance ?? 0) - totalAmount; // credit increases
 
   const saveVoucher = async () => {
     if (!partyLedger || !salesLedger || lines.length === 0) {
@@ -253,12 +255,38 @@ export default function SalesVoucherCreate() {
 
     setIsSaving(true);
     try {
-      // Get current company and division from the authenticated user's profile or use first available
-      const { data: companies } = await supabase.from('companies').select('id').limit(1);
-      const { data: divisions } = await supabase.from('divisions').select('id').limit(1);
-      
-      const companyId = companies?.[0]?.id || 'bc90d453-0c64-4f6f-8bbe-dca32aba40d1';
-      const divisionId = divisions?.[0]?.id || 'b38bfb72-3dd7-4aa5-b970-71b919d5ded4';
+      // Determine company and division via user access or fallbacks
+      const { data: userData } = await supabase.auth.getUser();
+      let companyId: string | null = null;
+      let divisionId: string | null = null;
+
+      if (userData?.user?.id) {
+        const { data: access } = await supabase.rpc('get_user_company_access', { _user_id: userData.user.id });
+        if (access && access.length > 0) {
+          companyId = access[0].company_id as string | null;
+          divisionId = (access[0].division_id as string | null) ?? null;
+        }
+      }
+
+      // Try preferred table name first, then fallback
+      if (!companyId) {
+        try {
+          const { data: vc } = await (supabase as any).from('vyaapari_companies').select('id').limit(1);
+          if (vc && vc.length > 0) companyId = vc[0].id as string;
+        } catch (_) {}
+      }
+      if (!companyId) {
+        const { data: c } = await supabase.from('companies').select('id').limit(1);
+        if (c && c.length > 0) companyId = c[0].id as string;
+      }
+      if (!divisionId) {
+        const { data: d } = await supabase.from('divisions').select('id').limit(1);
+        if (d && d.length > 0) divisionId = d[0].id as string;
+      }
+
+      if (!companyId) {
+        throw new Error('No company configured. Please create/select a company.');
+      }
 
       // Insert main voucher with all required fields
       const voucherGuid = `voucher-${Date.now()}`;
@@ -822,7 +850,7 @@ export default function SalesVoucherCreate() {
                     Will be debited: ₹{totalAmount.toFixed(2)}
                   </p>
                   <p className="text-xs text-orange-600 font-semibold">
-                    Final Balance: ₹{(selectedPartyLedger.closing_balance + totalAmount).toFixed(2)} Dr
+                    Final Balance: ₹{Math.abs(partyFinalBalance).toFixed(2)} {partyFinalBalance >= 0 ? 'Dr' : 'Cr'}
                   </p>
                 </div>
               ) : (
@@ -864,7 +892,7 @@ export default function SalesVoucherCreate() {
             <div className="space-y-1">
               <Label>Posting</Label>
               <div className="text-sm">
-                {selectedPartyLedger?.name || 'Party'} Dr ₹{totalAmount.toFixed(2)} → {selectedSalesLedger?.name || 'Sales'} Cr ₹{inventoryValue.toFixed(2)}
+                {selectedPartyLedger?.name || 'Party'} Dr ₹{totalAmount.toFixed(2)} → {selectedSalesLedger?.name || 'Sales'} Cr ₹{totalAmount.toFixed(2)}
               </div>
               <div className="text-xs text-muted-foreground">Taxes/charges posted to their respective ledgers</div>
             </div>
