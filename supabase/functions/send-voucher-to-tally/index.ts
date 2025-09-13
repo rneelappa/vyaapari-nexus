@@ -172,7 +172,10 @@ serve(async (req) => {
     }
 
     // Call Railway backend
-    const response = await fetch(`${RAILWAY_BACKEND_URL}/tally-send-xml?xml_content=${encodeURIComponent(xmlContent)}`, {
+    const railwayUrl = `${RAILWAY_BACKEND_URL}/tally-send-xml?xml_content=${encodeURIComponent(xmlContent)}`;
+    console.log('Calling Railway backend:', railwayUrl);
+    
+    const response = await fetch(railwayUrl, {
       method: 'GET',
       headers: {
         'x-api-key': RAILWAY_API_KEY,
@@ -189,7 +192,11 @@ serve(async (req) => {
       response: result.response,
       error: result.error,
       xmlSent: xmlContent,
-      railwayResult: result
+      railwayResult: result,
+      railwayBackendUrl: RAILWAY_BACKEND_URL,
+      ngrokUrl: result.response && result.response.includes('ngrok') ? 
+        result.response.match(/(\w+\.ngrok-free\.app)/)?.[0] || 'Not found in response' : 
+        'No ngrok URL detected'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200

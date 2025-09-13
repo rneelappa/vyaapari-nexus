@@ -10,8 +10,12 @@ interface TallyResponseData {
   message?: string;
   error?: string;
   tallyResponse?: string;
+  response?: string;
   endpoint?: string;
   xmlSent?: string;
+  railwayBackendUrl?: string;
+  ngrokUrl?: string;
+  railwayResult?: any;
   allResponses?: Array<{
     endpoint: string;
     status: number;
@@ -92,9 +96,35 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Endpoint Used</p>
-              <p className="font-semibold text-sm">{responseData.endpoint || 'N/A'}</p>
+              <p className="font-semibold text-sm">{responseData.endpoint || 'Railway Backend'}</p>
             </div>
           </div>
+          
+          {/* Railway Backend URL */}
+          {responseData.railwayBackendUrl && (
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Railway Backend URL</p>
+              <p className="text-sm font-mono bg-blue-50 p-2 rounded border break-all">{responseData.railwayBackendUrl}</p>
+            </div>
+          )}
+          
+          {/* Ngrok URL */}
+          {responseData.ngrokUrl && responseData.ngrokUrl !== 'No ngrok URL detected' && (
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Ngrok Endpoint</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-mono bg-yellow-50 p-2 rounded border break-all flex-1">
+                  {responseData.ngrokUrl}
+                </p>
+                {responseData.ngrokUrl.includes('offline') && (
+                  <Badge variant="destructive" className="text-xs">Offline</Badge>
+                )}
+              </div>
+              {responseData.ngrokUrl.includes('offline') && (
+                <p className="text-xs text-red-600 mt-1">⚠️ This ngrok endpoint appears to be offline</p>
+              )}
+            </div>
+          )}
           
           {responseData.message && (
             <div>
@@ -141,7 +171,7 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
       )}
 
       {/* Tally Response */}
-      {responseData.tallyResponse && (
+      {(responseData.tallyResponse || responseData.response) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
@@ -149,19 +179,19 @@ export const TallyResponseView: React.FC<TallyResponseViewProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(parseResponse(responseData.tallyResponse!))}
+                onClick={() => copyToClipboard(parseResponse(responseData.tallyResponse || responseData.response!))}
                 className="flex items-center gap-2"
               >
                 <Copy className="h-4 w-4" />
                 Copy
               </Button>
             </CardTitle>
-            <CardDescription>Raw response from Tally server</CardDescription>
+            <CardDescription>Raw response from Tally server (via Railway backend)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="bg-red-50 p-4 rounded-lg border border-red-200">
               <pre className="text-sm whitespace-pre-wrap font-mono text-red-900">
-                {parseResponse(responseData.tallyResponse)}
+                {parseResponse(responseData.tallyResponse || responseData.response || '')}
               </pre>
             </div>
           </CardContent>
