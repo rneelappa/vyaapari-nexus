@@ -28,10 +28,10 @@ export const useLedgerVouchers = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching vouchers for ledger:', ledgerName);
+      console.log('Fetching vouchers for ledger:', ledgerName, { companyId, divisionId });
 
-      // Fetch vouchers from trn_accounting table
-      const { data: accountingData, error: accountingError } = await supabase
+      // First attempt: with company/division filters
+      let { data: accountingData, error: accountingError } = await supabase
         .from('trn_accounting')
         .select('voucher_guid, voucher_number, voucher_type, voucher_date, amount')
         .ilike('ledger', ledgerName)
@@ -44,12 +44,34 @@ export const useLedgerVouchers = () => {
         throw accountingError;
       }
 
+      // Fallback: if no vouchers found for this company/division, try without those filters
+      if (!accountingData || accountingData.length === 0) {
+        console.log('No vouchers found with company/division filters. Trying without filters...');
+        const resp = await supabase
+          .from('trn_accounting')
+          .select('voucher_guid, voucher_number, voucher_type, voucher_date, amount')
+          .ilike('ledger', ledgerName)
+          .order('voucher_date', { ascending: false });
+        accountingData = resp.data || [];
+        if (resp.error) console.warn('Fallback fetch error:', resp.error);
+      }
+
       // Get unique voucher GUIDs to fetch full voucher details
-      const allGuids = accountingData?.map(item => item.voucher_guid) || [];
-      const voucherGuids = [...new Set(allGuids.filter(guid => guid !== null && guid !== undefined))];
+      const allGuids = (accountingData || []).map((item) => item.voucher_guid);
+      const voucherGuids = [...new Set(allGuids.filter((guid) => guid !== null && guid !== undefined))];
       
       if (voucherGuids.length === 0) {
-        setVouchers([]);
+        // No GUIDs, use accounting data as fallback list
+        const fallbackVouchers = (accountingData || []).map((item) => ({
+          guid: item.voucher_guid || crypto.randomUUID(),
+          voucher_number: item.voucher_number || 'N/A',
+          voucher_type: item.voucher_type || 'Unknown',
+          date: item.voucher_date || new Date().toISOString(),
+          amount: item.amount || 0,
+          narration: `Transaction for ${ledgerName}`,
+          party_ledger_name: ledgerName,
+        }));
+        setVouchers(fallbackVouchers);
         return;
       }
 
@@ -63,29 +85,29 @@ export const useLedgerVouchers = () => {
       if (voucherError) {
         console.warn('Error fetching voucher details:', voucherError);
         // Fallback to accounting data
-        const fallbackVouchers = accountingData?.map(item => ({
+        const fallbackVouchers = (accountingData || []).map((item) => ({
           guid: item.voucher_guid || crypto.randomUUID(),
           voucher_number: item.voucher_number || 'N/A',
           voucher_type: item.voucher_type || 'Unknown',
           date: item.voucher_date || new Date().toISOString(),
           amount: item.amount || 0,
           narration: `Transaction for ${ledgerName}`,
-          party_ledger_name: ledgerName
-        })) || [];
+          party_ledger_name: ledgerName,
+        }));
         
         setVouchers(fallbackVouchers);
         return;
       }
 
-      const formattedVouchers = voucherData?.map(voucher => ({
+      const formattedVouchers = (voucherData || []).map((voucher) => ({
         guid: voucher.guid,
         voucher_number: voucher.voucher_number || 'N/A',
         voucher_type: voucher.voucher_type || 'Unknown',
         date: voucher.date || new Date().toISOString(),
         amount: voucher.total_amount || 0,
         narration: voucher.narration || 'No description',
-        party_ledger_name: voucher.party_ledger_name || ledgerName
-      })) || [];
+        party_ledger_name: voucher.party_ledger_name || ledgerName,
+      }));
 
       setVouchers(formattedVouchers);
     } catch (err) {
