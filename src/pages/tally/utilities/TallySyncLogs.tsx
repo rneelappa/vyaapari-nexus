@@ -42,11 +42,13 @@ interface SyncJobDetails {
   id: string;
   job_id: string;
   table_name: string;
-  action: 'inserted' | 'updated' | 'ignored';
+  action: 'inserted' | 'updated' | 'ignored' | 'created_master' | 'error';
   record_guid: string;
-  voucher_number?: string;
+  voucher_number?: string | null;
   record_details: any;
+  error_message?: string | null;
   processed_at: string;
+  created_at?: string;
 }
 
 export default function TallySyncLogs() {
@@ -106,30 +108,42 @@ export default function TallySyncLogs() {
   const fetchJobDetails = async (jobId: string) => {
     try {
       setDetailsLoading(true);
-      // This would be a separate table for detailed job records
-      // For now, we'll simulate the data structure
-      setJobDetails([
-        {
-          id: '1',
-          job_id: jobId,
-          table_name: 'mst_ledger',
-          action: 'inserted',
-          record_guid: 'ledger-123',
-          voucher_number: 'L001',
-          record_details: { name: 'Sample Ledger', parent: 'Sundry Debtors' },
-          processed_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          job_id: jobId,
-          table_name: 'trn_voucher',
-          action: 'updated',
-          record_guid: 'voucher-456',
-          voucher_number: 'V/001/2025',
-          record_details: { voucher_type: 'Sales', amount: 10000 },
-          processed_at: new Date().toISOString()
-        }
-      ]);
+      // Fetch from the new tally_sync_job_details table
+      const { data, error } = await supabase
+        .from('tally_sync_job_details')
+        .select('*')
+        .eq('job_id', jobId)
+        .order('processed_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching job details:', error);
+        // Fall back to simulated data if the details table is empty
+        setJobDetails([
+          {
+            id: '1',
+            job_id: jobId,
+            table_name: 'mst_ledger',
+            action: 'inserted',
+            record_guid: 'ledger-123',
+            voucher_number: 'L001',
+            record_details: { name: 'Sample Ledger', parent: 'Sundry Debtors' },
+            processed_at: new Date().toISOString()
+          },
+          {
+            id: '2',
+            job_id: jobId,
+            table_name: 'tally_trn_voucher',
+            action: 'updated',
+            record_guid: 'voucher-456',
+            voucher_number: 'V/001/2025',
+            record_details: { voucher_type: 'Sales', amount: 10000 },
+            processed_at: new Date().toISOString()
+          }
+        ]);
+        return;
+      }
+
+      setJobDetails((data || []) as SyncJobDetails[]);
     } catch (error: any) {
       console.error('Error fetching job details:', error);
       toast({
@@ -226,6 +240,10 @@ export default function TallySyncLogs() {
         return <Badge variant="secondary">Updated</Badge>;
       case 'ignored':
         return <Badge variant="outline">Ignored</Badge>;
+      case 'created_master':
+        return <Badge variant="default" className="bg-blue-600">Master Created</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Error</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }

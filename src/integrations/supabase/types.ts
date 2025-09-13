@@ -1957,6 +1957,53 @@ export type Database = {
           },
         ]
       }
+      tally_sync_job_details: {
+        Row: {
+          action: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          job_id: string
+          processed_at: string | null
+          record_details: Json | null
+          record_guid: string
+          table_name: string
+          voucher_number: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_id: string
+          processed_at?: string | null
+          record_details?: Json | null
+          record_guid: string
+          table_name: string
+          voucher_number?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_id?: string
+          processed_at?: string | null
+          record_details?: Json | null
+          record_guid?: string
+          table_name?: string
+          voucher_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tally_sync_job_details_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "tally_sync_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tally_sync_jobs: {
         Row: {
           company_id: string
