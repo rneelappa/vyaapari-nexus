@@ -14,12 +14,14 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json().catch(() => ({}));
+    const { manual_trigger } = body || {};
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get all divisions with auto sync enabled
-    const { data: divisions, error: divisionsError } = await supabase
+    let query = supabase
       .from('divisions')
       .select(`
         id, 
@@ -34,9 +36,20 @@ serve(async (req) => {
         tally_url,
         tally_company_id
       `)
-      .eq('auto_sync_enabled', true)
       .eq('tally_enabled', true)
-      .neq('sync_frequency', 'disabled');
+      .not('tally_url', 'is', null);
+
+    // If manual trigger for specific division, ignore auto_sync_enabled and frequency
+    if (manual_trigger) {
+      query = query.eq('id', manual_trigger);
+      console.log(`Manual trigger requested for division: ${manual_trigger}`);
+    } else {
+      query = query
+        .eq('auto_sync_enabled', true)
+        .neq('sync_frequency', 'disabled');
+    }
+
+    const { data: divisions, error: divisionsError } = await query;
 
     if (divisionsError) {
       console.error('Error fetching divisions:', divisionsError);
@@ -46,22 +59,47 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Found ${divisions?.length || 0} divisions with auto sync enabled`);
+    console.log(`Found ${divisions?.length || 0} divisions with Tally and auto sync enabled`);
 
-    const results = [];
+    if (!divisions || divisions.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        processed_divisions: 0,
+        results: [],
+        message: 'No divisions found with both Tally and auto sync enabled'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const now = new Date();
 
-    for (const division of divisions || []) {
-      try {
-        // Check if sync is due based on frequency
-        const isDue = isSyncDue(division.last_sync_attempt, division.sync_frequency, now);
-        
-        if (!isDue) {
-          console.log(`Sync not due for division ${division.name} (${division.sync_frequency})`);
-          continue;
-        }
+    // Filter divisions that are due for sync
+    const divisionsDueForSync = divisions.filter(division => {
+      const isDue = isSyncDue(division.last_sync_attempt, division.sync_frequency, now);
+      if (!isDue) {
+        console.log(`Sync not due for division ${division.name} (${division.sync_frequency})`);
+      }
+      return isDue;
+    });
 
-        console.log(`Starting sync for division ${division.name}`);
+    console.log(`${divisionsDueForSync.length} divisions are due for sync`);
+
+    if (divisionsDueForSync.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        processed_divisions: 0,
+        results: [],
+        message: 'No divisions are due for sync at this time'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Process all due divisions in parallel since each has its own Tally URL
+    const syncPromises = divisionsDueForSync.map(async (division) => {
+      try {
+        console.log(`Starting parallel sync for division ${division.name} (URL: ${division.tally_url})`);
 
         // Update sync status to 'running'
         await supabase
@@ -73,7 +111,7 @@ serve(async (req) => {
           .eq('id', division.id);
 
         // Create sync job record
-        const { data: job } = await supabase
+        const { data: job, error: jobError } = await supabase
           .from('tally_sync_jobs')
           .insert({
             division_id: division.id,
@@ -84,12 +122,17 @@ serve(async (req) => {
           .select()
           .single();
 
+        if (jobError) {
+          throw new Error(`Failed to create sync job: ${jobError.message}`);
+        }
+
         // Calculate date range for sync (last 7 days)
         const endDate = new Date();
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 7);
 
         // Call the get-recent-vouchers function to fetch and sync data
+        // This function will use the division's specific Tally URL
         const syncResult = await supabase.functions.invoke('get-recent-vouchers', {
           body: {
             divisionId: division.id,
@@ -99,7 +142,7 @@ serve(async (req) => {
         });
 
         if (syncResult.error) {
-          throw new Error(syncResult.error.message);
+          throw new Error(`Sync API error: ${syncResult.error.message}`);
         }
 
         const recordsProcessed = syncResult.data?.voucherCount || 0;
@@ -109,7 +152,7 @@ serve(async (req) => {
           .from('tally_sync_jobs')
           .update({
             status: 'completed',
-            completed_at: now.toISOString(),
+            completed_at: new Date().toISOString(),
             records_processed: recordsProcessed
           })
           .eq('id', job.id);
@@ -119,48 +162,72 @@ serve(async (req) => {
           .from('divisions')
           .update({ 
             sync_status: 'completed',
-            last_sync_success: now.toISOString()
+            last_sync_success: new Date().toISOString()
           })
           .eq('id', division.id);
 
-        results.push({
+        console.log(`Sync completed for division ${division.name}: ${recordsProcessed} records processed`);
+
+        return {
           division_id: division.id,
           division_name: division.name,
+          tally_url: division.tally_url,
           status: 'success',
           records_processed: recordsProcessed
-        });
-
-        console.log(`Sync completed for division ${division.name}: ${recordsProcessed} records processed`);
+        };
 
       } catch (error) {
         console.error(`Error syncing division ${division.name}:`, error);
 
-        // Update job status to failed
-        if (job?.id) {
+        // Update job status to failed (if job was created)
+        try {
+          if (job?.id) {
+            await supabase
+              .from('tally_sync_jobs')
+              .update({
+                status: 'failed',
+                completed_at: new Date().toISOString(),
+                error_message: error.message
+              })
+              .eq('id', job.id);
+          }
+
+          // Update division sync status
           await supabase
-            .from('tally_sync_jobs')
-            .update({
-              status: 'failed',
-              completed_at: now.toISOString(),
-              error_message: error.message
-            })
-            .eq('id', job.id);
+            .from('divisions')
+            .update({ sync_status: 'failed' })
+            .eq('id', division.id);
+        } catch (updateError) {
+          console.error(`Error updating failed status for division ${division.name}:`, updateError);
         }
 
-        // Update division sync status
-        await supabase
-          .from('divisions')
-          .update({ sync_status: 'failed' })
-          .eq('id', division.id);
-
-        results.push({
+        return {
           division_id: division.id,
           division_name: division.name,
+          tally_url: division.tally_url,
           status: 'error',
           error: error.message
-        });
+        };
       }
-    }
+    });
+
+    // Wait for all parallel syncs to complete
+    const results = await Promise.all(syncPromises);
+
+    const successCount = results.filter(r => r.status === 'success').length;
+    const errorCount = results.filter(r => r.status === 'error').length;
+
+    console.log(`Parallel sync completed: ${successCount} successful, ${errorCount} failed`);
+
+    return new Response(JSON.stringify({
+      success: true,
+      processed_divisions: results.length,
+      successful_syncs: successCount,
+      failed_syncs: errorCount,
+      results
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
 
     return new Response(JSON.stringify({
       success: true,

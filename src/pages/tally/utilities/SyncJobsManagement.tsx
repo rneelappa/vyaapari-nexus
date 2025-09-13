@@ -77,25 +77,34 @@ const SyncJobsManagement = () => {
 
   const triggerManualSync = async (divisionId: string) => {
     try {
+      console.log(`Triggering manual sync for division: ${divisionId}`);
+      
       const { data, error } = await supabase.functions.invoke('tally-scheduler', {
         body: { manual_trigger: divisionId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Manual sync error:', error);
+        throw error;
+      }
+
+      console.log('Manual sync response:', data);
 
       toast({
         title: "Sync Triggered",
-        description: "Manual sync has been initiated",
+        description: "Manual sync has been initiated for this division",
       });
 
-      // Refresh data
-      fetchSyncJobs();
-      fetchDivisions();
+      // Refresh data after a short delay to show updated status
+      setTimeout(() => {
+        fetchSyncJobs();
+        fetchDivisions();
+      }, 1000);
     } catch (error) {
-      console.error('Error triggering sync:', error);
+      console.error('Error triggering manual sync:', error);
       toast({
         title: "Error",
-        description: "Failed to trigger sync",
+        description: `Failed to trigger sync: ${error.message}`,
         variant: "destructive",
       });
     }
