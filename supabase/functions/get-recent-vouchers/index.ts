@@ -132,10 +132,10 @@ serve(async (req) => {
       );
     }
 
-    // Get division info for context
+    // Get division info for context (including Tally connectivity)
     const { data: division, error: divisionError } = await supabase
       .from('divisions')
-      .select('name, tally_enabled')
+      .select('name, tally_enabled, tally_url, tally_company_id')
       .eq('id', divisionId)
       .maybeSingle();
 
@@ -152,10 +152,42 @@ serve(async (req) => {
       );
     }
 
+    // Fallback: If no DB vouchers, try fetching from Tally DayBook using division.tally_url
+    const tallyCompany = division?.tally_company_id || companyName;
+    let tallyInfo: any = null;
+
+    if ((vouchers?.length || 0) === 0 && division?.tally_url) {
+      try {
+        console.log('No DB vouchers found. Attempting Tally DayBook fetch...', { tallyCompany, tallyUrl: division.tally_url });
+        const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?>\n<ENVELOPE>\n  <HEADER>\n    <VERSION>1</VERSION>\n    <TALLYREQUEST>Export</TALLYREQUEST>\n    <TYPE>Data</TYPE>\n    <ID>DayBook</ID>\n  </HEADER>\n  <BODY>\n    <DESC>\n      <STATICVARIABLES>\n        <SVFROMDATE>${startDate}</SVFROMDATE>\n        <SVTODATE>${endDate}</SVTODATE>\n        <SVCURRENTCOMPANY>${tallyCompany}</SVCURRENTCOMPANY>\n      </STATICVARIABLES>\n    </DESC>\n  </BODY>\n</ENVELOPE>`;
+
+        const tallyResp = await fetch(division.tally_url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/xml', 'ngrok-skip-browser-warning': 'true' },
+          body: xmlPayload,
+        });
+
+        const xmlText = await tallyResp.text();
+        const matches = xmlText.match(/<VOUCHER[^>]*>[\s\S]*?<\/VOUCHER>/g) || [];
+        tallyInfo = {
+          requestedCompany: tallyCompany,
+          url: division.tally_url,
+          status: tallyResp.status,
+          voucherCount: matches.length,
+          responseLength: xmlText.length,
+        };
+        console.log('Tally fallback result:', tallyInfo);
+      } catch (tallyError) {
+        console.error('Tally fallback error:', tallyError);
+        tallyInfo = { requestedCompany: tallyCompany, url: division?.tally_url, error: String(tallyError) };
+      }
+    }
+
     const responseData = {
       success: true,
       vouchers: vouchers || [],
       division: division || null,
+      tally: tallyInfo,
       filters: {
         divisionId,
         days,
@@ -166,6 +198,7 @@ serve(async (req) => {
       },
       summary: {
         totalVouchers: vouchers?.length || 0,
+        tallyVoucherCount: tallyInfo?.voucherCount || 0,
         dateRange: fromDate && toDate 
           ? `${startDate} to ${endDate}` 
           : `Last ${days || 1} day(s) from ${startDate}`
