@@ -159,6 +159,7 @@ serve(async (req) => {
     // Fallback: If no DB vouchers, try fetching from Tally DayBook using division.tally_url
     const tallyCompany = companyName || division?.tally_company_id || 'Unknown Company';
     let tallyInfo: any = null;
+    let parseResults: any = null;
 
     if ((finalVouchers.length || 0) === 0 && division?.tally_url) {
       try {
@@ -172,9 +173,28 @@ serve(async (req) => {
         });
 
         const xmlText = await tallyResp.text();
+        
+        // Parse and upsert XML data to database tables
+        try {
+          const parseResp = await supabase.functions.invoke('tally-xml-parser', {
+            body: {
+              xmlText,
+              divisionId,
+              companyId: companies?.[0]?.company_id
+            }
+          });
+          
+          if (parseResp.data?.success) {
+            parseResults = parseResp.data;
+            console.log('XML parsing results:', parseResults.summary);
+          }
+        } catch (parseError) {
+          console.error('Error parsing XML:', parseError);
+        }
+        
         const voucherMatches = xmlText.match(/<VOUCHER[^>]*>[\s\S]*?<\/VOUCHER>/g) || [];
         
-        // Parse Tally vouchers from XML
+        // Parse Tally vouchers from XML for display
         const tallyVouchers = voucherMatches.map((voucherXml, index) => {
           // Extract voucher data from XML using correct Tally field names
           const dateMatch = voucherXml.match(/<DATE>(.*?)<\/DATE>/);
@@ -237,6 +257,7 @@ serve(async (req) => {
       vouchers: finalVouchers,
       division: division || null,
       tally: tallyInfo,
+      parseResults: parseResults,
       filters: {
         divisionId,
         days,
