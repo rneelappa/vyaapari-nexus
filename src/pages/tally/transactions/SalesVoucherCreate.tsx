@@ -239,6 +239,10 @@ export default function SalesVoucherCreate() {
   const inventoryValue = lines.filter(l => l.type === 'inventory').reduce((sum, line) => sum + line.amount, 0);
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
+  // Get selected party and sales ledger details
+  const selectedPartyLedger = ledgers.find(l => l.guid === partyLedger);
+  const selectedSalesLedger = ledgers.find(l => l.guid === salesLedger);
+
   const saveVoucher = async () => {
     if (!partyLedger || !salesLedger || lines.length === 0) {
       toast({
@@ -845,7 +849,47 @@ export default function SalesVoucherCreate() {
           <CardTitle>Summary</CardTitle>
           <CardDescription>Total and final narration</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Account Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Party Account</h3>
+              {selectedPartyLedger ? (
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="font-medium">{selectedPartyLedger.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Current Balance: ₹{Math.abs(selectedPartyLedger.closing_balance).toFixed(2)} 
+                    {selectedPartyLedger.closing_balance >= 0 ? ' Dr' : ' Cr'}
+                  </p>
+                  <p className="text-xs text-blue-600 font-medium">
+                    Will be debited: ₹{totalAmount.toFixed(2)}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Select party account</p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Sales Account</h3>
+              {selectedSalesLedger ? (
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="font-medium">{selectedSalesLedger.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Current Balance: ₹{Math.abs(selectedSalesLedger.closing_balance).toFixed(2)}
+                    {selectedSalesLedger.closing_balance >= 0 ? ' Dr' : ' Cr'}
+                  </p>
+                  <p className="text-xs text-green-600 font-medium">
+                    Will be credited: ₹{inventoryValue.toFixed(2)}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Select sales account</p>
+              )}
+            </div>
+          </div>
+
+          {/* Transaction Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <Label>Total Amount</Label>
@@ -857,7 +901,7 @@ export default function SalesVoucherCreate() {
             <div className="space-y-1">
               <Label>Posting</Label>
               <div className="text-sm">
-                Party Dr ₹{totalDebit.toFixed(2)} → Sales Cr ₹{inventoryValue.toFixed(2)}
+                {selectedPartyLedger?.name || 'Party'} Dr ₹{totalAmount.toFixed(2)} → {selectedSalesLedger?.name || 'Sales'} Cr ₹{inventoryValue.toFixed(2)}
               </div>
               <div className="text-xs text-muted-foreground">Taxes/charges posted to their respective ledgers</div>
             </div>
