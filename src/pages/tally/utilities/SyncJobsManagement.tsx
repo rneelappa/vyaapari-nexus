@@ -14,7 +14,10 @@ import {
   AlertCircle,
   CheckCircle,
   Calendar,
-  Database
+  Database,
+  Wifi,
+  WifiOff,
+  Timer
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +33,9 @@ interface DivisionSettings {
   sync_status: string;
   tally_enabled: boolean;
   tally_url: string | null;
+  tally_health_status: string;
+  last_health_check: string | null;
+  health_check_response_time: number | null;
 }
 
 export default function SyncJobsManagement() {
@@ -52,7 +58,7 @@ export default function SyncJobsManagement() {
       setLoading(true);
       const { data, error } = await supabase
         .from('divisions')
-        .select('id, name, auto_sync_enabled, sync_frequency, last_sync_success, last_sync_attempt, sync_status, tally_enabled, tally_url')
+        .select('id, name, auto_sync_enabled, sync_frequency, last_sync_success, last_sync_attempt, sync_status, tally_enabled, tally_url, tally_health_status, last_health_check, health_check_response_time')
         .eq('id', divisionId)
         .single();
 
@@ -131,6 +137,33 @@ export default function SyncJobsManagement() {
     }
   };
 
+  const triggerHealthCheck = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('tally-health-check', {
+        body: { 
+          manual_trigger: true
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Health Check Triggered",
+        description: "Manual health check has been initiated",
+      });
+      
+      // Refresh settings to see updated status
+      setTimeout(() => fetchDivisionSettings(), 2000);
+    } catch (error: any) {
+      console.error('Error triggering health check:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to trigger health check",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -144,6 +177,17 @@ export default function SyncJobsManagement() {
     }
   };
 
+  const getHealthIcon = (status: string) => {
+    switch (status) {
+      case 'online':
+        return <Wifi className="h-4 w-4 text-green-600" />;
+      case 'offline':
+        return <WifiOff className="h-4 w-4 text-red-600" />;
+      default:
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
@@ -154,6 +198,17 @@ export default function SyncJobsManagement() {
         return <Badge variant="secondary">Running</Badge>;
       default:
         return <Badge variant="outline">Idle</Badge>;
+    }
+  };
+
+  const getHealthBadge = (status: string) => {
+    switch (status) {
+      case 'online':
+        return <Badge variant="default">Online</Badge>;
+      case 'offline':
+        return <Badge variant="destructive">Offline</Badge>;
+      default:
+        return <Badge variant="secondary">Unknown</Badge>;
     }
   };
 
@@ -227,7 +282,7 @@ export default function SyncJobsManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Sync Status</Label>
               <div className="flex items-center gap-2">
@@ -251,34 +306,53 @@ export default function SyncJobsManagement() {
             </div>
             
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Tally Connection</Label>
-              <Badge variant={division.tally_enabled ? 'default' : 'destructive'}>
-                {division.tally_enabled ? 'Connected' : 'Disconnected'}
-              </Badge>
+              <Label className="text-sm text-muted-foreground">Tally Health</Label>
+              <div className="flex items-center gap-2">
+                {getHealthIcon(division.tally_health_status)}
+                {getHealthBadge(division.tally_health_status)}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Response Time</Label>
+              <div className="flex items-center gap-1 text-sm font-medium">
+                <Timer className="h-3 w-3" />
+                {division.health_check_response_time ? `${division.health_check_response_time}ms` : 'N/A'}
+              </div>
             </div>
           </div>
 
-          {division.last_sync_success && (
-            <div className="pt-4 border-t">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <Label className="text-muted-foreground">Last Successful Sync</Label>
-                  <div className="font-medium">
-                    {new Date(division.last_sync_success).toLocaleString()}
-                  </div>
+          <div className="pt-4 border-t">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <Label className="text-muted-foreground">Last Successful Sync</Label>
+                <div className="font-medium">
+                  {division.last_sync_success 
+                    ? new Date(division.last_sync_success).toLocaleString()
+                    : 'Never'
+                  }
                 </div>
-                <div>
-                  <Label className="text-muted-foreground">Last Attempt</Label>
-                  <div className="font-medium">
-                    {division.last_sync_attempt 
-                      ? new Date(division.last_sync_attempt).toLocaleString()
-                      : 'Never'
-                    }
-                  </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Last Sync Attempt</Label>
+                <div className="font-medium">
+                  {division.last_sync_attempt 
+                    ? new Date(division.last_sync_attempt).toLocaleString()
+                    : 'Never'
+                  }
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Last Health Check</Label>
+                <div className="font-medium">
+                  {division.last_health_check 
+                    ? new Date(division.last_health_check).toLocaleString()
+                    : 'Never'
+                  }
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
@@ -373,10 +447,15 @@ export default function SyncJobsManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Button variant="outline" onClick={triggerManualSync}>
               <Play className="h-4 w-4 mr-2" />
               Run Sync Now
+            </Button>
+            
+            <Button variant="outline" onClick={triggerHealthCheck}>
+              <Wifi className="h-4 w-4 mr-2" />
+              Check Health Now
             </Button>
             
             <Button variant="outline" disabled>
