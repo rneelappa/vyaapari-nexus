@@ -309,20 +309,41 @@ export type Database = {
           company_name: string
           created_at: string | null
           updated_at: string | null
+          vyaapari_company_id: string | null
+          vyaapari_division_id: string | null
         }
         Insert: {
           company_id: string
           company_name: string
           created_at?: string | null
           updated_at?: string | null
+          vyaapari_company_id?: string | null
+          vyaapari_division_id?: string | null
         }
         Update: {
           company_id?: string
           company_name?: string
           created_at?: string | null
           updated_at?: string | null
+          vyaapari_company_id?: string | null
+          vyaapari_division_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_mst_company_vyaapari_company"
+            columns: ["vyaapari_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_mst_company_vyaapari_division"
+            columns: ["vyaapari_division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mst_cost_category: {
         Row: {

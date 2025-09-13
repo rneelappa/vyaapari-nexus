@@ -72,11 +72,12 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
     console.log('Supabase client initialized');
 
-    // Get company information from mst_company table
-    console.log('Fetching company information...');
+    // Get company information linked to the current division
+    console.log('Fetching company information for division:', divisionId);
     const { data: companies, error: companyError } = await supabase
       .from('mst_company')
-      .select('company_name, company_id')
+      .select('company_name, company_id, vyaapari_division_id')
+      .eq('vyaapari_division_id', divisionId)
       .limit(1);
 
     if (companyError) {
@@ -84,7 +85,7 @@ serve(async (req) => {
     }
 
     const companyName = companies?.[0]?.company_name || 'Unknown Company';
-    console.log(`Company found: "${companyName}"`);
+    console.log(`Company found: "${companyName}" for division: ${divisionId}`);
 
     // Calculate the date range
     let startDate: string;
