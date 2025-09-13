@@ -72,6 +72,20 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
     console.log('Supabase client initialized');
 
+    // Get company information from mst_company table
+    console.log('Fetching company information...');
+    const { data: companies, error: companyError } = await supabase
+      .from('mst_company')
+      .select('company_name, company_id')
+      .limit(1);
+
+    if (companyError) {
+      console.error('Error fetching company:', companyError);
+    }
+
+    const companyName = companies?.[0]?.company_name || 'Unknown Company';
+    console.log(`Company found: "${companyName}"`);
+
     // Calculate the date range
     let startDate: string;
     let endDate: string;
@@ -92,7 +106,7 @@ serve(async (req) => {
     console.log('Fetching vouchers from date range:', { startDate, endDate });
 
     // Get vouchers from the division within the date range
-    console.log('Querying with params:', { divisionId, startDate, endDate });
+    console.log('Querying with params:', { divisionId, startDate, endDate, companyName });
     
     const { data: vouchers, error: vouchersError } = await supabase
       .from('tally_trn_voucher')
