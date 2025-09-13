@@ -133,7 +133,7 @@ function App() {
                 </AuthGuard>
               } />
               
-              {/* Tally routes */}
+              {/* Tally routes - Legacy paths for backward compatibility */}
               <Route path="/tally/masters/groups" element={
                 <AuthGuard>
                   <MainLayout>
@@ -246,15 +246,7 @@ function App() {
                 </AuthGuard>
               } />
               
-              <Route path="/company/:companyId/division/:divisionId/tally/transactions/sales/create" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <SalesVoucherCreate />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              
-              <Route path="/tally/display/daybook" element={
+              <Route path="/tally/display/day-book" element={
                 <AuthGuard>
                   <MainLayout>
                     <DayBookPage />
@@ -292,6 +284,159 @@ function App() {
                     <ConfigurationPage />
                   </MainLayout>
                 </AuthGuard>
+               } />
+               
+               {/* Division-aware Tally routes */}
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/groups" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <GroupsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/ledgers" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <LedgersPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/stock-items" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <StockItemsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/godowns" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <GodownsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/cost-centers" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <CostCentersPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/cost-categories" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <CostCategoriesPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/voucher-types" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <VoucherTypesPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/employees" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <EmployeesPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/uom" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <UOMPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/masters/payheads" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <PayheadsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/transactions/accounting" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <AccountingPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/transactions/sales/create" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <SalesVoucherCreate />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/transactions/inventory" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <InventoryPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/transactions/non-accounting" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <NonAccountingPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/display/statistics" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <StatisticsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/display/day-book" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <DayBookPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/display/reports" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <ReportsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/display/financial-statements" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <FinancialStatementsPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/company/:companyId/division/:divisionId/tally/utilities/configuration" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <ConfigurationPage />
+                   </MainLayout>
+                 </AuthGuard>
                } />
                
                <Route path="/tally/test-api" element={
