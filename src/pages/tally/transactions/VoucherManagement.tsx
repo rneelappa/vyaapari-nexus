@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Calendar, FileText, Plus, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AccountGroupsSelector } from '@/components/tally/AccountGroupsSelector';
+import { LedgerFilter } from '@/components/tally/LedgerFilter';
 
 interface VoucherEntry {
   guid: string;
@@ -47,6 +48,7 @@ const VoucherManagement: React.FC = () => {
   // Filters
   const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [selectedLedger, setSelectedLedger] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [amountFrom, setAmountFrom] = useState<string>('');
@@ -60,7 +62,7 @@ const VoucherManagement: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [vouchers, selectedType, selectedGroup, dateFrom, dateTo, amountFrom, amountTo]);
+  }, [vouchers, selectedType, selectedGroup, selectedLedger, dateFrom, dateTo, amountFrom, amountTo]);
 
   const fetchVouchers = async (reset: boolean = false) => {
     if (!companyId || !divisionId) return;
@@ -189,6 +191,13 @@ const VoucherManagement: React.FC = () => {
       }
     }
 
+    // Ledger filter
+    if (selectedLedger) {
+      filtered = filtered.filter(v => 
+        v.party_ledger_name === selectedLedger
+      );
+    }
+
     // Date range filter
     if (dateFrom) {
       filtered = filtered.filter(v => new Date(v.date) >= new Date(dateFrom));
@@ -217,6 +226,7 @@ const VoucherManagement: React.FC = () => {
   const clearFilters = () => {
     setSelectedType('ALL_TYPES');
     setSelectedGroup(null);
+    setSelectedLedger(null);
     setDateFrom('');
     setDateTo('');
     setAmountFrom('');
@@ -323,6 +333,14 @@ const VoucherManagement: React.FC = () => {
               selectedGroup={selectedGroup}
               onGroupSelect={setSelectedGroup}
               totalVouchers={totalCount}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Ledgers:</Label>
+            <LedgerFilter
+              selectedLedger={selectedLedger}
+              onLedgerChange={setSelectedLedger}
             />
           </div>
 
