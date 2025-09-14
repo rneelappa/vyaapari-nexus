@@ -1,912 +1,651 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Search, Plus, Edit, Trash2, Users, TrendingUp, TrendingDown, RefreshCw, TreePine, ChevronRight, ChevronDown } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useLedgerVouchers } from '@/hooks/useLedgerVouchers';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, RefreshCw, ArrowLeft, ChevronRight, Users, FileText, Receipt, Calendar } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
-// TEMPORARY DEBUG CODE - Remove after testing
-async function debugAuth() {
-  console.log('[DEBUG] Checking authentication status...');
-  
-  const { data: session, error: sessionError } = await supabase.auth.getSession();
-  console.log('[DEBUG] Session:', session, 'Error:', sessionError);
-  
-  const { data: user, error: userError } = await supabase.auth.getUser();
-  console.log('[DEBUG] User:', user, 'Error:', userError);
-  
-  if (!session?.session) {
-    console.error('[DEBUG] No session found - user not authenticated');
-  } else {
-    console.log('[DEBUG] Access token:', session.session.access_token?.substring(0, 20) + '...');
-  }
-  
-  if (!user?.user) {
-    console.error('[DEBUG] No user found - user not authenticated');
-  }
-  
-  // Test a simple query with explicit auth header
-  if (session?.session?.access_token) {
-    try {
-      console.log('[DEBUG] Testing authenticated query...');
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
-        headers: {
-          'Authorization': `Bearer ${session.session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Accept-Profile': 'public'
-        }
-      });
-      console.log('[DEBUG] Test query response:', response.status, await response.text());
-    } catch (error) {
-      console.error('[DEBUG] Test query failed:', error);
-    }
-  }
+interface Group {
+  guid: string;
+  name: string;
+  parent: string;
+  primary_group: string;
+  is_revenue: boolean;
+  is_deemedpositive: boolean;
+  affects_gross_profit: boolean;
+  company_id: string;
+  division_id: string;
 }
 
-// Run debug immediately
-debugAuth();
-import { useAuth } from "@/hooks/useAuth";
-import TallyApiService, { TallyGroup } from "@/services/tally-api";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { LoadingErrorState } from "@/components/common/LoadingErrorState";
-
-// Group Form Schema
-const groupFormSchema = z.object({
-  name: z.string().min(1, "Group name is required"),
-  parent: z.string().optional(),
-  is_primary_group: z.boolean().default(false),
-  primary_group: z.string().optional(),
-  is_revenue: z.boolean().optional(),
-  is_deemedpositive: z.boolean().optional(),
-  affects_gross_profit: z.boolean().optional(),
-}).refine((data) => {
-  // If it's a primary group, primary_group field should be optional
-  // If it's not a primary group, parent should be provided
-  if (!data.is_primary_group && !data.parent) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Non-primary groups must have a parent group selected",
-  path: ["parent"]
-});
-
-type GroupFormData = z.infer<typeof groupFormSchema>;
-
-interface Group extends TallyGroup {
-  children?: Group[];
-  level?: number;
+interface Ledger {
+  guid: string;
+  name: string;
+  parent: string;
+  opening_balance: number;
+  closing_balance: number;
+  company_id: string;
+  division_id: string;
 }
 
-// Primary groups for dropdown
-const PRIMARY_GROUPS = [
-  "Assets (Current)",
-  "Assets (Fixed)",
-  "Liabilities (Current)",
-  "Liabilities",
-  "Income (Direct)",
-  "Income (Indirect)", 
-  "Expenses (Direct)",
-  "Expenses (Indirect)",
-];
+interface Voucher {
+  guid: string;
+  voucher_number: string;
+  voucher_type: string;
+  date: string;
+  total_amount: number;
+  party_ledger_name: string;
+  narration: string;
+}
+
+interface VoucherDetail {
+  guid: string;
+  voucher_number: string;
+  voucher_type: string;
+  date: string;
+  total_amount: number;
+  party_ledger_name: string;
+  narration: string;
+  basic_amount: number;
+  tax_amount: number;
+  discount_amount: number;
+  final_amount: number;
+  reference: string;
+  due_date: string;
+  currency: string;
+  is_cancelled: boolean;
+}
+
+type ViewLevel = 'groups' | 'subgroups' | 'ledgers' | 'vouchers' | 'voucher_detail';
 
 export default function GroupsPage() {
   const { user } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [groups, setGroups] = useState<Group[]>([]);
+  const { vouchers, loading: vouchersLoading, fetchVouchersByType, fetchVouchersForLedger } = useLedgerVouchers();
+  
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Navigation state
+  const [currentLevel, setCurrentLevel] = useState<ViewLevel>('groups');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<"table" | "tree">("table");
-
-  const form = useForm<GroupFormData>({
-    resolver: zodResolver(groupFormSchema),
-    defaultValues: {
-      name: "",
-      parent: "",
-      is_primary_group: false,
-      primary_group: "",
-      is_revenue: false,
-      is_deemedpositive: true,
-      affects_gross_profit: false,
-    },
-  });
-
-  // Watch is_primary_group to conditionally show/hide parent field
-  const isPrimaryGroup = form.watch("is_primary_group");
-
-  // Add circuit breaker state
-  const [fetchAttempts, setFetchAttempts] = useState(0);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
-  const MAX_FETCH_ATTEMPTS = 3;
-  const FETCH_COOLDOWN = 5000; // 5 seconds
+  const [selectedLedger, setSelectedLedger] = useState<Ledger | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  
+  // Data state
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [ledgers, setLedgers] = useState<Ledger[]>([]);
+  const [voucherDetail, setVoucherDetail] = useState<VoucherDetail | null>(null);
+  
+  // Breadcrumb state
+  const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
 
   useEffect(() => {
-    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
-      const now = Date.now();
-      if (now - lastFetchTime > FETCH_COOLDOWN) {
-        fetchGroups();
-      }
+    if (user) {
+      fetchGroups();
     }
-  }, [user, fetchAttempts, lastFetchTime]);
+  }, [user]);
 
   const fetchGroups = async () => {
-    // Circuit breaker: prevent too many rapid calls
-    const now = Date.now();
-    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
-      setError(`Too many failed attempts. Please refresh the page to try again.`);
-      return;
-    }
-
-    if (now - lastFetchTime < FETCH_COOLDOWN) {
-      console.log('Skipping fetch due to cooldown period');
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
-      setLastFetchTime(now);
-      
-      console.log('Fetching groups from Supabase...');
-      
-      // Fetch groups from Supabase with timeout
+
       const { data, error } = await supabase
         .from('mst_group')
         .select('*')
         .order('name');
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Transform data to match Group interface
+
+      if (error) throw error;
+
       const transformedGroups: Group[] = (data || []).map(item => ({
         guid: item.guid,
-        company_id: item.company_id || '',
-        division_id: item.division_id || '',
         name: item.name,
-        parent: item.parent,
-        _parent: item._parent,
-        primary_group: item.primary_group,
+        parent: item.parent || '',
+        primary_group: item.primary_group || '',
         is_revenue: !!item.is_revenue,
         is_deemedpositive: !!item.is_deemedpositive,
-        is_reserved: !!item.is_reserved,
         affects_gross_profit: !!item.affects_gross_profit,
-        sort_position: item.sort_position,
-        created_at: new Date().toISOString(), // Set current timestamp as fallback
+        company_id: item.company_id || '',
+        division_id: item.division_id || '',
       }));
-      
+
       setGroups(transformedGroups);
-      setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching groups:', err);
-      setFetchAttempts(prev => prev + 1);
-      
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch groups';
-      setError(errorMessage);
-      setGroups([]);
-      
-      // Don't show destructive toasts for permission errors as they spam the UI
-      if (!errorMessage.includes('permission denied')) {
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+      setError(err instanceof Error ? err.message : 'Failed to fetch groups');
+      toast({
+        title: "Error",
+        description: "Failed to fetch groups",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRefresh = () => {
-    setFetchAttempts(0);
-    setLastFetchTime(0);
-    setError(null);
-    fetchGroups();
-  };
+  const fetchLedgersForGroup = async (groupName: string) => {
+    try {
+      setLoading(true);
+      
+      // First try exact match, then fallback to broader searches
+      let { data, error } = await supabase
+        .from('mst_ledger')
+        .select('*')
+        .eq('parent', groupName)
+        .order('name');
 
-  const buildGroupHierarchy = (groups: Group[]): Group[] => {
-    const groupMap = new Map<string, Group>();
-    const rootGroups: Group[] = [];
-
-    // Create map of all groups
-    groups.forEach(group => {
-      groupMap.set(group.name, { ...group, children: [], level: 0 });
-    });
-
-    // Build hierarchy
-    groups.forEach(group => {
-      if (group.parent && group.parent !== group.name && groupMap.has(group.parent)) {
-        const parent = groupMap.get(group.parent)!;
-        const child = groupMap.get(group.name)!;
-        child.level = (parent.level || 0) + 1;
-        parent.children!.push(child);
-      } else {
-        const rootGroup = groupMap.get(group.name)!;
-        rootGroups.push(rootGroup);
+      if (!data || data.length === 0) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('mst_ledger')
+          .select('*')
+          .ilike('parent', `%${groupName}%`)
+          .order('name');
+        
+        if (!fallbackError) {
+          data = fallbackData;
+          error = null;
+        }
       }
-    });
 
-    return rootGroups.sort((a, b) => a.name.localeCompare(b.name));
-  };
-
-  const handleAddGroup = async (data: GroupFormData) => {
-    try {
-      const { error } = await supabase
-        .from('mst_group')
-        .insert({
-          name: data.name,
-          parent: data.is_primary_group ? '' : (data.parent || ''),
-          _parent: data.is_primary_group ? '' : (data.parent || ''),
-          primary_group: data.primary_group || '',
-          is_revenue: data.is_revenue ? 1 : 0,
-          is_deemedpositive: data.is_deemedpositive ? 1 : 0,
-          affects_gross_profit: data.affects_gross_profit ? 1 : 0,
-          guid: crypto.randomUUID(),
-        });
+      if (!data || data.length === 0) {
+        const { data: allData, error: allError } = await supabase
+          .from('mst_ledger')
+          .select('*')
+          .order('name');
+        
+        if (!allError) {
+          data = allData?.filter(ledger => 
+            ledger.parent?.toLowerCase().includes(groupName.toLowerCase())
+          ) || [];
+        }
+      }
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Group created successfully",
-      });
+      const transformedLedgers: Ledger[] = (data || []).map(item => ({
+        guid: item.guid,
+        name: item.name,
+        parent: item.parent || '',
+        opening_balance: item.opening_balance || 0,
+        closing_balance: item.closing_balance || 0,
+        company_id: item.company_id || '',
+        division_id: item.division_id || '',
+      }));
 
-      setIsAddDialogOpen(false);
-      form.reset();
-      fetchGroups();
+      setLedgers(transformedLedgers);
     } catch (err) {
+      console.error('Error fetching ledgers:', err);
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : "Failed to create group",
+        description: "Failed to fetch ledgers for this group",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditGroup = async (data: GroupFormData) => {
-    if (!selectedGroup) return;
-
+  const fetchVoucherDetail = async (voucherGuid: string) => {
     try {
-      const { error } = await supabase
-        .from('mst_group')
-        .update({
-          name: data.name,
-          parent: data.is_primary_group ? '' : (data.parent || ''),
-          _parent: data.is_primary_group ? '' : (data.parent || ''),
-          primary_group: data.primary_group || '',
-          is_revenue: data.is_revenue ? 1 : 0,
-          is_deemedpositive: data.is_deemedpositive ? 1 : 0,
-          affects_gross_profit: data.affects_gross_profit ? 1 : 0,
-        })
-        .eq('guid', selectedGroup.guid);
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('tally_trn_voucher')
+        .select('*')
+        .eq('guid', voucherGuid)
+        .single();
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Group updated successfully",
-      });
+      const detail: VoucherDetail = {
+        guid: data.guid,
+        voucher_number: data.voucher_number || '',
+        voucher_type: data.voucher_type || '',
+        date: data.date || '',
+        total_amount: data.total_amount || 0,
+        party_ledger_name: data.party_ledger_name || '',
+        narration: data.narration || '',
+        basic_amount: data.basic_amount || 0,
+        tax_amount: data.tax_amount || 0,
+        discount_amount: data.discount_amount || 0,
+        final_amount: data.final_amount || 0,
+        reference: data.reference || '',
+        due_date: data.due_date || '',
+        currency: data.currency || 'INR',
+        is_cancelled: !!data.is_cancelled,
+      };
 
-      setIsEditDialogOpen(false);
-      setSelectedGroup(null);
-      form.reset();
-      fetchGroups();
+      setVoucherDetail(detail);
     } catch (err) {
+      console.error('Error fetching voucher detail:', err);
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : "Failed to update group",
+        description: "Failed to fetch voucher details",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteGroup = async (group: Group) => {
-    try {
-      const { error } = await supabase
-        .from('mst_group')
-        .delete()
-        .eq('guid', group.guid);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Group deleted successfully",
-      });
-
-      fetchGroups();
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Failed to delete group",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const openEditDialog = (group: Group) => {
-    setSelectedGroup(group);
-    form.reset({
-      name: group.name,
-      parent: group.parent,
-      is_primary_group: !group.parent || group.parent === '',
-      primary_group: group.primary_group,
-      is_revenue: !!group.is_revenue,
-      is_deemedpositive: !!group.is_deemedpositive,
-      affects_gross_profit: !!group.affects_gross_profit,
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const toggleGroupExpansion = (groupName: string) => {
-    const newExpanded = new Set(expandedGroups);
-    if (newExpanded.has(groupName)) {
-      newExpanded.delete(groupName);
-    } else {
-      newExpanded.add(groupName);
-    }
-    setExpandedGroups(newExpanded);
-  };
-
-  const filteredGroups = groups.filter(group =>
-    group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    group.parent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    group.primary_group.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const hierarchicalGroups = buildGroupHierarchy(filteredGroups);
-
-  const getDebitCreditIcon = (isDeemedPositive: boolean) => {
-    return isDeemedPositive ? (
-      <TrendingUp className="h-4 w-4 text-green-600" />
-    ) : (
-      <TrendingDown className="h-4 w-4 text-red-600" />
-    );
-  };
-
-  const renderTreeNode = (group: Group, level: number = 0) => {
-    const hasChildren = group.children && group.children.length > 0;
-    const isExpanded = expandedGroups.has(group.name);
+  // Navigation handlers
+  const handleGroupClick = async (group: Group) => {
+    // Check if group has children (subgroups)
+    const hasSubgroups = groups.some(g => g.parent === group.name);
     
-    return (
-      <div key={group.guid}>
-        <TableRow className="hover:bg-muted/50">
-          <TableCell className="font-medium">
-            <div className="flex items-center space-x-2" style={{ paddingLeft: `${level * 20}px` }}>
-              {hasChildren && (
-                <button
-                  onClick={() => toggleGroupExpansion(group.name)}
-                  className="p-1 hover:bg-accent rounded"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </button>
-              )}
-              {!hasChildren && <div className="w-6" />}
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span>{group.name}</span>
-            </div>
-          </TableCell>
-          <TableCell>{group.parent}</TableCell>
-          <TableCell>
-            <Badge variant="outline">{group.primary_group}</Badge>
-          </TableCell>
-          <TableCell>
-            <div className="flex items-center space-x-1">
-              {getDebitCreditIcon(group.is_deemedpositive)}
-              <span className="text-sm">
-                {group.is_deemedpositive ? "Debit" : "Credit"}
-              </span>
-            </div>
-          </TableCell>
-          <TableCell>
-            {group.is_revenue ? (
-              <Badge variant="default">Yes</Badge>
-            ) : (
-              <Badge variant="secondary">No</Badge>
-            )}
-          </TableCell>
-          <TableCell>
-            {group.affects_gross_profit ? (
-              <Badge variant="default">Yes</Badge>
-            ) : (
-              <Badge variant="secondary">No</Badge>
-            )}
-          </TableCell>
-          <TableCell>
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" onClick={() => openEditDialog(group)}>
-                <Edit className="h-4 w-4" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Group</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete "{group.name}"? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleDeleteGroup(group)}>
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </TableCell>
-        </TableRow>
-        {hasChildren && isExpanded && group.children?.map(child => renderTreeNode(child, level + 1))}
-      </div>
-    );
+    if (hasSubgroups) {
+      setSelectedGroup(group);
+      setCurrentLevel('subgroups');
+      setBreadcrumb([group.name]);
+    } else {
+      // No subgroups, go directly to ledgers
+      setSelectedGroup(group);
+      setCurrentLevel('ledgers');
+      setBreadcrumb([group.name]);
+      await fetchLedgersForGroup(group.name);
+    }
+  };
+
+  const handleSubgroupClick = async (subgroup: Group) => {
+    setCurrentLevel('ledgers');
+    setBreadcrumb([selectedGroup?.name || '', subgroup.name]);
+    await fetchLedgersForGroup(subgroup.name);
+  };
+
+  const handleLedgerClick = async (ledger: Ledger) => {
+    setSelectedLedger(ledger);
+    setCurrentLevel('vouchers');
+    setBreadcrumb([...breadcrumb, ledger.name]);
+    await fetchVouchersForLedger(ledger.name);
+  };
+
+  const handleVoucherClick = async (voucher: Voucher) => {
+    setSelectedVoucher(voucher);
+    setCurrentLevel('voucher_detail');
+    setBreadcrumb([...breadcrumb, voucher.voucher_number]);
+    await fetchVoucherDetail(voucher.guid);
+  };
+
+  const handleBack = () => {
+    const newBreadcrumb = [...breadcrumb];
+    newBreadcrumb.pop();
+    setBreadcrumb(newBreadcrumb);
+
+    switch (currentLevel) {
+      case 'subgroups':
+        setCurrentLevel('groups');
+        setSelectedGroup(null);
+        break;
+      case 'ledgers':
+        if (breadcrumb.length === 2) {
+          setCurrentLevel('subgroups');
+        } else {
+          setCurrentLevel('groups');
+          setSelectedGroup(null);
+        }
+        break;
+      case 'vouchers':
+        setCurrentLevel('ledgers');
+        setSelectedLedger(null);
+        break;
+      case 'voucher_detail':
+        setCurrentLevel('vouchers');
+        setSelectedVoucher(null);
+        setVoucherDetail(null);
+        break;
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Filter data based on current level
+  const getFilteredData = () => {
+    switch (currentLevel) {
+      case 'groups':
+        return groups.filter(g => !g.parent || g.parent === '').filter(group =>
+          group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          group.primary_group.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      case 'subgroups':
+        return groups.filter(g => g.parent === selectedGroup?.name).filter(group =>
+          group.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      case 'ledgers':
+        return ledgers.filter(ledger =>
+          ledger.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      case 'vouchers':
+        return vouchers.filter(voucher =>
+          voucher.voucher_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          voucher.voucher_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          voucher.party_ledger_name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      default:
+        return [];
+    }
   };
 
   if (!user) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Please log in to view groups.</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Please log in to view groups.</p>
       </div>
     );
   }
 
+  const getTitle = () => {
+    switch (currentLevel) {
+      case 'groups': return 'Account Groups';
+      case 'subgroups': return `Subgroups of ${selectedGroup?.name}`;
+      case 'ledgers': return `Ledgers in ${breadcrumb[breadcrumb.length - 1]}`;
+      case 'vouchers': return `Vouchers for ${selectedLedger?.name}`;
+      case 'voucher_detail': return `Voucher Details: ${selectedVoucher?.voucher_number}`;
+      default: return 'Account Groups';
+    }
+  };
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Groups</h1>
-          <p className="text-muted-foreground">
-            Manage chart of accounts groups and their hierarchy
-          </p>
+        <div className="flex items-center gap-4">
+          {currentLevel !== 'groups' && (
+            <Button variant="outline" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold">{getTitle()}</h1>
+            {breadcrumb.length > 0 && (
+              <p className="text-muted-foreground">
+                {breadcrumb.join(' → ')}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchGroups} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button 
-            variant={viewMode === "tree" ? "default" : "outline"} 
-            onClick={() => setViewMode(viewMode === "tree" ? "table" : "tree")}
-          >
-            <TreePine className="h-4 w-4 mr-2" />
-            {viewMode === "tree" ? "Table View" : "Tree View"}
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Group
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Add New Group</DialogTitle>
-                <DialogDescription>
-                  Create a new accounting group. Groups organize your chart of accounts.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleAddGroup)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Group Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter group name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="is_primary_group"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel>Primary Group *</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  {!isPrimaryGroup && (
-                    <FormField
-                      control={form.control}
-                      name="parent"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Parent Group *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select parent group" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {groups.filter(g => !g.parent || g.parent === '').map((group) => (
-                                <SelectItem key={group.guid} value={group.name}>
-                                  {group.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                  <FormField
-                    control={form.control}
-                    name="primary_group"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Group Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select primary group category (optional)" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {PRIMARY_GROUPS.map((primaryGroup) => (
-                              <SelectItem key={primaryGroup} value={primaryGroup}>
-                                {primaryGroup}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="is_revenue"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel>Revenue Group</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="is_deemedpositive"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <FormLabel>Debit Nature</FormLabel>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="affects_gross_profit"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <FormLabel>Affects Gross Profit</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit">Create Group</Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <Button onClick={fetchGroups} disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Groups</CardTitle>
-          <CardDescription>
-            Hierarchical structure of account groups in your chart of accounts
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search groups..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
+      {/* Voucher Detail View */}
+      {currentLevel === 'voucher_detail' && voucherDetail && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Voucher Details</CardTitle>
+            <CardDescription>Complete information for voucher {voucherDetail.voucher_number}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Voucher Number</label>
+                  <p className="text-lg font-semibold">{voucherDetail.voucher_number}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Type</label>
+                  <p><Badge variant="outline">{voucherDetail.voucher_type}</Badge></p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Date</label>
+                  <p>{formatDate(voucherDetail.date)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Party</label>
+                  <p>{voucherDetail.party_ledger_name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Reference</label>
+                  <p>{voucherDetail.reference || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Basic Amount</label>
+                  <p className="text-lg">{formatCurrency(voucherDetail.basic_amount)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Tax Amount</label>
+                  <p className="text-lg">{formatCurrency(voucherDetail.tax_amount)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Discount</label>
+                  <p className="text-lg">{formatCurrency(voucherDetail.discount_amount)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Final Amount</label>
+                  <p className="text-xl font-bold">{formatCurrency(voucherDetail.final_amount)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
+                  <p>
+                    <Badge variant={voucherDetail.is_cancelled ? "destructive" : "default"}>
+                      {voucherDetail.is_cancelled ? "Cancelled" : "Active"}
+                    </Badge>
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+            {voucherDetail.narration && (
+              <div className="mt-6">
+                <label className="text-sm font-medium text-muted-foreground">Narration</label>
+                <p className="mt-1 p-3 bg-muted rounded-md">{voucherDetail.narration}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-          {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <div className="text-destructive mb-2">Error: {error}</div>
-              <Button 
-                onClick={handleRefresh} 
-                variant="outline"
-                disabled={fetchAttempts >= MAX_FETCH_ATTEMPTS}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                {fetchAttempts >= MAX_FETCH_ATTEMPTS ? 'Max attempts reached' : 'Try Again'}
-              </Button>
-              {fetchAttempts >= MAX_FETCH_ATTEMPTS && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Please refresh the page to try again
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Group Name</TableHead>
-                    <TableHead>Parent Group</TableHead>
-                    <TableHead>Primary Group</TableHead>
-                    <TableHead>Nature</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Affects P&L</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {viewMode === "tree" ? (
-                    hierarchicalGroups.map(group => renderTreeNode(group, 0))
-                  ) : (
-                    filteredGroups.map((group) => (
-                      <TableRow key={group.guid}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center space-x-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            {group.name}
-                          </div>
-                        </TableCell>
-                        <TableCell>{group.parent}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{group.primary_group}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            {getDebitCreditIcon(group.is_deemedpositive)}
-                            <span className="text-sm">
-                              {group.is_deemedpositive ? "Debit" : "Credit"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {group.is_revenue ? (
-                            <Badge variant="default">Yes</Badge>
-                          ) : (
-                            <Badge variant="secondary">No</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {group.affects_gross_profit ? (
-                            <Badge variant="default">Yes</Badge>
-                          ) : (
-                            <Badge variant="secondary">No</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end space-x-2">
-                            <Button variant="ghost" size="sm" onClick={() => openEditDialog(group)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Group</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete "{group.name}"? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteGroup(group)}>
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Edit Group</DialogTitle>
-            <DialogDescription>
-              Update the group details. Make sure to maintain proper hierarchy.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleEditGroup)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Group Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter group name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="is_primary_group"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Primary Group *</FormLabel>
-                  </FormItem>
-                )}
-              />
-              {!isPrimaryGroup && (
-                <FormField
-                  control={form.control}
-                  name="parent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Parent Group *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select parent group" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {groups
-                            .filter(g => g.name !== selectedGroup?.name && (!g.parent || g.parent === '')) // Only show primary groups and prevent self-reference
-                            .map((group) => (
-                              <SelectItem key={group.guid} value={group.name}>
-                                {group.name}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              <FormField
-                control={form.control}
-                name="primary_group"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Primary Group Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select primary group category (optional)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {PRIMARY_GROUPS.map((primaryGroup) => (
-                          <SelectItem key={primaryGroup} value={primaryGroup}>
-                            {primaryGroup}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="is_revenue"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2">
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <FormLabel>Revenue Group</FormLabel>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="is_deemedpositive"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2">
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <FormLabel>Debit Nature</FormLabel>
-                    </FormItem>
-                  )}
+      {/* Other Views */}
+      {currentLevel !== 'voucher_detail' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {currentLevel === 'groups' && <Users className="h-5 w-5" />}
+              {currentLevel === 'subgroups' && <Users className="h-5 w-5" />}
+              {currentLevel === 'ledgers' && <FileText className="h-5 w-5" />}
+              {currentLevel === 'vouchers' && <Receipt className="h-5 w-5" />}
+              {getTitle()}
+            </CardTitle>
+            <CardDescription>
+              {currentLevel === 'groups' && 'Click on a group to view subgroups or ledgers'}
+              {currentLevel === 'subgroups' && 'Click on a subgroup to view its ledgers'}
+              {currentLevel === 'ledgers' && 'Click on a ledger to view its vouchers'}
+              {currentLevel === 'vouchers' && 'Click on a voucher to view details'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={`Search ${currentLevel}...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="affects_gross_profit"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Affects Gross Profit</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Update Group</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        {currentLevel === 'groups' && (
+                          <>
+                            <TableHead>Group Name</TableHead>
+                            <TableHead>Primary Group</TableHead>
+                            <TableHead>Nature</TableHead>
+                            <TableHead>Revenue</TableHead>
+                            <TableHead>Action</TableHead>
+                          </>
+                        )}
+                        {currentLevel === 'subgroups' && (
+                          <>
+                            <TableHead>Subgroup Name</TableHead>
+                            <TableHead>Primary Group</TableHead>
+                            <TableHead>Nature</TableHead>
+                            <TableHead>Action</TableHead>
+                          </>
+                        )}
+                        {currentLevel === 'ledgers' && (
+                          <>
+                            <TableHead>Ledger Name</TableHead>
+                            <TableHead>Group</TableHead>
+                            <TableHead className="text-right">Opening Balance</TableHead>
+                            <TableHead className="text-right">Closing Balance</TableHead>
+                            <TableHead>Action</TableHead>
+                          </>
+                        )}
+                        {currentLevel === 'vouchers' && (
+                          <>
+                            <TableHead>Voucher #</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead>Party</TableHead>
+                            <TableHead>Action</TableHead>
+                          </>
+                        )}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getFilteredData().map((item: any) => (
+                        <TableRow 
+                          key={item.guid} 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => {
+                            if (currentLevel === 'groups') handleGroupClick(item);
+                            else if (currentLevel === 'subgroups') handleSubgroupClick(item);
+                            else if (currentLevel === 'ledgers') handleLedgerClick(item);
+                            else if (currentLevel === 'vouchers') handleVoucherClick(item);
+                          }}
+                        >
+                          {currentLevel === 'groups' && (
+                            <>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-4 w-4 text-muted-foreground" />
+                                  {item.name}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{item.primary_group}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={item.is_deemedpositive ? "default" : "secondary"}>
+                                  {item.is_deemedpositive ? "Debit" : "Credit"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={item.is_revenue ? "default" : "secondary"}>
+                                  {item.is_revenue ? "Yes" : "No"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <ChevronRight className="h-4 w-4" />
+                              </TableCell>
+                            </>
+                          )}
+                          {currentLevel === 'subgroups' && (
+                            <>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-4 w-4 text-muted-foreground" />
+                                  {item.name}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{item.primary_group}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={item.is_deemedpositive ? "default" : "secondary"}>
+                                  {item.is_deemedpositive ? "Debit" : "Credit"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <ChevronRight className="h-4 w-4" />
+                              </TableCell>
+                            </>
+                          )}
+                          {currentLevel === 'ledgers' && (
+                            <>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  {item.name}
+                                </div>
+                              </TableCell>
+                              <TableCell>{item.parent}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(item.opening_balance)}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(item.closing_balance)}</TableCell>
+                              <TableCell>
+                                <ChevronRight className="h-4 w-4" />
+                              </TableCell>
+                            </>
+                          )}
+                          {currentLevel === 'vouchers' && (
+                            <>
+                              <TableCell className="font-medium">{item.voucher_number}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{item.voucher_type}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  {formatDate(item.date)}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className={item.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                                  {formatCurrency(Math.abs(item.amount))}
+                                </span>
+                              </TableCell>
+                              <TableCell>{item.party_ledger_name}</TableCell>
+                              <TableCell>
+                                <ChevronRight className="h-4 w-4" />
+                              </TableCell>
+                            </>
+                          )}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
