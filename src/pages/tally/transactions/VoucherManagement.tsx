@@ -16,6 +16,7 @@ import { LedgerFilter } from '@/components/tally/LedgerFilter';
 import { VoucherTypesFilter } from '@/components/tally/VoucherTypesFilter';
 import { GodownsFilter } from '@/components/tally/GodownsFilter';
 import { InventoryFilter } from '@/components/tally/InventoryFilter';
+import { VoucherFilterProvider, useVoucherFilter } from '@/contexts/VoucherFilterContext';
 
 interface VoucherEntry {
   guid: string;
@@ -34,9 +35,10 @@ interface VoucherEntry {
   due_date?: string;
 }
 
-const VoucherManagement: React.FC = () => {
+const VoucherManagementContent: React.FC = () => {
   const { companyId, divisionId } = useParams();
   const { toast } = useToast();
+  const { filters, updateFilter, clearFilters } = useVoucherFilter();
   
   const [vouchers, setVouchers] = useState<VoucherEntry[]>([]);
   const [filteredVouchers, setFilteredVouchers] = useState<VoucherEntry[]>([]);
@@ -48,17 +50,8 @@ const VoucherManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [hasMore, setHasMore] = useState<boolean>(true);
   
-  // Filters
+  // Legacy filter for backwards compatibility
   const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [selectedLedger, setSelectedLedger] = useState<string | null>(null);
-  const [selectedVoucherType, setSelectedVoucherType] = useState<string | null>(null);
-  const [selectedGodown, setSelectedGodown] = useState<string | null>(null);
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<string | null>(null);
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
-  const [amountFrom, setAmountFrom] = useState<string>('');
-  const [amountTo, setAmountTo] = useState<string>('');
 
   useEffect(() => {
     if (companyId && divisionId) {
@@ -68,7 +61,7 @@ const VoucherManagement: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [vouchers, selectedType, selectedGroup, selectedLedger, selectedVoucherType, selectedGodown, selectedInventoryItem, dateFrom, dateTo, amountFrom, amountTo]);
+  }, [vouchers, selectedType, filters]);
 
   const fetchVouchers = async (reset: boolean = false) => {
     if (!companyId || !divisionId) return;
@@ -175,44 +168,44 @@ const VoucherManagement: React.FC = () => {
     }
 
     // Voucher Type filter (new)
-    if (selectedVoucherType) {
-      filtered = filtered.filter(v => v.voucher_type === selectedVoucherType);
+    if (filters.selectedVoucherType) {
+      filtered = filtered.filter(v => v.voucher_type === filters.selectedVoucherType);
     }
 
     // Godown filter - filter by vouchers related to selected godown
-    if (selectedGodown) {
+    if (filters.selectedGodown) {
       // Filter by stock-affecting voucher types and location-based matching
       filtered = filtered.filter(v => {
         const isStockVoucher = ['Sales', 'Purchase', 'Stock Journal', 'Physical Stock', 'Delivery Note', 'Receipt Note'].includes(v.voucher_type);
         if (!isStockVoucher) return false;
         
         const voucherLocation = v.party_ledger_name?.toLowerCase() || '';
-        const godownName = selectedGodown.toLowerCase();
+        const godownName = filters.selectedGodown!.toLowerCase();
         
         return voucherLocation.includes(godownName.split(' ')[0]) || voucherLocation.includes('stock') || voucherLocation.includes('inventory');
       });
     }
 
     // Inventory Item filter - filter by vouchers involving selected stock item
-    if (selectedInventoryItem) {
+    if (filters.selectedInventoryItem) {
       filtered = filtered.filter(v => {
         const isStockVoucher = ['Sales', 'Purchase', 'Stock Journal', 'Physical Stock', 'Delivery Note', 'Receipt Note'].includes(v.voucher_type);
         if (!isStockVoucher) return false;
         
         const voucherText = `${v.party_ledger_name || ''} ${v.narration || ''}`.toLowerCase();
-        const itemName = selectedInventoryItem.toLowerCase();
+        const itemName = filters.selectedInventoryItem!.toLowerCase();
         
         return voucherText.includes(itemName) || voucherText.includes(itemName.split(' ')[0]);
       });
     }
 
     // Group filter - filter by ledgers that belong to the selected group
-    if (selectedGroup) {
+    if (filters.selectedGroup) {
       try {
         const { data: groupLedgers } = await supabase
           .from('mst_ledger')
           .select('name')
-          .eq('parent', selectedGroup)
+          .eq('parent', filters.selectedGroup)
           .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
 
         const ledgerNames = (groupLedgers || []).map(l => l.name);
@@ -230,29 +223,29 @@ const VoucherManagement: React.FC = () => {
     }
 
     // Ledger filter
-    if (selectedLedger) {
+    if (filters.selectedLedger) {
       filtered = filtered.filter(v => 
-        v.party_ledger_name === selectedLedger
+        v.party_ledger_name === filters.selectedLedger
       );
     }
 
     // Date range filter
-    if (dateFrom) {
-      filtered = filtered.filter(v => new Date(v.date) >= new Date(dateFrom));
+    if (filters.dateFrom) {
+      filtered = filtered.filter(v => new Date(v.date) >= new Date(filters.dateFrom));
     }
-    if (dateTo) {
-      filtered = filtered.filter(v => new Date(v.date) <= new Date(dateTo));
+    if (filters.dateTo) {
+      filtered = filtered.filter(v => new Date(v.date) <= new Date(filters.dateTo));
     }
 
     // Amount range filter
-    if (amountFrom) {
-      const minAmount = parseFloat(amountFrom);
+    if (filters.amountFrom) {
+      const minAmount = parseFloat(filters.amountFrom);
       if (!isNaN(minAmount)) {
         filtered = filtered.filter(v => v.total_amount >= minAmount);
       }
     }
-    if (amountTo) {
-      const maxAmount = parseFloat(amountTo);
+    if (filters.amountTo) {
+      const maxAmount = parseFloat(filters.amountTo);
       if (!isNaN(maxAmount)) {
         filtered = filtered.filter(v => v.total_amount <= maxAmount);
       }
@@ -261,17 +254,9 @@ const VoucherManagement: React.FC = () => {
     setFilteredVouchers(filtered);
   };
 
-  const clearFilters = () => {
+  const handleClearFilters = () => {
     setSelectedType('ALL_TYPES');
-    setSelectedGroup(null);
-    setSelectedLedger(null);
-    setSelectedVoucherType(null);
-    setSelectedGodown(null);
-    setSelectedInventoryItem(null);
-    setDateFrom('');
-    setDateTo('');
-    setAmountFrom('');
-    setAmountTo('');
+    clearFilters();
   };
 
   const handleVoucherClick = (voucher: VoucherEntry) => {
@@ -371,8 +356,8 @@ const VoucherManagement: React.FC = () => {
             <AccountGroupsSelector
               companyId={companyId!}
               divisionId={divisionId!}
-              selectedGroup={selectedGroup}
-              onGroupSelect={setSelectedGroup}
+              selectedGroup={filters.selectedGroup}
+              onGroupSelect={(group) => updateFilter('selectedGroup', group)}
               totalVouchers={totalCount}
             />
           </div>
@@ -380,8 +365,8 @@ const VoucherManagement: React.FC = () => {
           <div className="flex items-center gap-2">
             <Label className="text-xs whitespace-nowrap">Ledgers:</Label>
             <LedgerFilter
-              selectedLedger={selectedLedger}
-              onLedgerChange={setSelectedLedger}
+              selectedLedger={filters.selectedLedger}
+              onLedgerChange={(ledger) => updateFilter('selectedLedger', ledger)}
             />
           </div>
 
@@ -390,8 +375,8 @@ const VoucherManagement: React.FC = () => {
             <VoucherTypesFilter
               companyId={companyId!}
               divisionId={divisionId!}
-              selectedType={selectedVoucherType}
-              onTypeSelect={setSelectedVoucherType}
+              selectedType={filters.selectedVoucherType}
+              onTypeSelect={(type) => updateFilter('selectedVoucherType', type)}
               totalVouchers={totalCount}
             />
           </div>
@@ -401,8 +386,8 @@ const VoucherManagement: React.FC = () => {
             <GodownsFilter
               companyId={companyId!}
               divisionId={divisionId!}
-              selectedGodown={selectedGodown}
-              onGodownSelect={setSelectedGodown}
+              selectedGodown={filters.selectedGodown}
+              onGodownSelect={(godown) => updateFilter('selectedGodown', godown)}
               totalVouchers={totalCount}
             />
           </div>
@@ -412,8 +397,8 @@ const VoucherManagement: React.FC = () => {
             <InventoryFilter
               companyId={companyId!}
               divisionId={divisionId!}
-              selectedItem={selectedInventoryItem}
-              onItemSelect={setSelectedInventoryItem}
+              selectedItem={filters.selectedInventoryItem}
+              onItemSelect={(item) => updateFilter('selectedInventoryItem', item)}
               totalVouchers={totalCount}
             />
           </div>
@@ -454,44 +439,44 @@ const VoucherManagement: React.FC = () => {
           
           <div className="flex items-center gap-2">
             <Label className="text-xs whitespace-nowrap">From:</Label>
-            <Input
-              type="date"
-              className="h-7 w-32 text-xs"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-            />
+              <Input
+                type="date"
+                className="h-7 w-32 text-xs"
+                value={filters.dateFrom}
+                onChange={(e) => updateFilter('dateFrom', e.target.value)}
+              />
           </div>
           
           <div className="flex items-center gap-2">
             <Label className="text-xs whitespace-nowrap">To:</Label>
-            <Input
-              type="date"
-              className="h-7 w-32 text-xs"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-            />
+              <Input
+                type="date"
+                className="h-7 w-32 text-xs"
+                value={filters.dateTo}
+                onChange={(e) => updateFilter('dateTo', e.target.value)}
+              />
           </div>
           
           <div className="flex items-center gap-2">
             <Label className="text-xs whitespace-nowrap">Min Amount:</Label>
-            <Input
-              type="number"
-              placeholder="0"
-              className="h-7 w-24 text-xs"
-              value={amountFrom}
-              onChange={(e) => setAmountFrom(e.target.value)}
-            />
+              <Input
+                type="number"
+                placeholder="0"
+                className="h-7 w-24 text-xs"
+                value={filters.amountFrom}
+                onChange={(e) => updateFilter('amountFrom', e.target.value)}
+              />
           </div>
           
           <div className="flex items-center gap-2">
             <Label className="text-xs whitespace-nowrap">Max Amount:</Label>
-            <Input
-              type="number"
-              placeholder="0"
-              className="h-7 w-24 text-xs"
-              value={amountTo}
-              onChange={(e) => setAmountTo(e.target.value)}
-            />
+              <Input
+                type="number"
+                placeholder="0"
+                className="h-7 w-24 text-xs"
+                value={filters.amountTo}
+                onChange={(e) => updateFilter('amountTo', e.target.value)}
+              />
           </div>
           
           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={clearFilters}>
@@ -547,6 +532,20 @@ const VoucherManagement: React.FC = () => {
         </div>
       )}
     </div>
+  );
+};
+
+const VoucherManagement: React.FC = () => {
+  const { companyId, divisionId } = useParams();
+
+  if (!companyId || !divisionId) {
+    return <div>Missing company or division ID</div>;
+  }
+
+  return (
+    <VoucherFilterProvider companyId={companyId} divisionId={divisionId}>
+      <VoucherManagementContent />
+    </VoucherFilterProvider>
   );
 };
 

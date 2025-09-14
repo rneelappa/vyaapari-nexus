@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
-import { useParams } from 'react-router-dom';
 import { ChevronDown, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useVoucherFilter } from '@/contexts/VoucherFilterContext';
 
 interface Ledger {
   name: string;
   parent: string;
-  opening_balance: number;
-  closing_balance: number;
+  opening_balance?: number;
+  closing_balance?: number;
   voucher_count?: number;
 }
 
@@ -23,44 +22,11 @@ interface LedgerFilterProps {
 }
 
 export function LedgerFilter({ selectedLedger, onLedgerChange }: LedgerFilterProps) {
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [open, setOpen] = useState(false);
-  const { companyId, divisionId } = useParams();
+  const { filteredOptions, loading, filters } = useVoucherFilter();
 
-  const fetchLedgers = async () => {
-    if (!companyId || !divisionId) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('mst_ledger')
-        .select('name, parent, opening_balance, closing_balance')
-        .or(`company_id.eq.${companyId},company_id.is.null`)
-        .or(`division_id.eq.${divisionId},division_id.is.null`)
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching ledgers:', error);
-        return;
-      }
-
-      setLedgers(data || []);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (open) {
-      fetchLedgers();
-    }
-  }, [open, companyId, divisionId]);
-
-  const filteredLedgers = ledgers.filter(ledger =>
+  const filteredLedgers = filteredOptions.ledgers.filter(ledger =>
     ledger.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     ledger.parent.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -80,20 +46,28 @@ export function LedgerFilter({ selectedLedger, onLedgerChange }: LedgerFilterPro
     setOpen(false);
   };
 
+  // Show dependency info in the button
+  const getButtonText = () => {
+    if (selectedLedger) return selectedLedger;
+    if (filters.selectedGroup) return `Ledgers in ${filters.selectedGroup}`;
+    return 'All Ledgers';
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" className="justify-between min-w-[200px]">
           <span className="flex items-center gap-2">
-            {selectedLedger ? (
-              <>
-                <span className="truncate">{selectedLedger}</span>
-                <Badge variant="secondary" className="ml-1">
-                  Selected
-                </Badge>
-              </>
-            ) : (
-              'Select Ledger'
+            <span className="truncate">{getButtonText()}</span>
+            {selectedLedger && (
+              <Badge variant="secondary" className="ml-1">
+                Selected
+              </Badge>
+            )}
+            {filters.selectedGroup && (
+              <Badge variant="outline" className="ml-1 text-xs">
+                Filtered
+              </Badge>
             )}
           </span>
           <ChevronDown className="h-4 w-4 opacity-50" />
@@ -134,17 +108,15 @@ export function LedgerFilter({ selectedLedger, onLedgerChange }: LedgerFilterPro
                       onClick={() => handleLedgerSelect(ledger.name)}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{ledger.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Balance: ₹{ledger.closing_balance?.toFixed(2) || '0.00'}
-                          </div>
-                        </div>
-                        {ledger.voucher_count && (
-                          <Badge variant="outline" className="ml-2">
-                            {ledger.voucher_count}
-                          </Badge>
-                        )}
+                         <div className="flex-1 min-w-0">
+                           <div className="font-medium truncate">{ledger.name}</div>
+                           <div className="text-sm text-muted-foreground">
+                             Balance: ₹{ledger.closing_balance?.toFixed(2) || '0.00'}
+                           </div>
+                         </div>
+                         <Badge variant="outline" className="ml-2">
+                           {ledger.voucher_count || 0}
+                         </Badge>
                       </div>
                     </div>
                   ))}
