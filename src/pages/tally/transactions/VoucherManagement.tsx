@@ -318,6 +318,8 @@ const VoucherManagementContent: React.FC = () => {
         voucher={selectedVoucher}
         onBack={handleBack}
         onEdit={handleEdit}
+        companyId={companyId}
+        divisionId={divisionId}
       />
     );
   }
