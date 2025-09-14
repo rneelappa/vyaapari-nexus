@@ -106,6 +106,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml',
+        'ngrok-skip-browser-warning': 'true',
         'Content-Length': tallyRequest.length.toString(),
       },
       body: tallyRequest,
