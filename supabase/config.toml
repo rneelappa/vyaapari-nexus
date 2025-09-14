@@ -55,3 +55,6 @@ verify_jwt = false
 
 [functions.tally-health-check]
 verify_jwt = false
+
+[functions.tally-voucher-sync]
+verify_jwt = true

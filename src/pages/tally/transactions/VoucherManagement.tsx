@@ -320,6 +320,10 @@ const VoucherManagementContent: React.FC = () => {
         onEdit={handleEdit}
         companyId={companyId}
         divisionId={divisionId}
+        onSyncComplete={() => {
+          // Refresh voucher data after sync
+          fetchVouchers();
+        }}
       />
     );
   }

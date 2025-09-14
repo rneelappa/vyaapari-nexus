@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Edit } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { TallyVoucherSync } from './TallyVoucherSync';
 import { VoucherViewRenderer } from './VoucherViewRenderer';
 
 interface VoucherEntry {
@@ -27,9 +28,10 @@ interface VoucherDetailsViewProps {
   onEdit: (voucher: VoucherEntry) => void;
   companyId?: string;
   divisionId?: string;
+  onSyncComplete?: () => void;
 }
 
-export function VoucherDetailsView({ voucher, onBack, onEdit, companyId, divisionId }: VoucherDetailsViewProps) {
+export function VoucherDetailsView({ voucher, onBack, onEdit, companyId, divisionId, onSyncComplete }: VoucherDetailsViewProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -39,10 +41,20 @@ export function VoucherDetailsView({ voucher, onBack, onEdit, companyId, divisio
           Back to Vouchers
         </Button>
         
-        <Button onClick={() => onEdit(voucher)} className="flex items-center gap-2">
-          <Edit className="h-4 w-4" />
-          Edit Voucher
-        </Button>
+        <div className="flex gap-2">
+          {companyId && divisionId && (
+            <TallyVoucherSync
+              voucherGuid={voucher.guid}
+              companyId={companyId}
+              divisionId={divisionId}
+              onSyncComplete={onSyncComplete}
+            />
+          )}
+          
+          <Button onClick={() => onEdit(voucher)} variant="outline" size="sm" className="flex items-center gap-2">
+            Edit Voucher
+          </Button>
+        </div>
       </div>
 
       {/* Voucher View Renderer */}

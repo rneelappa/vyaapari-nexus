@@ -27,6 +27,7 @@ import {
   Warehouse
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TallyVoucherSync } from './TallyVoucherSync';
 
 interface VoucherDetails {
   // Basic voucher information
@@ -376,6 +377,16 @@ export function EnhancedVoucherDetails({
         </div>
         
         <div className="flex gap-2">
+          <TallyVoucherSync
+            voucherGuid={voucherGuid}
+            companyId={companyId}
+            divisionId={divisionId}
+            onSyncComplete={() => {
+              // Refresh voucher data after sync
+              fetchVoucherDetails();
+            }}
+          />
+          
           {voucher.is_cancelled === 1 && (
             <Badge variant="destructive">Cancelled</Badge>
           )}
