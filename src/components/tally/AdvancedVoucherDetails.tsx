@@ -137,6 +137,10 @@ export function AdvancedVoucherDetails({
     setIsEditing(false);
   };
 
+  // Separate party ledger from other ledgers
+  const partyLedger = editedVoucher.entries?.find(entry => entry.isPartyLedger);
+  const otherLedgers = editedVoucher.entries?.filter(entry => !entry.isPartyLedger) || [];
+  
   const totalDebit = editedVoucher.entries?.reduce((sum, entry) => 
     entry.amount > 0 ? sum + entry.amount : sum, 0) || 0;
   const totalCredit = editedVoucher.entries?.reduce((sum, entry) => 
@@ -144,10 +148,18 @@ export function AdvancedVoucherDetails({
   const totalInventoryValue = editedVoucher.inventoryEntries?.reduce((sum, entry) => 
     sum + entry.amount, 0) || 0;
   
+  // Calculate other ledgers total (excluding party ledger)
+  const otherLedgersTotal = otherLedgers.reduce((sum, entry) => 
+    sum + Math.abs(entry.amount), 0);
+  
+  // Party ledger amount (should match inventory + other ledgers)
+  const partyLedgerAmount = partyLedger ? Math.abs(partyLedger.amount) : 0;
+  const inventoryPlusOthersTotal = totalInventoryValue + otherLedgersTotal;
+  
   const grandTotal = Math.max(totalDebit, totalCredit);
-  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01; // Account for floating point precision
+  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
   const hasInventory = editedVoucher.inventoryEntries?.length > 0;
-  const inventoryLedgerMatch = hasInventory ? Math.abs(totalInventoryValue - grandTotal) < 0.01 : true;
+  const partyBalanceMatch = Math.abs(partyLedgerAmount - inventoryPlusOthersTotal) < 0.01;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -314,15 +326,34 @@ export function AdvancedVoucherDetails({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {editedVoucher.entries?.map((entry, index) => (
+                          {/* Party Ledger First */}
+                          {partyLedger && (
+                            <TableRow className="bg-blue-50 dark:bg-blue-950/30">
+                              <TableCell className="font-bold">
+                                {partyLedger.ledgerName}
+                                <Badge variant="default" className="ml-2 text-xs">
+                                  Party Account
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-bold">
+                                {partyLedger.amount > 0 ? formatAmount(partyLedger.amount) : '-'}
+                              </TableCell>
+                              <TableCell className="text-right font-bold">
+                                {partyLedger.amount < 0 ? formatAmount(Math.abs(partyLedger.amount)) : '-'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="default">
+                                  {partyLedger.isDeemedPositive ? 'Positive' : 'Negative'}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          
+                          {/* Other Ledgers */}
+                          {otherLedgers.map((entry, index) => (
                             <TableRow key={index}>
                               <TableCell className="font-medium">
                                 {entry.ledgerName}
-                                {entry.isPartyLedger && (
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    Party
-                                  </Badge>
-                                )}
                               </TableCell>
                               <TableCell className="text-right">
                                 {entry.amount > 0 ? formatAmount(entry.amount) : '-'}
@@ -361,7 +392,8 @@ export function AdvancedVoucherDetails({
                       
                       {/* Balance Validation */}
                       <Separator className="my-3" />
-                      <div className="flex items-center justify-between">
+                      <div className="space-y-3">
+                        {/* Ledger Balance Check */}
                         <div className="flex items-center gap-2">
                           <div className={`h-3 w-3 rounded-full ${isBalanced ? 'bg-green-500' : 'bg-red-500'}`} />
                           <span className="text-sm font-medium">
@@ -369,17 +401,34 @@ export function AdvancedVoucherDetails({
                           </span>
                         </div>
                         
-                        {hasInventory && (
-                          <div className="flex items-center gap-2">
-                            <div className={`h-3 w-3 rounded-full ${inventoryLedgerMatch ? 'bg-green-500' : 'bg-orange-500'}`} />
-                            <span className="text-sm font-medium">
-                              Inventory-Ledger: {inventoryLedgerMatch ? 'Match' : 'Mismatch'}
-                            </span>
-                            {!inventoryLedgerMatch && (
-                              <span className="text-xs text-muted-foreground">
-                                (Diff: {formatAmount(Math.abs(totalInventoryValue - grandTotal))})
-                              </span>
-                            )}
+                        {/* Party Balance Breakdown */}
+                        {partyLedger && (
+                          <div className="bg-muted/20 rounded-lg p-3 space-y-2">
+                            <div className="text-sm font-medium text-muted-foreground">Party Account Validation</div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <div className="text-muted-foreground">Party Amount</div>
+                                <div className="font-medium">{formatAmount(partyLedgerAmount)}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">Inventory + Others</div>
+                                <div className="font-medium">{formatAmount(inventoryPlusOthersTotal)}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  (Inv: {formatAmount(totalInventoryValue)} + Others: {formatAmount(otherLedgersTotal)})
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className={`h-3 w-3 rounded-full ${partyBalanceMatch ? 'bg-green-500' : 'bg-red-500'}`} />
+                                <div>
+                                  <div className="font-medium">{partyBalanceMatch ? 'Balanced' : 'Unbalanced'}</div>
+                                  {!partyBalanceMatch && (
+                                    <div className="text-xs text-red-600">
+                                      Diff: {formatAmount(Math.abs(partyLedgerAmount - inventoryPlusOthersTotal))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
