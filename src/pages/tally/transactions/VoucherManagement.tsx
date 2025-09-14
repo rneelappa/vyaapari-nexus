@@ -692,33 +692,40 @@ export default function VoucherManagement() {
                     <CardTitle className="text-base">Ledger Entries</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {(() => {
-                      const party = selectedVoucher.entries.find((e: any) => e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName);
-                      const others = selectedVoucher.entries.filter((e: any) => !(e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName));
-
-                      const totalLedgerDebit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
-                      const totalLedgerCredit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
-                      const totalInventoryValue = (selectedVoucher.inventoryEntries || []).reduce((s: number, i: any) => s + (i.amount || 0), 0);
+                     {(() => {
+                       // Separate entries by source type
+                       const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
+                       const inventoryEntries = selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting');
+                       
+                       const party = mainLedgerEntries.find((e: any) => e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName);
+                       const otherMainLedgers = mainLedgerEntries.filter((e: any) => !(e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName));
+                       
+                       // Calculate totals based on new structure
+                       const inventoryAccountingDebit = inventoryEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                       const inventoryAccountingCredit = inventoryEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
+                       
+                       const mainLedgerDebit = mainLedgerEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                       const mainLedgerCredit = mainLedgerEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
+                       
+                       // Total Debit = All debit entries from both sources
+                       const totalDebit = inventoryAccountingDebit + mainLedgerDebit;
+                       const totalCredit = inventoryAccountingCredit + mainLedgerCredit;
                       
-                      // Total Debit includes inventory + ledger debits (excluding party)
-                      const otherLedgerDebits = others.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
-                      const totalDebit = totalInventoryValue + otherLedgerDebits;
-                      const totalCredit = totalLedgerCredit;
-                      
-                      const grandTotal = Math.max(totalDebit, totalCredit);
-                      const otherLedgersTotal = others.reduce((s: number, e: any) => s + Math.abs(e.amount || 0), 0);
-                      const partyAmount = party ? Math.abs(party.amount || 0) : 0;
-                      const inventoryPlusOthers = totalInventoryValue + otherLedgersTotal;
-                      const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+                       const grandTotal = Math.max(totalDebit, totalCredit);
+                       const totalInventoryValue = inventoryAccountingDebit; // For compatibility
+                       const otherLedgersTotal = otherMainLedgers.reduce((s: number, e: any) => s + Math.abs(e.amount || 0), 0);
+                       const partyAmount = party ? Math.abs(party.amount || 0) : 0;
+                       const inventoryPlusOthers = totalInventoryValue + otherLedgersTotal;
+                       const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
 
-                      const t = (selectedVoucher.type || '').toLowerCase();
-                      const expectedAccountType = t.includes('sales') ? 'Sales Account' : t.includes('purchase') ? 'Purchase Account' : (t.includes('payment') || t.includes('receipt') || t.includes('contra')) ? 'Bank/Cash Account' : 'Account';
-                      const needsTwoLedgers = ['sales','purchase','payment','receipt'].some(k => t.includes(k));
-                      const mainAccount = others.find((e: any) => {
-                        const name = (e.ledgerName || '').toLowerCase();
-                        return name.includes('sales') || name.includes('purchase') || name.includes('bank') || name.includes('cash');
-                      });
-                      const hasBothRequiredLedgers = !!party && others.length > 0;
+                       const t = (selectedVoucher.type || '').toLowerCase();
+                       const expectedAccountType = t.includes('sales') ? 'Sales Account' : t.includes('purchase') ? 'Purchase Account' : (t.includes('payment') || t.includes('receipt') || t.includes('contra')) ? 'Bank/Cash Account' : 'Account';
+                       const needsTwoLedgers = ['sales','purchase','payment','receipt'].some(k => t.includes(k));
+                       const mainAccount = otherMainLedgers.find((e: any) => {
+                         const name = (e.ledgerName || '').toLowerCase();
+                         return name.includes('sales') || name.includes('purchase') || name.includes('bank') || name.includes('cash');
+                       });
+                      const hasBothRequiredLedgers = !!party && otherMainLedgers.length > 0;
                       const partyBalanceMatch = Math.abs(partyAmount - inventoryPlusOthers) < 0.01;
 
                       return (
@@ -738,31 +745,53 @@ export default function VoucherManagement() {
                           )}
 
                           {/* Warning if main account missing */}
-                          {needsTwoLedgers && others.length === 0 && (
+                          {needsTwoLedgers && otherMainLedgers.length === 0 && (
                             <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm">
                               Missing {expectedAccountType} - required for {selectedVoucher.type} voucher
                             </div>
                           )}
 
                           {/* Other ledgers */}
-                          {others.map((entry: any, index: number) => (
+                          {otherMainLedgers.map((entry: any, index: number) => (
                             <div key={index} className={`flex items-center justify-between p-3 rounded-lg bg-muted ${mainAccount && mainAccount.ledgerName === entry.ledgerName ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}>
                               <div className="flex-1">
-                                <p className="font-medium">
-                                  {entry.ledgerName}
-                                  {mainAccount && mainAccount.ledgerName === entry.ledgerName && (
-                                    <Badge variant="secondary" className="ml-2 text-xs">Main Account</Badge>
-                                  )}
-                                </p>
+                                 <p className="font-medium">
+                                   {entry.ledgerName}
+                                   {mainAccount && mainAccount.ledgerName === entry.ledgerName && (
+                                     <Badge variant="secondary" className="ml-2 text-xs">Main Account</Badge>
+                                   )}
+                                 </p>
+                                 <Badge variant="outline" className="text-xs mt-1">
+                                   {entry.source === 'inventory_accounting' ? 'Inventory Accounting' : 'Main Ledger'}
+                                 </Badge>
                               </div>
                               <div className="text-right">
                                 <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
                                 <p className="text-xs text-muted-foreground">{(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
                               </div>
                             </div>
-                          ))}
+                           ))}
 
-                          <Separator />
+                           {/* Inventory Accounting Entries */}
+                           {inventoryEntries.length > 0 && (
+                             <>
+                               <div className="text-sm font-medium text-muted-foreground mt-4 mb-2">Inventory Accounting Entries</div>
+                               {inventoryEntries.map((entry: any, index: number) => (
+                                 <div key={`inv-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                                   <div className="flex-1">
+                                     <p className="font-medium">{entry.ledgerName}</p>
+                                     <Badge variant="outline" className="text-xs mt-1">Inventory Accounting</Badge>
+                                   </div>
+                                   <div className="text-right">
+                                     <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
+                                     <p className="text-xs text-muted-foreground">{(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
+                                   </div>
+                                 </div>
+                               ))}
+                             </>
+                           )}
+
+                           <Separator />
                           {/* Totals */}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                             <div>
