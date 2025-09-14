@@ -60,12 +60,15 @@ export class ExternalTallyApiService {
         limit: (filters.limit || 50).toString(),
         ...(filters.from && { from: filters.from }),
         ...(filters.to && { to: filters.to }),
-        ...(filters.type && { type: filters.type }),
+        ...(filters.type && { type: filters.type?.toUpperCase() }),
         ...(filters.search && { search: filters.search })
       });
 
       const response = await fetch(`${this.baseURL}/vouchers/${companyId}/${divisionId}?${params}`);
-      const data = await response.json();
+      const responseData = await response.json();
+      
+      // Unwrap the data payload from the API response
+      const data = responseData.success ? responseData.data : responseData;
       return { success: response.ok, data };
     } catch (error) {
       return { success: false, data: null, error: (error as Error).message };
