@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { 
   FileText,
   Calculator,
@@ -9,7 +16,8 @@ import {
   Package,
   MapPin,
   Database,
-  Clock
+  Clock,
+  MoreHorizontal
 } from 'lucide-react';
 import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
 import { VoucherOverview } from './VoucherOverview';
@@ -49,7 +57,8 @@ const ICON_MAP = {
   Package,
   MapPin,
   Database,
-  Clock
+  Clock,
+  MoreHorizontal
 };
 
 export function VoucherViewRenderer({ 
@@ -62,10 +71,78 @@ export function VoucherViewRenderer({
   const [viewConfig, setViewConfig] = useState<ViewConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [useMasterView, setUseMasterView] = useState(false);
+  const [visibleTabs, setVisibleTabs] = useState<TabConfig[]>([]);
+  const [overflowTabs, setOverflowTabs] = useState<TabConfig[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('');
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchVoucherView();
   }, [voucherType, companyId, divisionId]);
+
+  useEffect(() => {
+    if (viewConfig) {
+      const enabledTabs = viewConfig.tabs
+        .filter(tab => tab.enabled)
+        .sort((a, b) => a.order - b.order);
+      
+      if (enabledTabs.length > 0 && !activeTab) {
+        setActiveTab(enabledTabs[0].id);
+      }
+
+      handleTabOverflow(enabledTabs);
+    }
+  }, [viewConfig, activeTab]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (viewConfig) {
+        const enabledTabs = viewConfig.tabs
+          .filter(tab => tab.enabled)
+          .sort((a, b) => a.order - b.order);
+        handleTabOverflow(enabledTabs);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewConfig, activeTab]);
+
+  const handleTabOverflow = (enabledTabs: TabConfig[]) => {
+    // For mobile/small screens, show max 3 tabs, rest go to overflow
+    const maxVisibleTabs = window.innerWidth < 640 ? 2 : window.innerWidth < 768 ? 3 : window.innerWidth < 1024 ? 4 : 6;
+    
+    if (enabledTabs.length <= maxVisibleTabs) {
+      setVisibleTabs(enabledTabs);
+      setOverflowTabs([]);
+    } else {
+      // Always keep the active tab visible
+      const activeTabIndex = enabledTabs.findIndex(tab => tab.id === activeTab);
+      let visible = enabledTabs.slice(0, maxVisibleTabs - 1);
+      
+      // If active tab is not in visible range, replace the last visible tab with it
+      if (activeTabIndex >= maxVisibleTabs - 1) {
+        visible[maxVisibleTabs - 2] = enabledTabs[activeTabIndex];
+      }
+      
+      const overflow = enabledTabs.filter(tab => !visible.find(v => v.id === tab.id));
+      
+      setVisibleTabs(visible);
+      setOverflowTabs(overflow);
+    }
+  };
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    
+    // If tab is in overflow, we need to recalculate visible/overflow
+    if (viewConfig) {
+      const enabledTabs = viewConfig.tabs
+        .filter(tab => tab.enabled)
+        .sort((a, b) => a.order - b.order);
+      handleTabOverflow(enabledTabs);
+    }
+  };
 
   const fetchVoucherView = async () => {
     setLoading(true);
@@ -175,19 +252,67 @@ export function VoucherViewRenderer({
       </div>
 
       {/* Custom Tabs */}
-      <Tabs defaultValue={enabledTabs[0]?.id} className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${enabledTabs.length}, 1fr)` }}>
-          {enabledTabs.map((tab) => {
-            const IconComponent = ICON_MAP[tab.icon as keyof typeof ICON_MAP] || FileText;
-            
-            return (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
-                <IconComponent className="h-4 w-4" />
-                {tab.name}
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <div className="flex items-center gap-2">
+          <TabsList 
+            ref={tabsListRef}
+            className="flex-1 grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, 1fr)` }}
+          >
+            {visibleTabs.map((tab) => {
+              const IconComponent = ICON_MAP[tab.icon as keyof typeof ICON_MAP] || FileText;
+              
+              return (
+                <TabsTrigger 
+                  key={tab.id} 
+                  value={tab.id} 
+                  className="flex items-center gap-2 text-sm"
+                >
+                  <IconComponent className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {tab.name === 'Accounting Entries' ? 'Accounting' : 
+                     tab.name === 'Associated Ledgers' ? 'Ledgers' : tab.name}
+                  </span>
+                  <span className="sm:hidden">
+                    {tab.name === 'Accounting Entries' ? 'Acc' : 
+                     tab.name === 'Associated Ledgers' ? 'Led' : 
+                     tab.name.length > 6 ? tab.name.substring(0, 6) + '...' : tab.name}
+                  </span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {overflowTabs.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="px-2">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                className="w-48 bg-background border shadow-md z-50"
+              >
+                {overflowTabs.map((tab) => {
+                  const IconComponent = ICON_MAP[tab.icon as keyof typeof ICON_MAP] || FileText;
+                  
+                  return (
+                    <DropdownMenuItem
+                      key={tab.id}
+                      onClick={() => handleTabChange(tab.id)}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      {tab.name === 'Accounting Entries' ? 'Accounting' : 
+                       tab.name === 'Associated Ledgers' ? 'Ledgers' : tab.name}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
 
         {enabledTabs.map((tab) => (
           <TabsContent key={tab.id} value={tab.id}>
@@ -197,13 +322,13 @@ export function VoucherViewRenderer({
                 companyId={companyId}
                 divisionId={divisionId}
               />
-            ) : tab.id === 'accounting' ? (
+            ) : (tab.id === 'accounting' || tab.name === 'Accounting Entries') ? (
               <VoucherAccountingEntries
                 voucherGuid={voucherGuid}
                 companyId={companyId}
                 divisionId={divisionId}
               />
-            ) : tab.id === 'ledgers' ? (
+            ) : (tab.id === 'ledgers' || tab.name === 'Associated Ledgers') ? (
               <VoucherAssociatedLedgers
                 voucherGuid={voucherGuid}
                 companyId={companyId}
