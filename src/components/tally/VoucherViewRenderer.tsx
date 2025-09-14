@@ -23,6 +23,7 @@ import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
 import { VoucherOverview } from './VoucherOverview';
 import { VoucherAccountingEntries } from './VoucherAccountingEntries';
 import { VoucherAssociatedLedgers } from './VoucherAssociatedLedgers';
+import { VoucherInventoryDetails } from './VoucherInventoryDetails';
 
 interface TabConfig {
   id: string;
@@ -330,6 +331,12 @@ export function VoucherViewRenderer({
               />
             ) : (tab.id === 'ledgers' || tab.name === 'Associated Ledgers') ? (
               <VoucherAssociatedLedgers
+                voucherGuid={voucherGuid}
+                companyId={companyId}
+                divisionId={divisionId}
+              />
+            ) : (tab.id === 'inventory' || tab.name === 'Inventory') ? (
+              <VoucherInventoryDetails
                 voucherGuid={voucherGuid}
                 companyId={companyId}
                 divisionId={divisionId}
