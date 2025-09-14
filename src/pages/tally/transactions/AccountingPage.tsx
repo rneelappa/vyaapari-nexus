@@ -1,52 +1,45 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, RefreshCw, FileText, TrendingUp, TrendingDown, DollarSign, Eye, Calendar } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { useAccountingLedgers } from "@/hooks/useAccountingLedgers";
-import { useLedgerVouchers } from "@/hooks/useLedgerVouchers";
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useVoucherTypesByCategory } from '@/hooks/useVoucherTypesByCategory';
+import { useLedgerVouchers } from '@/hooks/useLedgerVouchers';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, RefreshCw, FileText, Package, Calculator, Calendar } from 'lucide-react';
 
 export default function AccountingPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedLedger, setSelectedLedger] = useState<string | null>(null);
-  const [isVoucherDialogOpen, setIsVoucherDialogOpen] = useState(false);
+  const { categories, loading, error, refresh } = useVoucherTypesByCategory();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedVoucherType, setSelectedVoucherType] = useState<any>(null);
+  const [showVoucherDialog, setShowVoucherDialog] = useState(false);
   
-  // Use the accounting ledgers hook
-  const { ledgers, loading, error, refresh } = useAccountingLedgers();
-  
-  // Use the voucher hook
   const { vouchers, loading: vouchersLoading, fetchVouchersForLedger } = useLedgerVouchers();
 
-  const handleCreateTransaction = (ledgerName: string) => {
-    const pathParts = location.pathname.split('/');
-    const divisionIndex = pathParts.indexOf('division');
-    const companyIndex = pathParts.indexOf('company');
-    
-    if (divisionIndex > -1 && companyIndex > -1 && pathParts[divisionIndex + 1] && pathParts[companyIndex + 1]) {
-      const divisionId = pathParts[divisionIndex + 1];
-      const companyId = pathParts[companyIndex + 1];
-      // For now, show a message since we don't have specific forms for each ledger
-      toast({
-        title: "Create Transaction",
-        description: `Create transaction for ${ledgerName} - Feature coming soon`,
-      });
-    }
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Please log in to view voucher types.</p>
+      </div>
+    );
+  }
+
+  const handleVoucherTypeClick = async (voucherType: any) => {
+    setSelectedVoucherType(voucherType);
+    setShowVoucherDialog(true);
+    await fetchVouchersForLedger(voucherType.name);
   };
 
-  const handleLedgerClick = async (ledgerName: string) => {
-    setSelectedLedger(ledgerName);
-    setIsVoucherDialogOpen(true);
-    await fetchVouchersForLedger(ledgerName);
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'accounting': return <Calculator className="h-4 w-4" />;
+      case 'inventory': return <Package className="h-4 w-4" />;
+      default: return <FileText className="h-4 w-4" />;
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -62,6 +55,14 @@ export default function AccountingPage() {
       year: 'numeric',
       month: 'long',
     });
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(amount);
   };
 
   // Build Monthly and Fiscal Year groups
@@ -108,226 +109,211 @@ export default function AccountingPage() {
     return result;
   })();
 
-  const filteredLedgers = ledgers.filter(ledger =>
-    ledger.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    ledger.parent.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
-  const getBalanceIcon = (balance: number) => {
-    return balance >= 0 ? 
-      <TrendingUp className="h-4 w-4 text-green-600" /> : 
-      <TrendingDown className="h-4 w-4 text-red-600" />;
-  };
-
-  const getBalanceBadge = (balance: number) => {
-    return balance >= 0 ? (
-      <Badge variant="default" className="bg-green-100 text-green-800">
-        Dr {formatCurrency(Math.abs(balance))}
-      </Badge>
-    ) : (
-      <Badge variant="secondary" className="bg-red-100 text-red-800">
-        Cr {formatCurrency(Math.abs(balance))}
-      </Badge>
-    );
-  };
-
-  if (!user) {
-    return (
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Please log in to view accounting ledgers.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Accounting Ledgers</h1>
+          <h1 className="text-3xl font-bold">Accounting Voucher Types</h1>
           <p className="text-muted-foreground">
-            View ledger balances, transaction counts, and debit/credit totals
+            View voucher types categorized by their accounting nature
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={refresh} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
+        <Button onClick={refresh} disabled={loading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search ledgers..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-      </div>
-
-      {error && (
-        <Card className="border-destructive">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-destructive">
-              <span className="font-medium">Error:</span>
-              <span>{error}</span>
+      <Card>
+        <CardHeader>
+          <CardTitle>Voucher Types Overview</CardTitle>
+          <CardDescription>
+            Click on any voucher type to view its transaction history
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search voucher types..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
             </div>
-            <Button 
-              variant="outline" 
-              onClick={refresh} 
-              className="mt-2"
-              disabled={loading}
-            >
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
-      {loading ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Loading accounting ledgers...</span>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-blue-600" />
-              Accounting Ledgers
-              <Badge variant="secondary" className="ml-auto">
-                {filteredLedgers.length} ledgers
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Ledger balances with debit/credit totals and transaction counts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {filteredLedgers.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : error ? (
               <div className="text-center py-8">
-                <div className="mb-4">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground font-medium">
-                    {searchTerm ? 'No ledgers match your search.' : 'No accounting ledgers found.'}
-                  </p>
-                  {!searchTerm && (
-                    <div className="text-sm text-muted-foreground mt-2 space-y-1">
-                      <p>This could mean:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>No ledger data exists for this company/division</li>
-                        <li>Ledgers may exist but don't match accounting categories</li>
-                        <li>Check the browser console for debugging information</li>
-                      </ul>
-                    </div>
-                  )}
-                </div>
-                <Button onClick={refresh} variant="outline">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Reload Data
-                </Button>
+                <p className="text-destructive">{error}</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Ledger Name</TableHead>
-                    <TableHead>Group</TableHead>
-                    <TableHead className="text-right">Debit Total</TableHead>
-                    <TableHead className="text-right">Credit Total</TableHead>
-                    <TableHead className="text-right">Current Balance</TableHead>
-                    <TableHead className="text-right">Vouchers</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLedgers.map((ledger) => (
-                    <TableRow 
-                      key={ledger.guid}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleLedgerClick(ledger.name)}
-                    >
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {getBalanceIcon(ledger.net_balance)}
-                          {ledger.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-blue-600 border-blue-200">
-                          {ledger.parent}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="text-green-600 font-medium">
-                          {formatCurrency(ledger.total_debit)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="text-red-600 font-medium">
-                          {formatCurrency(ledger.total_credit)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {getBalanceBadge(ledger.net_balance)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge 
-                          variant={ledger.voucher_count > 0 ? "default" : "secondary"}
-                          className={ledger.voucher_count > 0 ? "bg-blue-100 text-blue-800" : ""}
-                        >
-                          {ledger.voucher_count.toLocaleString()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCreateTransaction(ledger.name);
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Transaction
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <Tabs defaultValue="accounting" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="accounting" className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    Accounting ({categories.accounting.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="inventory" className="flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Inventory ({categories.inventory.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="non-accounting" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Non-Accounting ({categories.nonAccounting.length})
+                  </TabsTrigger>
+                </TabsList>
 
-      {/* Voucher Dialog */}
-      <Dialog open={isVoucherDialogOpen} onOpenChange={setIsVoucherDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                <TabsContent value="accounting" className="mt-4">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Voucher Type</TableHead>
+                          <TableHead>Parent</TableHead>
+                          <TableHead className="text-center">Stock Impact</TableHead>
+                          <TableHead className="text-center">Voucher Count</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories.accounting
+                          .filter(vt => 
+                            vt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            vt.parent.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                          .map((voucherType) => (
+                          <TableRow
+                            key={voucherType.guid}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => handleVoucherTypeClick(voucherType)}
+                          >
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                {getCategoryIcon('accounting')}
+                                {voucherType.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{voucherType.parent}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant={voucherType.affects_stock ? "default" : "secondary"}>
+                                {voucherType.affects_stock ? "Yes" : "No"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline">{voucherType.count}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="inventory" className="mt-4">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Voucher Type</TableHead>
+                          <TableHead>Parent</TableHead>
+                          <TableHead className="text-center">Stock Impact</TableHead>
+                          <TableHead className="text-center">Voucher Count</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories.inventory
+                          .filter(vt => 
+                            vt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            vt.parent.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                          .map((voucherType) => (
+                          <TableRow
+                            key={voucherType.guid}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => handleVoucherTypeClick(voucherType)}
+                          >
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                {getCategoryIcon('inventory')}
+                                {voucherType.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{voucherType.parent}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="default">Yes</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline">{voucherType.count}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="non-accounting" className="mt-4">
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Voucher Type</TableHead>
+                          <TableHead>Parent</TableHead>
+                          <TableHead className="text-center">Stock Impact</TableHead>
+                          <TableHead className="text-center">Voucher Count</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories.nonAccounting
+                          .filter(vt => 
+                            vt.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            vt.parent.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                          .map((voucherType) => (
+                          <TableRow
+                            key={voucherType.guid}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => handleVoucherTypeClick(voucherType)}
+                          >
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                {getCategoryIcon('non-accounting')}
+                                {voucherType.name}
+                              </div>
+                            </TableCell>
+                            <TableCell>{voucherType.parent}</TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant={voucherType.affects_stock ? "default" : "secondary"}>
+                                {voucherType.affects_stock ? "Yes" : "No"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline">{voucherType.count}</Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showVoucherDialog} onOpenChange={setShowVoucherDialog}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Vouchers for {selectedLedger}
+            <DialogTitle>
+              Vouchers for {selectedVoucherType?.name}
             </DialogTitle>
             <DialogDescription>
-              All vouchers and transactions for this ledger
+              Transaction history for this voucher type
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-auto max-h-[60vh]">
@@ -338,7 +324,7 @@ export default function AccountingPage() {
               </div>
             ) : vouchers.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No vouchers found for this ledger.</p>
+                <p className="text-muted-foreground">No vouchers found for this voucher type.</p>
               </div>
             ) : (
               <Tabs defaultValue="all" className="w-full">
