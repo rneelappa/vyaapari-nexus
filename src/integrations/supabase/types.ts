@@ -3555,6 +3555,10 @@ export type Database = {
           voucher_count: number
         }[]
       }
+      has_company_division_access: {
+        Args: { _company_id: string; _division_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
