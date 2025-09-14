@@ -127,8 +127,19 @@ export function VoucherViewRenderer({
     }
   };
 
-  // If loading or should use master view, render EnhancedVoucherDetails
-  if (loading || useMasterView || !viewConfig) {
+  // Loading state - show skeleton to avoid duplicate inner tabs
+  if (loading) {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="h-6 w-40 rounded-md bg-muted animate-pulse" />
+        <div className="h-10 w-full rounded-md bg-muted animate-pulse" />
+        <div className="h-64 w-full rounded-md bg-muted animate-pulse" />
+      </div>
+    );
+  }
+
+  // If should use master view, render EnhancedVoucherDetails
+  if (useMasterView || !viewConfig) {
     return (
       <EnhancedVoucherDetails
         voucherGuid={voucherGuid}
