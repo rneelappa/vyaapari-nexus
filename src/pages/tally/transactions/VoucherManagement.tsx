@@ -13,6 +13,7 @@ import { Calendar, FileText, Plus, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { AccountGroupsSelector } from '@/components/tally/AccountGroupsSelector';
 import { LedgerFilter } from '@/components/tally/LedgerFilter';
+import { VoucherTypesFilter } from '@/components/tally/VoucherTypesFilter';
 
 interface VoucherEntry {
   guid: string;
@@ -49,6 +50,7 @@ const VoucherManagement: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedLedger, setSelectedLedger] = useState<string | null>(null);
+  const [selectedVoucherType, setSelectedVoucherType] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [amountFrom, setAmountFrom] = useState<string>('');
@@ -62,7 +64,7 @@ const VoucherManagement: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [vouchers, selectedType, selectedGroup, selectedLedger, dateFrom, dateTo, amountFrom, amountTo]);
+  }, [vouchers, selectedType, selectedGroup, selectedLedger, selectedVoucherType, dateFrom, dateTo, amountFrom, amountTo]);
 
   const fetchVouchers = async (reset: boolean = false) => {
     if (!companyId || !divisionId) return;
@@ -163,9 +165,14 @@ const VoucherManagement: React.FC = () => {
   const applyFilters = async () => {
     let filtered = [...vouchers];
 
-    // Type filter
+    // Type filter (legacy - now we have VoucherTypesFilter)
     if (selectedType && selectedType !== "ALL_TYPES") {
       filtered = filtered.filter(v => v.voucher_type === selectedType);
+    }
+
+    // Voucher Type filter (new)
+    if (selectedVoucherType) {
+      filtered = filtered.filter(v => v.voucher_type === selectedVoucherType);
     }
 
     // Group filter - filter by ledgers that belong to the selected group
@@ -227,6 +234,7 @@ const VoucherManagement: React.FC = () => {
     setSelectedType('ALL_TYPES');
     setSelectedGroup(null);
     setSelectedLedger(null);
+    setSelectedVoucherType(null);
     setDateFrom('');
     setDateTo('');
     setAmountFrom('');
@@ -345,7 +353,18 @@ const VoucherManagement: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Type:</Label>
+            <Label className="text-xs whitespace-nowrap">Voucher Types:</Label>
+            <VoucherTypesFilter
+              companyId={companyId!}
+              divisionId={divisionId!}
+              selectedType={selectedVoucherType}
+              onTypeSelect={setSelectedVoucherType}
+              totalVouchers={totalCount}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Legacy Type:</Label>
             <Select value={selectedType} onValueChange={setSelectedType}>
               <SelectTrigger className="h-7 w-32 text-xs">
                 <SelectValue placeholder="All" />
