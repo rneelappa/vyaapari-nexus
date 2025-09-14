@@ -78,7 +78,8 @@ export class ExternalTallyApiService {
   async getVoucher(companyId: string, divisionId: string, voucherId: string): Promise<TallyApiResponse> {
     try {
       const response = await fetch(`${this.baseURL}/voucher/${companyId}/${divisionId}/${voucherId}`);
-      const data = await response.json();
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
       return { success: response.ok, data };
     } catch (error) {
       return { success: false, data: null, error: (error as Error).message };
@@ -92,7 +93,8 @@ export class ExternalTallyApiService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-      const data = await response.json();
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
       return { success: response.ok, data };
     } catch (error) {
       return { success: false, data: null, error: (error as Error).message };
@@ -104,6 +106,99 @@ export class ExternalTallyApiService {
       const response = await fetch(`${this.baseURL}/voucher/${companyId}/${divisionId}/${voucherId}/xml`);
       const xmlData = await response.text();
       return { success: response.ok, data: xmlData };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  // Master Data Methods
+  async getLedgerMasters(companyId: string, divisionId: string): Promise<TallyApiResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/masters/ledgers/${companyId}/${divisionId}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  async getStockMasters(companyId: string, divisionId: string): Promise<TallyApiResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/masters/stocks/${companyId}/${divisionId}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  async getGroupMasters(companyId: string, divisionId: string): Promise<TallyApiResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/masters/groups/${companyId}/${divisionId}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  async getUnitMasters(companyId: string, divisionId: string): Promise<TallyApiResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/masters/units/${companyId}/${divisionId}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  async getGodownMasters(companyId: string, divisionId: string): Promise<TallyApiResponse> {
+    try {
+      const response = await fetch(`${this.baseURL}/masters/godowns/${companyId}/${divisionId}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  // Accounting Reports Methods
+  async getTrialBalance(companyId: string, divisionId: string, fromDate: string, toDate: string): Promise<TallyApiResponse> {
+    try {
+      const params = new URLSearchParams({ fromDate, toDate });
+      const response = await fetch(`${this.baseURL}/reports/trial-balance/${companyId}/${divisionId}?${params}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  async getProfitLoss(companyId: string, divisionId: string, fromDate: string, toDate: string): Promise<TallyApiResponse> {
+    try {
+      const params = new URLSearchParams({ fromDate, toDate });
+      const response = await fetch(`${this.baseURL}/reports/profit-loss/${companyId}/${divisionId}?${params}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
+    } catch (error) {
+      return { success: false, data: null, error: (error as Error).message };
+    }
+  }
+
+  async getBalanceSheet(companyId: string, divisionId: string, fromDate: string, toDate: string): Promise<TallyApiResponse> {
+    try {
+      const params = new URLSearchParams({ fromDate, toDate });
+      const response = await fetch(`${this.baseURL}/reports/balance-sheet/${companyId}/${divisionId}?${params}`);
+      const responseData = await response.json();
+      const data = responseData.success ? responseData.data : responseData;
+      return { success: response.ok, data };
     } catch (error) {
       return { success: false, data: null, error: (error as Error).message };
     }

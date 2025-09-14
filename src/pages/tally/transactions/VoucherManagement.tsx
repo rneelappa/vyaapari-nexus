@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, Plus, Search, Calendar, DollarSign, Filter, X, Activity, RotateCcw, Eye, Edit, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Plus, Search, Calendar, DollarSign, Filter, X, Activity, RotateCcw, Eye, Edit, Download, ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { useExternalTallyVouchers } from "@/hooks/useExternalTallyVouchers";
 import { format } from 'date-fns';
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdvancedVoucherDetails } from "@/components/tally/AdvancedVoucherDetails";
 
 // Define VoucherEntry interface for external API
 interface VoucherEntry {
@@ -420,6 +421,7 @@ export default function VoucherManagement() {
             <div className="space-y-3">
               {vouchers.map((voucher) => {
                 const totalAmount = voucher.entries?.reduce((sum, entry) => sum + Math.abs(entry.amount || 0), 0) || 0;
+                const hasInventory = voucher.inventoryEntries?.length > 0;
                 
                 return (
                   <Card 
@@ -443,6 +445,12 @@ export default function VoucherManagement() {
                             {voucher.isInvoice && <Badge variant="outline" className="text-xs">Invoice</Badge>}
                             {voucher.isModify && <Badge variant="destructive" className="text-xs">Modified</Badge>}
                             {voucher.isDeleted && <Badge variant="destructive" className="text-xs">Deleted</Badge>}
+                            {hasInventory && (
+                              <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                                <Package className="h-3 w-3" />
+                                {voucher.inventoryEntries.length} items
+                              </Badge>
+                            )}
                           </div>
                           
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
