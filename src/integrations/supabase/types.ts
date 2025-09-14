@@ -3536,6 +3536,53 @@ export type Database = {
           },
         ]
       }
+      xml_staging: {
+        Row: {
+          attributes: Json | null
+          company_id: string | null
+          created_at: string
+          division_id: string | null
+          id: string
+          level: number
+          parent_id: string | null
+          position: number
+          xml_tag: string
+          xml_value: string | null
+        }
+        Insert: {
+          attributes?: Json | null
+          company_id?: string | null
+          created_at?: string
+          division_id?: string | null
+          id?: string
+          level?: number
+          parent_id?: string | null
+          position?: number
+          xml_tag: string
+          xml_value?: string | null
+        }
+        Update: {
+          attributes?: Json | null
+          company_id?: string | null
+          created_at?: string
+          division_id?: string | null
+          id?: string
+          level?: number
+          parent_id?: string | null
+          position?: number
+          xml_tag?: string
+          xml_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xml_staging_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "xml_staging"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
