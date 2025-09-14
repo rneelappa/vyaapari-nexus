@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdvancedVoucherDetails } from "@/components/tally/AdvancedVoucherDetails";
+import { InventoryTest } from "@/components/tally/InventoryTest";
 
 // Define VoucherEntry interface for external API
 interface VoucherEntry {
@@ -239,6 +240,19 @@ export default function VoucherManagement() {
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {/* Debug/Test Section */}
+          <details className="border rounded-lg p-4">
+            <summary className="cursor-pointer font-medium text-sm">
+              🔧 Enhanced API & Inventory Testing
+            </summary>
+            <div className="mt-4">
+              <InventoryTest 
+                companyId={companyId || 'SKM'} 
+                divisionId={divisionId || 'MAIN'} 
+              />
+            </div>
+          </details>
+
           {/* Action Bar */}
           <div className="flex items-center gap-3 flex-wrap">
             <Button 
