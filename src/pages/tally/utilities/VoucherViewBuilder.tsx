@@ -371,9 +371,9 @@ export function VoucherViewBuilder({
           <div className="space-y-2">
             <Label>Associated Voucher Types</Label>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-              {voucherTypes.map((type) => (
+              {voucherTypes.map((type, index) => (
                 <Badge
-                  key={type}
+                  key={`${type}-${index}`}
                   variant={selectedVoucherTypes.includes(type) ? "default" : "outline"}
                   className="cursor-pointer"
                   onClick={() => {

@@ -101,7 +101,9 @@ export function VoucherViewsManager({ companyId, divisionId }: VoucherViewsManag
 
       setViews((viewsData as any) || []);
       setTypeViews((typeViewsData as any) || []);
-      setVoucherTypes(voucherTypesData?.map((v: any) => v.name) || []);
+      // Remove duplicates and ensure unique voucher types
+      const uniqueVoucherTypes = [...new Set(voucherTypesData?.map((v: any) => v.name) || [])];
+      setVoucherTypes(uniqueVoucherTypes);
     } catch (error) {
       console.error('Error fetching voucher views:', error);
       toast({
