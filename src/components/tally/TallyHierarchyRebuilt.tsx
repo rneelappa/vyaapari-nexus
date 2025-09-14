@@ -28,6 +28,7 @@ const tallyMenuStructure = {
     name: "Transactions",
     icon: FileText,
     items: [
+      { name: "Voucher Management", path: "/tally/transactions/voucher-management", icon: FileText },
       { name: "Accounting", path: "/tally/transactions/accounting", icon: Calculator },
       { name: "Sales Voucher Create", path: "/tally/transactions/sales/create", icon: FileText },
       { name: "Inventory", path: "/tally/transactions/inventory", icon: Package },
