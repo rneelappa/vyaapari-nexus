@@ -1,3 +1,4 @@
+// VoucherManagement with dependent filters - v2
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { VoucherDisplay } from '@/components/tally/VoucherDisplay';
@@ -36,9 +37,13 @@ interface VoucherEntry {
 }
 
 const VoucherManagementContent: React.FC = () => {
+  console.log('VoucherManagementContent rendering');
   const { companyId, divisionId } = useParams();
   const { toast } = useToast();
+  
+  console.log('About to call useVoucherFilter');
   const { filters, updateFilter, clearFilters } = useVoucherFilter();
+  console.log('Successfully called useVoucherFilter');
   
   const [vouchers, setVouchers] = useState<VoucherEntry[]>([]);
   const [filteredVouchers, setFilteredVouchers] = useState<VoucherEntry[]>([]);
@@ -537,6 +542,8 @@ const VoucherManagementContent: React.FC = () => {
 
 const VoucherManagement: React.FC = () => {
   const { companyId, divisionId } = useParams();
+
+  console.log('VoucherManagement wrapper rendering with:', { companyId, divisionId });
 
   if (!companyId || !divisionId) {
     return <div>Missing company or division ID</div>;

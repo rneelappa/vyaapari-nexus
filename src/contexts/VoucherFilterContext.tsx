@@ -1,3 +1,4 @@
+// VoucherFilterContext v2.0 - Force refresh
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -57,6 +58,7 @@ const initialOptions: FilteredOptions = {
 };
 
 export function VoucherFilterProvider({ children, companyId, divisionId }: VoucherFilterProviderProps) {
+  console.log('VoucherFilterProvider rendering with:', { companyId, divisionId });
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [filteredOptions, setFilteredOptions] = useState<FilteredOptions>(initialOptions);
   const [loading, setLoading] = useState(false);
@@ -329,8 +331,11 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
 }
 
 export function useVoucherFilter() {
+  console.log('useVoucherFilter called');
   const context = useContext(VoucherFilterContext);
+  console.log('context:', context);
   if (context === undefined) {
+    console.error('useVoucherFilter must be used within a VoucherFilterProvider');
     throw new Error('useVoucherFilter must be used within a VoucherFilterProvider');
   }
   return context;
