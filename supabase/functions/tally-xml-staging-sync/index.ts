@@ -69,6 +69,17 @@ serve(async (req) => {
       throw new Error('Tally URL not configured for this division');
     }
 
+    // Get company name from mst_company table
+    const { data: company, error: companyError } = await supabase
+      .from('mst_company')
+      .select('company_name')
+      .eq('vyaapari_company_id', companyId)
+      .single();
+
+    if (companyError || !company) {
+      throw new Error('Company not found in mst_company table');
+    }
+
     // Construct Tally XML request for all vouchers
     const tallyRequest = `<?xml version="1.0" encoding="UTF-8"?>
 <ENVELOPE>
@@ -81,7 +92,7 @@ serve(async (req) => {
   <BODY>
     <DESC>
       <STATICVARIABLES>
-        <SVCURRENTCOMPANY>${division.tally_company_id || 'Default Company'}</SVCURRENTCOMPANY>
+        <SVCURRENTCOMPANY>${company.company_name}</SVCURRENTCOMPANY>
         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
       </STATICVARIABLES>
     </DESC>
