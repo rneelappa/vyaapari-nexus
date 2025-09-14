@@ -317,6 +317,38 @@ export default function TallySyncPage() {
     }
   };
 
+  const handleForceTallyFetch = () => {
+    const fromDate = dateRange.from || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const toDate = dateRange.to || new Date();
+    
+    setIsLoading(true);
+    supabase.functions.invoke('get-recent-vouchers', {
+      body: { 
+        divisionId,
+        fromDate: format(fromDate, 'yyyy-MM-dd'),
+        toDate: format(toDate, 'yyyy-MM-dd'),
+        forceTally: true
+      }
+    }).then(({ data, error }) => {
+      if (error) {
+        console.error('Force Tally fetch error:', error);
+        toast({
+          title: "Fetch Failed",
+          description: error.message || "Failed to fetch from Tally",
+          variant: "destructive"
+        });
+      } else if (data?.success) {
+        setSyncData(data);
+        toast({
+          title: "Tally Data Fetched",
+          description: `Fetched ${data.summary?.tallyVoucherCount || 0} vouchers from Tally`,
+        });
+      }
+    }).finally(() => {
+      setIsLoading(false);
+    });
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -466,38 +498,50 @@ export default function TallySyncPage() {
                 ) : (
                   <RefreshCw className="h-4 w-4 mr-2" />
                 )}
-                Search
-              </Button>
-            </div>
+              Search
+            </Button>
+            <Button
+              onClick={handleForceTallyFetch}
+              disabled={isLoading}
+              variant="outline"
+            >
+              {isLoading ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Force Tally Fetch
+            </Button>
           </div>
+        </div>
 
-          <div className="flex gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchRecentVouchers(1)}
-              disabled={isLoading}
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Last Day
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchRecentVouchers(7)}
-              disabled={isLoading}
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Last Week
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fetchRecentVouchers(30)}
-              disabled={isLoading}
-            >
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Last Month
+        <div className="flex gap-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchRecentVouchers(1)}
+            disabled={isLoading}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Last Day
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchRecentVouchers(7)}
+            disabled={isLoading}
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Last Week
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchRecentVouchers(30)}
+            disabled={isLoading}
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Last Month
             </Button>
           </div>
         </CardContent>
