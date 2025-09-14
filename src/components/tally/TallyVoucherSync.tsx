@@ -137,7 +137,7 @@ export function TallyVoucherSync({
       ]);
 
       if (divisionRow?.tally_url) {
-        const url = `${divisionRow.tally_url}:9000`;
+        const url = divisionRow.tally_url;
         const companyName = companyRow?.company_name || divisionRow.tally_company_id || 'Unknown Company';
         const requestBody = `<?xml version="1.0" encoding="UTF-8"?>
 <ENVELOPE>

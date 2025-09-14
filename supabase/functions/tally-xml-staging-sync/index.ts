@@ -102,7 +102,7 @@ serve(async (req) => {
     console.log('Sending request to Tally:', division.tally_url);
 
     // Call Tally API
-    const tallyResponse = await fetch(`${division.tally_url}:9000`, {
+    const tallyResponse = await fetch(division.tally_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml',
