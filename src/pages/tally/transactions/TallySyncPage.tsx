@@ -201,35 +201,56 @@ export default function TallySyncPage() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('tally-api', {
+      // Ensure we have Tally XML for enhanced upsert
+      const ensureXml = async (): Promise<string | null> => {
+        if (syncData?.tally?.responseXml) return syncData.tally.responseXml;
+        const from = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : format(new Date(Date.now() - 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+        const to = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+        const { data, error } = await supabase.functions.invoke('get-recent-vouchers', {
+          body: { divisionId, fromDate: from, toDate: to, forceTally: true }
+        });
+        if (error) throw error;
+        return data?.tally?.responseXml || null;
+      };
+
+      const xmlText = await ensureXml();
+      if (!xmlText) {
+        toast({
+          title: "No Tally XML",
+          description: "Could not fetch Tally vouchers XML for the selected range",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Run enhanced parser to upsert vouchers and all dependencies
+      const { data: parseData, error: parseError } = await supabase.functions.invoke('enhanced-xml-parser', {
         body: {
-          action: 'sync_vouchers',
+          xmlText,
           divisionId,
-          vouchers: syncData.vouchers.map(v => v.guid),
-          fromDate: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
-          toDate: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+          companyId: syncData?.vouchers?.[0]?.company_id || null,
+          enableLiveUpdates: false
         }
       });
+      if (parseError) throw parseError;
+      if (!parseData?.success) throw new Error(parseData?.error || 'Parsing failed');
 
-      if (error) throw error;
+      setSyncData(prev => prev ? { ...prev, parseResults: parseData, tally: { ...(prev.tally || {}), responseXml: xmlText } } : prev);
 
-      if (data.success) {
-        toast({
-          title: "Sync Completed",
-          description: `Successfully synced ${data.syncedCount || syncData.vouchers.length} vouchers`,
-        });
-        // Refresh the voucher list
-        if (dateRange.from && dateRange.to) {
-          fetchVouchersByDateRange(dateRange.from, dateRange.to);
-        }
-      } else {
-        throw new Error(data.error || 'Sync failed');
+      toast({
+        title: "Sync Completed",
+        description: `Inserted: ${parseData.summary.inserted}, Updated: ${parseData.summary.updated}, Masters: ${parseData.summary.created_master}`
+      });
+
+      // Refresh the voucher list
+      if (dateRange.from && dateRange.to) {
+        fetchVouchersByDateRange(dateRange.from, dateRange.to);
       }
     } catch (error: any) {
       console.error('Sync error:', error);
       toast({
         title: "Sync Failed",
-        description: error.message || "Failed to sync vouchers",
+        description: error.message || "Failed to upsert vouchers",
         variant: "destructive"
       });
     } finally {
@@ -249,36 +270,48 @@ export default function TallySyncPage() {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('tally-api', {
+      // Re-run enhanced parser to ensure relationships and masters are created
+      const ensureXml = async (): Promise<string | null> => {
+        if (syncData?.tally?.responseXml) return syncData.tally.responseXml;
+        const from = dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : format(new Date(Date.now() - 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+        const to = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+        const { data, error } = await supabase.functions.invoke('get-recent-vouchers', {
+          body: { divisionId, fromDate: from, toDate: to, forceTally: true }
+        });
+        if (error) throw error;
+        return data?.tally?.responseXml || null;
+      };
+
+      const xmlText = await ensureXml();
+      if (!xmlText) {
+        toast({ title: "No XML", description: "Cannot fix relationships without Tally XML", variant: "destructive" });
+        return;
+      }
+
+      const { data: parseData, error: parseError } = await supabase.functions.invoke('enhanced-xml-parser', {
         body: {
-          action: 'fix_relationships',
+          xmlText,
           divisionId,
-          vouchers: syncData.vouchers.map(v => v.guid),
-          companyId: syncData.vouchers[0]?.company_id
+          companyId: syncData?.vouchers?.[0]?.company_id || null,
+          enableLiveUpdates: false
         }
       });
+      if (parseError) throw parseError;
+      if (!parseData?.success) throw new Error(parseData?.error || 'Fix failed');
 
-      if (error) throw error;
+      setSyncData(prev => prev ? { ...prev, parseResults: parseData } : prev);
 
-      if (data.success) {
-        toast({
-          title: "Relationships Fixed",
-          description: `Fixed relationships for ${data.processedCount || syncData.vouchers.length} vouchers`,
-        });
-        // Refresh the voucher list to show updated statuses
-        if (dateRange.from && dateRange.to) {
-          fetchVouchersByDateRange(dateRange.from, dateRange.to);
-        }
-      } else {
-        throw new Error(data.error || 'Relationship fix failed');
+      toast({
+        title: "Relationships Fixed",
+        description: `Masters created: ${parseData.summary.created_master}, Updated: ${parseData.summary.updated}`
+      });
+
+      if (dateRange.from && dateRange.to) {
+        fetchVouchersByDateRange(dateRange.from, dateRange.to);
       }
     } catch (error: any) {
       console.error('Fix relationships error:', error);
-      toast({
-        title: "Fix Failed",
-        description: error.message || "Failed to fix database relationships",
-        variant: "destructive"
-      });
+      toast({ title: "Fix Failed", description: error.message || "Failed to fix relationships", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

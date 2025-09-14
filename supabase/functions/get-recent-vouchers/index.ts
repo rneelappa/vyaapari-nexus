@@ -33,13 +33,14 @@ serve(async (req) => {
       );
     }
 
-    const { divisionId, days, fromDate, toDate } = requestBody;
+    const { divisionId, days, fromDate, toDate, forceTally } = requestBody;
     
     console.log('Extracted data:', { 
       divisionId, 
       days,
       fromDate,
-      toDate 
+      toDate,
+      forceTally 
     });
     
     if (!divisionId) {
@@ -161,9 +162,9 @@ serve(async (req) => {
     let tallyInfo: any = null;
     let parseResults: any = null;
 
-    if ((finalVouchers.length || 0) === 0 && division?.tally_url) {
+    if (((finalVouchers.length || 0) === 0 || forceTally) && division?.tally_url) {
       try {
-        console.log('No DB vouchers found. Attempting Tally DayBook fetch...', { tallyCompany, tallyUrl: division.tally_url });
+        console.log('Fetching Tally DayBook...', { tallyCompany, tallyUrl: division.tally_url, forceTally });
         const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?>\n<ENVELOPE>\n  <HEADER>\n    <VERSION>1</VERSION>\n    <TALLYREQUEST>Export</TALLYREQUEST>\n    <TYPE>Data</TYPE>\n    <ID>DayBook</ID>\n  </HEADER>\n  <BODY>\n    <DESC>\n      <STATICVARIABLES>\n        <SVFROMDATE>${startDate}</SVFROMDATE>\n        <SVTODATE>${endDate}</SVTODATE>\n        <SVCURRENTCOMPANY>${tallyCompany}</SVCURRENTCOMPANY>\n      </STATICVARIABLES>\n    </DESC>\n  </BODY>\n</ENVELOPE>`;
 
         const tallyResp = await fetch(division.tally_url, {
