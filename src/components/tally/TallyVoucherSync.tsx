@@ -139,7 +139,23 @@ export function TallyVoucherSync({
 
       if (divisionRow?.tally_url) {
         const url = `${divisionRow.tally_url}:9000`;
-        const requestBody = `\n      <ENVELOPE>\n        <HEADER>\n          <TALLYREQUEST>Export Data</TALLYREQUEST>\n        </HEADER>\n        <BODY>\n          <EXPORTDATA>\n            <REQUESTDESC>\n              <REPORTNAME>Voucher</REPORTNAME>\n              <STATICVARIABLES>\n                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>\n                <VCHGUID>${voucherGuid}</VCHGUID>\n              </STATICVARIABLES>\n            </REQUESTDESC>\n          </EXPORTDATA>\n        </BODY>\n      </ENVELOPE>\n    `;
+        const requestBody = `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Data</TYPE>
+    <ID>DayBook</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVCURRENTCOMPANY>${divisionRow.tally_company_id || 'Default Company'}</SVCURRENTCOMPANY>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+      </STATICVARIABLES>
+    </DESC>
+  </BODY>
+</ENVELOPE>`;
         setTallyData((prev) => ({
           ...(prev || { success: false }),
           debugInfo: {
@@ -421,14 +437,14 @@ export function TallyVoucherSync({
                       </div>
 
                       {tallyData.debugInfo.request.requestBody && (
-                        <div>
-                          <p className="text-sm font-medium mb-2">XML Request Sent:</p>
-                          <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
-                            <pre className="whitespace-pre-wrap">
-                              {formatXmlPreview(tallyData.debugInfo.request.requestBody)}
-                            </pre>
-                          </div>
-                        </div>
+                         <div>
+                           <p className="text-sm font-medium mb-2">XML Request Sent:</p>
+                           <div className="bg-muted p-3 rounded text-xs font-mono max-h-60 overflow-y-auto">
+                             <pre className="whitespace-pre-wrap">
+                               {tallyData.debugInfo.request.requestBody}
+                             </pre>
+                           </div>
+                         </div>
                       )}
                       
                       <div>
@@ -445,14 +461,14 @@ export function TallyVoucherSync({
                       </div>
 
                       {tallyData.debugInfo.response.responsePreview && (
-                        <div>
-                          <p className="text-sm font-medium mb-2">XML Response Preview:</p>
-                          <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
-                            <pre className="whitespace-pre-wrap">
-                              {formatXmlPreview(tallyData.debugInfo.response.responsePreview)}
-                            </pre>
-                          </div>
-                        </div>
+                         <div>
+                           <p className="text-sm font-medium mb-2">XML Response Preview:</p>
+                           <div className="bg-muted p-3 rounded text-xs font-mono max-h-60 overflow-y-auto">
+                             <pre className="whitespace-pre-wrap">
+                               {tallyData.debugInfo.response.responsePreview}
+                             </pre>
+                           </div>
+                         </div>
                       )}
                     </div>
                   </CardContent>

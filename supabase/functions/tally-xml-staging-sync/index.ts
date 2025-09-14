@@ -69,25 +69,24 @@ serve(async (req) => {
       throw new Error('Tally URL not configured for this division');
     }
 
-    // Construct Tally XML request
-    const tallyRequest = `
-      <ENVELOPE>
-        <HEADER>
-          <TALLYREQUEST>Export Data</TALLYREQUEST>
-        </HEADER>
-        <BODY>
-          <EXPORTDATA>
-            <REQUESTDESC>
-              <REPORTNAME>Voucher</REPORTNAME>
-              <STATICVARIABLES>
-                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
-                <VCHGUID>${voucherGuid}</VCHGUID>
-              </STATICVARIABLES>
-            </REQUESTDESC>
-          </EXPORTDATA>
-        </BODY>
-      </ENVELOPE>
-    `;
+    // Construct Tally XML request for all vouchers
+    const tallyRequest = `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER>
+    <VERSION>1</VERSION>
+    <TALLYREQUEST>Export</TALLYREQUEST>
+    <TYPE>Data</TYPE>
+    <ID>DayBook</ID>
+  </HEADER>
+  <BODY>
+    <DESC>
+      <STATICVARIABLES>
+        <SVCURRENTCOMPANY>${division.tally_company_id || 'Default Company'}</SVCURRENTCOMPANY>
+        <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+      </STATICVARIABLES>
+    </DESC>
+  </BODY>
+</ENVELOPE>`;
 
     console.log('Sending request to Tally:', division.tally_url);
 
@@ -154,12 +153,12 @@ serve(async (req) => {
       request: {
         url: `${division.tally_url}:9000`,
         voucherGuid,
-        requestBody: tallyRequest.substring(0, 500) + '...'
+        requestBody: tallyRequest // Show complete XML request
       },
       response: {
         statusCode: tallyResponse.status,
         contentLength: xmlResponse.length,
-        responsePreview: xmlResponse.substring(0, 1000) + (xmlResponse.length > 1000 ? '...' : '')
+        responsePreview: xmlResponse.substring(0, 2000) + (xmlResponse.length > 2000 ? '...' : '')
       },
       parseTime: Date.now() - parseStartTime
     };
