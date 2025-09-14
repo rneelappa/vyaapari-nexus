@@ -55,6 +55,9 @@ serve(async (req) => {
 
     const startTime = Date.now();
 
+    const timeline: Array<{ step: string; info?: any; at: string }> = [];
+    timeline.push({ step: 'received_request', info: { action, voucherGuid, companyId, divisionId }, at: new Date().toISOString() });
+
     // Get division details to fetch Tally URL
     const { data: division, error: divisionError } = await supabase
       .from('divisions')
@@ -106,30 +109,63 @@ serve(async (req) => {
       voucherGuid,
       timestamp: new Date().toISOString()
     });
+    timeline.push({ step: 'calling_tally', info: { url: division.tally_url, company: company.company_name, voucherGuid }, at: new Date().toISOString() });
 
     // Call Tally API
     const tallyResponse = await fetch(division.tally_url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/xml',
+        'Accept': 'application/xml, text/plain;q=0.9, */*;q=0.8',
         'ngrok-skip-browser-warning': 'true',
-        'Content-Length': tallyRequest.length.toString(),
       },
       body: tallyRequest,
     });
 
     if (!tallyResponse.ok) {
-      throw new Error(`Tally API request failed: ${tallyResponse.status} ${tallyResponse.statusText}`);
+      const errText = await tallyResponse.text();
+      const errInfo = {
+        status: tallyResponse.status,
+        statusText: tallyResponse.statusText,
+        contentType: tallyResponse.headers.get('content-type'),
+        bodyPreview: errText.substring(0, 2000) + (errText.length > 2000 ? '...' : ''),
+        responseTime: `${Date.now() - startTime}ms`
+      };
+      console.error('❌ TALLY RESPONDED WITH ERROR:', errInfo);
+      timeline.push({ step: 'tally_error', info: errInfo, at: new Date().toISOString() });
+
+      const errorResponse: TallyApiResponse = {
+        success: false,
+        error: `Tally API ${tallyResponse.status} ${tallyResponse.statusText}`,
+        statistics: {
+          totalNodes: 0,
+          depth: 0,
+          processingTime: Date.now() - startTime,
+          stagingRecords: 0
+        },
+        debugInfo: {
+          request: { url: division.tally_url, voucherGuid, requestBody: tallyRequest },
+          response: errInfo,
+          parseTime: 0,
+        }
+      };
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const xmlResponse = await tallyResponse.text();
-    console.log('✅ TALLY RESPONDED SUCCESSFULLY:', {
+    const tallyOkInfo = {
       status: tallyResponse.status,
       contentLength: xmlResponse.length,
       contentType: tallyResponse.headers.get('content-type'),
       responseTime: `${Date.now() - startTime}ms`,
       timestamp: new Date().toISOString()
-    });
+    };
+    console.log('✅ TALLY RESPONDED SUCCESSFULLY:', tallyOkInfo);
+    timeline.push({ step: 'tally_responded', info: tallyOkInfo, at: new Date().toISOString() });
 
     const parseStartTime = Date.now();
 
@@ -204,7 +240,8 @@ serve(async (req) => {
         contentLength: xmlResponse.length,
         responsePreview: xmlResponse.substring(0, 2000) + (xmlResponse.length > 2000 ? '...' : '')
       },
-      parseTime: Date.now() - parseStartTime
+      parseTime: Date.now() - parseStartTime,
+      timeline
     };
 
     const response: TallyApiResponse = {
@@ -233,6 +270,12 @@ serve(async (req) => {
         depth: 0,
         processingTime: 0,
         stagingRecords: 0
+      },
+      debugInfo: {
+        parseTime: 0,
+        request: undefined,
+        response: undefined,
+        timeline
       }
     };
 
