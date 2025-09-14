@@ -605,8 +605,16 @@ export function EnhancedVoucherDetails({
                       ledger.ledger.toLowerCase().includes('cash')
                     );
                     
-                    const totalDebit = accountingEntries.reduce((sum, entry) => 
+                    // Calculate inventory total
+                    const totalInventoryValue = inventoryEntries.reduce((sum, entry) => 
+                      sum + (entry.amount || 0), 0);
+                    
+                    // Calculate other ledgers debits (excluding party)
+                    const otherLedgerDebits = otherLedgers.reduce((sum, entry) => 
                       entry.amount > 0 ? sum + entry.amount : sum, 0);
+                    
+                    // Total Debit = Inventory + Other Ledger Debits (excluding party)
+                    const totalDebit = totalInventoryValue + otherLedgerDebits;
                     const totalCredit = accountingEntries.reduce((sum, entry) => 
                       entry.amount < 0 ? sum + Math.abs(entry.amount) : sum, 0);
                     

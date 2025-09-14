@@ -172,16 +172,23 @@ export function AdvancedVoucherDetails({
     ledger.ledgerName.toLowerCase().includes('cash')
   );
   
-  const totalDebit = editedVoucher.entries?.reduce((sum, entry) => 
+  // Calculate ledger totals - original for reference
+  const totalLedgerDebit = editedVoucher.entries?.reduce((sum, entry) => 
     entry.amount > 0 ? sum + entry.amount : sum, 0) || 0;
-  const totalCredit = editedVoucher.entries?.reduce((sum, entry) => 
+  const totalLedgerCredit = editedVoucher.entries?.reduce((sum, entry) => 
     entry.amount < 0 ? sum + Math.abs(entry.amount) : sum, 0) || 0;
   const totalInventoryValue = editedVoucher.inventoryEntries?.reduce((sum, entry) => 
     sum + entry.amount, 0) || 0;
   
   // Calculate other ledgers total (excluding party ledger)
+  const otherLedgersDebit = otherLedgers.reduce((sum, entry) => 
+    entry.amount > 0 ? sum + entry.amount : sum, 0);
   const otherLedgersTotal = otherLedgers.reduce((sum, entry) => 
     sum + Math.abs(entry.amount), 0);
+  
+  // Total Debit = Inventory + Other Ledger Debits (excluding party)
+  const totalDebit = totalInventoryValue + otherLedgersDebit;
+  const totalCredit = totalLedgerCredit;
   
   // Party ledger amount (should match inventory + other ledgers)
   const partyLedgerAmount = partyLedger ? Math.abs(partyLedger.amount) : 0;

@@ -696,10 +696,16 @@ export default function VoucherManagement() {
                       const party = selectedVoucher.entries.find((e: any) => e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName);
                       const others = selectedVoucher.entries.filter((e: any) => !(e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName));
 
-                      const totalDebit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
-                      const totalCredit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
-                      const grandTotal = Math.max(totalDebit, totalCredit);
+                      const totalLedgerDebit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                      const totalLedgerCredit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
                       const totalInventoryValue = (selectedVoucher.inventoryEntries || []).reduce((s: number, i: any) => s + (i.amount || 0), 0);
+                      
+                      // Total Debit includes inventory + ledger debits (excluding party)
+                      const otherLedgerDebits = others.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                      const totalDebit = totalInventoryValue + otherLedgerDebits;
+                      const totalCredit = totalLedgerCredit;
+                      
+                      const grandTotal = Math.max(totalDebit, totalCredit);
                       const otherLedgersTotal = others.reduce((s: number, e: any) => s + Math.abs(e.amount || 0), 0);
                       const partyAmount = party ? Math.abs(party.amount || 0) : 0;
                       const inventoryPlusOthers = totalInventoryValue + otherLedgersTotal;
