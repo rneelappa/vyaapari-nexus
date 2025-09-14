@@ -107,7 +107,19 @@ export function TallyVoucherSync({
   };
 
   const updateFromTally = async () => {
+    // Open popup immediately with loading state
     setUpdating(true);
+    setTallyData({
+      success: false,
+      statistics: {
+        totalNodes: 0,
+        depth: 0,
+        processingTime: 0,
+        stagingRecords: 0
+      }
+    });
+    setShowDialog(true);
+
     try {
       const { data, error } = await supabase.functions.invoke('tally-xml-staging-sync', {
         body: {
@@ -253,7 +265,12 @@ export function TallyVoucherSync({
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    {tallyData.success ? (
+                    {updating ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
+                        Processing...
+                      </>
+                    ) : tallyData.success ? (
                       <>
                         <CheckCircle className="h-4 w-4 text-green-600" />
                         Success
@@ -267,7 +284,14 @@ export function TallyVoucherSync({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {tallyData.success ? (
+                  {updating ? (
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <p className="text-sm text-muted-foreground">
+                        Calling Tally API and processing XML data...
+                      </p>
+                    </div>
+                  ) : tallyData.success ? (
                     <p className="text-sm text-muted-foreground">
                       Successfully fetched and processed voucher data from Tally
                     </p>
