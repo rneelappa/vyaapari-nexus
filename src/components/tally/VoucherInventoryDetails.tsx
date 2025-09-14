@@ -101,16 +101,72 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
     setError(null);
     
     try {
-      // For now, we'll fetch all stock items for the company/division
-      // In a real implementation, this would be filtered by voucher-specific inventory entries
-      const [stockItemsResult, godownsResult, uomsResult] = await Promise.all([
-        supabase
+      // First, let's check if there are any inventory-related entries in accounting
+      // Look for stock item names in ledger names or check for inventory allocations
+      const { data: accountingData, error: accountingError } = await supabase
+        .from('trn_accounting')
+        .select('ledger, amount, cost_centre')
+        .eq('voucher_guid', voucherGuid)
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId);
+
+      if (accountingError) {
+        console.error('Error fetching accounting entries:', accountingError);
+        setError('Failed to fetch voucher accounting data');
+        return;
+      }
+
+      // Extract potential stock item names from ledger names
+      const ledgerNames = (accountingData || []).map(entry => entry.ledger);
+      
+      // Fetch stock items that match the ledger names (assuming some ledgers might be stock items)
+      const { data: stockItemsData, error: stockItemsError } = await supabase
+        .from('mst_stock_item')
+        .select('*')
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .in('name', ledgerNames);
+
+      // Also try to find stock items that might be referenced in cost centres
+      const costCentres = (accountingData || [])
+        .map(entry => entry.cost_centre)
+        .filter(cc => cc && cc.trim() !== '');
+
+      let additionalStockItems: any[] = [];
+      if (costCentres.length > 0) {
+        const { data: additionalData } = await supabase
           .from('mst_stock_item')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .limit(50), // Limit for performance
+          .in('name', costCentres);
         
+        additionalStockItems = additionalData || [];
+      }
+
+      // Combine and deduplicate stock items
+      const allStockItems = [...(stockItemsData || []), ...additionalStockItems];
+      const uniqueStockItems = allStockItems.filter((item, index, self) => 
+        index === self.findIndex(i => i.guid === item.guid)
+      );
+
+      // If no direct matches found, the voucher might not have inventory items
+      if (uniqueStockItems.length === 0) {
+        setInventoryItems([]);
+        setTotals({ totalItems: 0, totalValue: 0, totalQuantity: 0 });
+      } else {
+        setInventoryItems(uniqueStockItems);
+        
+        // Calculate totals for voucher-specific items only
+        const totalItems = uniqueStockItems.length;
+        const totalValue = uniqueStockItems.reduce((sum, item) => sum + (item.closing_value || 0), 0);
+        const totalQuantity = uniqueStockItems.reduce((sum, item) => sum + (item.closing_balance || 0), 0);
+
+        setTotals({ totalItems, totalValue, totalQuantity });
+      }
+
+      // Fetch related godowns and UOMs (these are still company-wide as they're reference data)
+      const [godownsResult, uomsResult] = await Promise.all([
         supabase
           .from('mst_godown')
           .select('*')
@@ -124,34 +180,8 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
           .eq('division_id', divisionId)
       ]);
 
-      if (stockItemsResult.error) {
-        console.error('Error fetching stock items:', stockItemsResult.error);
-        setError('Failed to fetch inventory items');
-        return;
-      }
-
-      if (godownsResult.error) {
-        console.error('Error fetching godowns:', godownsResult.error);
-      }
-
-      if (uomsResult.error) {
-        console.error('Error fetching UOMs:', uomsResult.error);
-      }
-
-      const items = stockItemsResult.data || [];
-      const godownData = godownsResult.data || [];
-      const uomData = uomsResult.data || [];
-
-      setInventoryItems(items);
-      setGodowns(godownData);
-      setUoms(uomData);
-
-      // Calculate totals
-      const totalItems = items.length;
-      const totalValue = items.reduce((sum, item) => sum + (item.closing_value || 0), 0);
-      const totalQuantity = items.reduce((sum, item) => sum + (item.closing_balance || 0), 0);
-
-      setTotals({ totalItems, totalValue, totalQuantity });
+      setGodowns(godownsResult.data || []);
+      setUoms(uomsResult.data || []);
 
     } catch (err) {
       console.error('Unexpected error:', err);
@@ -366,7 +396,12 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
           <div className="text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <h3 className="text-lg font-semibold mb-2">No Inventory Items</h3>
-            <p className="text-muted-foreground">No inventory items found for this voucher.</p>
+            <p className="text-muted-foreground">
+              This voucher does not have any associated inventory items or stock movements.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Inventory associations are determined by matching ledger names and cost centres with stock item names.
+            </p>
           </div>
         </div>
       )}
