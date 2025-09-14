@@ -14,6 +14,7 @@ import { useExternalTallyVouchers } from "@/hooks/useExternalTallyVouchers";
 import { format } from 'date-fns';
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RailwayApiTest } from "@/components/tally/RailwayApiTest";
 
 // Define VoucherEntry interface for external API
 interface VoucherEntry {
@@ -205,6 +206,9 @@ export default function VoucherManagement() {
 
   return (
     <div className="p-6 space-y-6 min-h-screen bg-gradient-subtle">
+      {/* Railway API Test Section */}
+      <RailwayApiTest companyId={companyId} divisionId={divisionId} />
+      
       {/* Header Section */}
       <Card className="shadow-medium border-0">
         <CardHeader className="pb-4">
