@@ -18,7 +18,7 @@ export default function AccountingPage() {
   const [selectedVoucherType, setSelectedVoucherType] = useState<any>(null);
   const [showVoucherDialog, setShowVoucherDialog] = useState(false);
   
-  const { vouchers, loading: vouchersLoading, fetchVouchersForLedger } = useLedgerVouchers();
+  const { vouchers, loading: vouchersLoading, fetchVouchersByType } = useLedgerVouchers();
 
   if (!user) {
     return (
@@ -31,7 +31,7 @@ export default function AccountingPage() {
   const handleVoucherTypeClick = async (voucherType: any) => {
     setSelectedVoucherType(voucherType);
     setShowVoucherDialog(true);
-    await fetchVouchersForLedger(voucherType.name);
+    await fetchVouchersByType(voucherType.name);
   };
 
   const getCategoryIcon = (category: string) => {

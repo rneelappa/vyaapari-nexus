@@ -30,7 +30,7 @@ export const useLedgerVouchers = () => {
 
       console.log('Fetching vouchers for ledger:', ledgerName, { companyId, divisionId });
 
-      // Query vouchers directly from tally_trn_voucher table
+      // Query vouchers directly from tally_trn_voucher table by party ledger name
       const { data: voucherData, error: voucherError } = await supabase
         .from('tally_trn_voucher')
         .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
@@ -81,10 +81,97 @@ export const useLedgerVouchers = () => {
     }
   };
 
+  const fetchVouchersByType = async (voucherTypeName: string) => {
+    if (!companyId || !divisionId) {
+      setError('Company ID and Division ID are required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('Fetching vouchers for voucher type:', voucherTypeName, { companyId, divisionId });
+
+      // First try exact match on voucher_type with company/division
+      const { data: voucherData, error: voucherError } = await supabase
+        .from('tally_trn_voucher')
+        .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
+        .eq('voucher_type', voucherTypeName)
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .order('date', { ascending: false });
+
+      if (voucherError) {
+        console.error('Error fetching voucher data by type:', voucherError);
+        throw voucherError;
+      }
+
+      let finalVoucherData = voucherData || [];
+
+      // If none, try partial match (ILIKE) with company/division
+      if (finalVoucherData.length === 0) {
+        const partialResp = await supabase
+          .from('tally_trn_voucher')
+          .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
+          .ilike('voucher_type', `%${voucherTypeName}%`)
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId)
+          .order('date', { ascending: false });
+        if (!partialResp.error) {
+          finalVoucherData = partialResp.data || [];
+        }
+      }
+
+      // If still none, try without company/division filters
+      if (finalVoucherData.length === 0) {
+        const fallbackResp = await supabase
+          .from('tally_trn_voucher')
+          .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
+          .eq('voucher_type', voucherTypeName)
+          .order('date', { ascending: false });
+        if (!fallbackResp.error && fallbackResp.data) {
+          finalVoucherData = fallbackResp.data;
+        }
+      }
+
+      // If still none, try partial without filters
+      if (finalVoucherData.length === 0) {
+        const fallbackPartial = await supabase
+          .from('tally_trn_voucher')
+          .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
+          .ilike('voucher_type', `%${voucherTypeName}%`)
+          .order('date', { ascending: false });
+        if (!fallbackPartial.error && fallbackPartial.data) {
+          finalVoucherData = fallbackPartial.data;
+        }
+      }
+
+      const formattedVouchers = finalVoucherData.map((voucher) => ({
+        guid: voucher.guid,
+        voucher_number: voucher.voucher_number || 'N/A',
+        voucher_type: voucher.voucher_type || 'Unknown',
+        date: voucher.date || new Date().toISOString(),
+        amount: voucher.total_amount || 0,
+        narration: voucher.narration || 'No description',
+        party_ledger_name: voucher.party_ledger_name || '',
+      }));
+
+      console.log(`Found ${formattedVouchers.length} vouchers for voucher type ${voucherTypeName}`);
+      setVouchers(formattedVouchers);
+    } catch (err) {
+      console.error('Error fetching vouchers by type:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch vouchers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     vouchers,
     loading,
     error,
-    fetchVouchersForLedger
+    fetchVouchersForLedger,
+    fetchVouchersByType,
   };
 };
