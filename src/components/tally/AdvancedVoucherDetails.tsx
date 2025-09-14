@@ -143,6 +143,11 @@ export function AdvancedVoucherDetails({
     entry.amount < 0 ? sum + Math.abs(entry.amount) : sum, 0) || 0;
   const totalInventoryValue = editedVoucher.inventoryEntries?.reduce((sum, entry) => 
     sum + entry.amount, 0) || 0;
+  
+  const grandTotal = Math.max(totalDebit, totalCredit);
+  const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01; // Account for floating point precision
+  const hasInventory = editedVoucher.inventoryEntries?.length > 0;
+  const inventoryLedgerMatch = hasInventory ? Math.abs(totalInventoryValue - grandTotal) < 0.01 : true;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -350,8 +355,33 @@ export function AdvancedVoucherDetails({
                         </div>
                         <div className="space-y-1">
                           <div className="text-sm font-medium text-muted-foreground">Grand Total</div>
-                          <div className="text-2xl font-bold text-primary">{formatAmount(Math.max(totalDebit, totalCredit))}</div>
+                          <div className="text-2xl font-bold text-primary">{formatAmount(grandTotal)}</div>
                         </div>
+                      </div>
+                      
+                      {/* Balance Validation */}
+                      <Separator className="my-3" />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-3 w-3 rounded-full ${isBalanced ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className="text-sm font-medium">
+                            Ledger Balance: {isBalanced ? 'Balanced' : 'Unbalanced'}
+                          </span>
+                        </div>
+                        
+                        {hasInventory && (
+                          <div className="flex items-center gap-2">
+                            <div className={`h-3 w-3 rounded-full ${inventoryLedgerMatch ? 'bg-green-500' : 'bg-orange-500'}`} />
+                            <span className="text-sm font-medium">
+                              Inventory-Ledger: {inventoryLedgerMatch ? 'Match' : 'Mismatch'}
+                            </span>
+                            {!inventoryLedgerMatch && (
+                              <span className="text-xs text-muted-foreground">
+                                (Diff: {formatAmount(Math.abs(totalInventoryValue - grandTotal))})
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
