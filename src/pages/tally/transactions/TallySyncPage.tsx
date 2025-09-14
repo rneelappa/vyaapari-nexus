@@ -189,6 +189,101 @@ export default function TallySyncPage() {
     }
   };
 
+  const handleSyncNow = async () => {
+    if (!divisionId || !syncData?.vouchers?.length) {
+      toast({
+        title: "Error", 
+        description: "No vouchers to sync or missing division ID",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('tally-api', {
+        body: {
+          action: 'sync_vouchers',
+          divisionId,
+          vouchers: syncData.vouchers.map(v => v.guid),
+          fromDate: dateRange.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
+          toDate: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Sync Completed",
+          description: `Successfully synced ${data.syncedCount || syncData.vouchers.length} vouchers`,
+        });
+        // Refresh the voucher list
+        if (dateRange.from && dateRange.to) {
+          fetchVouchersByDateRange(dateRange.from, dateRange.to);
+        }
+      } else {
+        throw new Error(data.error || 'Sync failed');
+      }
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast({
+        title: "Sync Failed",
+        description: error.message || "Failed to sync vouchers",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFixDbRelationships = async () => {
+    if (!divisionId || !syncData?.vouchers?.length) {
+      toast({
+        title: "Error",
+        description: "No vouchers to fix or missing division ID", 
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('tally-api', {
+        body: {
+          action: 'fix_relationships',
+          divisionId,
+          vouchers: syncData.vouchers.map(v => v.guid),
+          companyId: syncData.vouchers[0]?.company_id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Relationships Fixed",
+          description: `Fixed relationships for ${data.processedCount || syncData.vouchers.length} vouchers`,
+        });
+        // Refresh the voucher list to show updated statuses
+        if (dateRange.from && dateRange.to) {
+          fetchVouchersByDateRange(dateRange.from, dateRange.to);
+        }
+      } else {
+        throw new Error(data.error || 'Relationship fix failed');
+      }
+    } catch (error: any) {
+      console.error('Fix relationships error:', error);
+      toast({
+        title: "Fix Failed",
+        description: error.message || "Failed to fix database relationships",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -408,9 +503,30 @@ export default function TallySyncPage() {
         <TabsContent value="vouchers">
           <Card>
             <CardHeader>
-              <CardTitle>Voucher List</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                Voucher List
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleSyncNow()}
+                    disabled={isLoading || !syncData?.vouchers?.length}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Sync Now
+                  </Button>
+                  <Button
+                    onClick={() => handleFixDbRelationships()}
+                    disabled={isLoading || !syncData?.vouchers?.length}
+                    variant="outline"
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    Fix DB Relationships
+                  </Button>
+                </div>
+              </CardTitle>
               <CardDescription>
-                Vouchers for the selected date range
+                Vouchers for the selected date range • 
+                {syncData?.vouchers?.length ? ` ${syncData.vouchers.length} vouchers found` : ' No vouchers found'}
               </CardDescription>
             </CardHeader>
             <CardContent>
