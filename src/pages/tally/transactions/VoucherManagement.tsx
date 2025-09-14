@@ -236,7 +236,7 @@ const VoucherManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -261,150 +261,136 @@ const VoucherManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Card className="p-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total Vouchers</CardTitle>
-            <FileText className="h-3 w-3 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="text-xl font-bold">{voucherCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {totalCount > 0 ? `Showing ${vouchers.length} of ${totalCount.toLocaleString()} total` : 'No vouchers'}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="p-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Total Amount</CardTitle>
-            <Calendar className="h-3 w-3 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="text-xl font-bold">
-              {new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR'
-              }).format(totalAmount)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Filtered vouchers total
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="p-3">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Voucher Types</CardTitle>
-            <Badge variant="secondary" className="text-xs">{Object.keys(typeBreakdown).length}</Badge>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="space-y-1">
-              {Object.entries(typeBreakdown).slice(0, 3).map(([type, count]) => (
-                <div key={type} className="flex justify-between text-xs">
-                  <span className="truncate">{type}</span>
-                  <span className="font-medium">{count}</span>
-                </div>
-              ))}
-              {Object.keys(typeBreakdown).length > 3 && (
-                <p className="text-xs text-muted-foreground">
-                  +{Object.keys(typeBreakdown).length - 3} more types
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card className="p-4">
-        <CardHeader className="p-0 pb-3">
-          <CardTitle className="text-sm">Filters</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Voucher Type</Label>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL_TYPES">All Types</SelectItem>
-                  {voucherTypes.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-1">
-              <Label className="text-xs">Date From</Label>
-              <Input
-                type="date"
-                className="h-8 text-xs"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <Label className="text-xs">Date To</Label>
-              <Input
-                type="date"
-                className="h-8 text-xs"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <Label className="text-xs">Amount From</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                className="h-8 text-xs"
-                value={amountFrom}
-                onChange={(e) => setAmountFrom(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <Label className="text-xs">Amount To</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                className="h-8 text-xs"
-                value={amountTo}
-                onChange={(e) => setAmountTo(e.target.value)}
-              />
+      {/* Statistics Block */}
+      <div className="bg-muted/30 rounded-lg px-4 py-2 border">
+        <div className="grid grid-cols-3 gap-6">
+          <div className="flex items-center gap-3">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-sm font-semibold">{voucherCount.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">
+                Showing {vouchers.length} of {totalCount.toLocaleString()} total
+              </div>
             </div>
           </div>
           
-          <div className="flex justify-end mt-3">
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              Clear Filters
-            </Button>
+          <div className="flex items-center gap-3">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <div className="text-sm font-semibold">
+                {new Intl.NumberFormat('en-IN', {
+                  style: 'currency',
+                  currency: 'INR',
+                  notation: 'compact'
+                }).format(totalAmount)}
+              </div>
+              <div className="text-xs text-muted-foreground">Total Amount</div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="text-xs h-4">{Object.keys(typeBreakdown).length}</Badge>
+            <div className="flex-1">
+              <div className="flex gap-2 flex-wrap">
+                {Object.entries(typeBreakdown).slice(0, 3).map(([type, count]) => (
+                  <span key={type} className="text-xs bg-background px-2 py-1 rounded border">
+                    {type}: {count}
+                  </span>
+                ))}
+                {Object.keys(typeBreakdown).length > 3 && (
+                  <span className="text-xs text-muted-foreground">
+                    +{Object.keys(typeBreakdown).length - 3} more
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Voucher Display */}
-      <VoucherDisplay
-        vouchers={filteredVouchers}
-        loading={loading}
-        onVoucherClick={handleVoucherClick}
-        onEdit={handleEdit}
-        title="All Vouchers"
-        showActions={true}
-        searchable={true}
-        filterable={false} // We have advanced filters above
-      />
+      {/* Filters Block */}
+      <div className="bg-muted/30 rounded-lg px-4 py-2 border">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Type:</Label>
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="h-7 w-32 text-xs">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL_TYPES">All Types</SelectItem>
+                {voucherTypes.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">From:</Label>
+            <Input
+              type="date"
+              className="h-7 w-32 text-xs"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">To:</Label>
+            <Input
+              type="date"
+              className="h-7 w-32 text-xs"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Min Amount:</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              className="h-7 w-24 text-xs"
+              value={amountFrom}
+              onChange={(e) => setAmountFrom(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Max Amount:</Label>
+            <Input
+              type="number"
+              placeholder="0"
+              className="h-7 w-24 text-xs"
+              value={amountTo}
+              onChange={(e) => setAmountTo(e.target.value)}
+            />
+          </div>
+          
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={clearFilters}>
+            Clear
+          </Button>
+        </div>
+      </div>
+
+      {/* Voucher Display - Takes remaining space */}
+      <div className="flex-1 min-h-0">
+        <VoucherDisplay
+          vouchers={filteredVouchers}
+          loading={loading}
+          onVoucherClick={handleVoucherClick}
+          onEdit={handleEdit}
+          title="All Vouchers"
+          showActions={true}
+          searchable={true}
+          filterable={false} // We have advanced filters above
+        />
+      </div>
 
       {/* Load More Section */}
       {hasMore && vouchers.length > 0 && (
-        <div className="flex justify-center py-4">
+        <div className="flex justify-center py-2">
           <Button 
             onClick={loadMoreVouchers} 
             variant="outline" 
@@ -430,7 +416,7 @@ const VoucherManagement: React.FC = () => {
 
       {/* End of Results Message */}
       {!hasMore && vouchers.length > 0 && (
-        <div className="text-center py-4 text-muted-foreground">
+        <div className="text-center py-2 text-muted-foreground">
           <p>You've reached the end of all vouchers ({totalCount.toLocaleString()} total)</p>
         </div>
       )}
