@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -99,7 +100,12 @@ serve(async (req) => {
   </BODY>
 </ENVELOPE>`;
 
-    console.log('Sending request to Tally:', division.tally_url);
+    console.log('📡 CALLING TALLY API:', {
+      url: division.tally_url,
+      company: company.company_name,
+      voucherGuid,
+      timestamp: new Date().toISOString()
+    });
 
     // Call Tally API
     const tallyResponse = await fetch(division.tally_url, {
@@ -117,7 +123,13 @@ serve(async (req) => {
     }
 
     const xmlResponse = await tallyResponse.text();
-    console.log('Received XML response from Tally, length:', xmlResponse.length);
+    console.log('✅ TALLY RESPONDED SUCCESSFULLY:', {
+      status: tallyResponse.status,
+      contentLength: xmlResponse.length,
+      contentType: tallyResponse.headers.get('content-type'),
+      responseTime: `${Date.now() - startTime}ms`,
+      timestamp: new Date().toISOString()
+    });
 
     const parseStartTime = Date.now();
 
@@ -132,10 +144,24 @@ serve(async (req) => {
     let stagingRecords = 0;
 
     if (action === 'update') {
+      console.log('🧹 CLEARING EXISTING STAGING DATA:', {
+        companyId,
+        divisionId,
+        timestamp: new Date().toISOString()
+      });
+
       // Clear existing staging data for this voucher
       await supabase.rpc('reset_xml_staging', {
         p_company_id: companyId,
         p_division_id: divisionId
+      });
+
+      console.log('📊 STARTING XML DATA IMPORT TO STAGING:', {
+        xmlLength: xmlResponse.length,
+        companyId,
+        divisionId,
+        voucherGuid,
+        timestamp: new Date().toISOString()
       });
 
       // Parse XML and populate staging table
@@ -146,6 +172,12 @@ serve(async (req) => {
         divisionId,
         voucherGuid
       );
+
+      console.log('✅ XML DATA IMPORT COMPLETED:', {
+        stagingRecords,
+        processingTime: `${Date.now() - startTime}ms`,
+        timestamp: new Date().toISOString()
+      });
 
       statistics.stagingRecords = stagingRecords;
     }
@@ -163,7 +195,7 @@ serve(async (req) => {
 
     const debugInfo = {
       request: {
-        url: `${division.tally_url}:9000`,
+        url: division.tally_url,
         voucherGuid,
         requestBody: tallyRequest // Show complete XML request
       },
@@ -187,7 +219,11 @@ serve(async (req) => {
     });
 
   } catch (error: any) {
-    console.error('Tally XML Staging Sync error:', error);
+    console.error('❌ TALLY XML STAGING SYNC ERROR:', {
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     
     const errorResponse: TallyApiResponse = {
       success: false,
@@ -214,15 +250,31 @@ async function parseAndStageXml(
   divisionId: string,
   voucherGuid: string
 ): Promise<number> {
+  console.log('🔄 PARSING XML CONTENT:', {
+    xmlLength: xmlContent.length,
+    companyId,
+    divisionId,
+    timestamp: new Date().toISOString()
+  });
+
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
 
   if (!xmlDoc || xmlDoc.querySelector('parsererror')) {
+    console.error('❌ XML PARSING FAILED: Invalid XML response from Tally');
     throw new Error('Invalid XML response from Tally');
   }
 
+  console.log('✅ XML PARSED SUCCESSFULLY, PROCESSING NODES...');
+
   let recordCount = 0;
   const rootElement = xmlDoc.documentElement;
+
+  console.log('🌳 ROOT ELEMENT:', {
+    tagName: rootElement.tagName,
+    childElementsCount: rootElement.children.length,
+    timestamp: new Date().toISOString()
+  });
 
   // Recursively process XML nodes
   await processXmlNode(
@@ -236,12 +288,21 @@ async function parseAndStageXml(
     0 // depth
   );
 
+  console.log('📊 COUNTING STAGING RECORDS...');
+
   // Count records in staging
   const { count } = await supabase
     .from('xml_staging')
     .select('*', { count: 'exact', head: true })
     .eq('company_id', companyId)
     .eq('division_id', divisionId);
+
+  console.log('📋 STAGING RECORDS COUNT:', {
+    totalRecords: count || 0,
+    companyId,
+    divisionId,
+    timestamp: new Date().toISOString()
+  });
 
   return count || 0;
 }
