@@ -42,6 +42,11 @@ serve(async (req) => {
     
     console.log('Tally XML Staging Sync request:', { voucherGuid, companyId, divisionId, action });
 
+    // Prepare debug containers so we can return context even on errors
+    let debugRequest: any = { voucherGuid };
+    let debugResponse: any = {};
+    let parseTime = 0;
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

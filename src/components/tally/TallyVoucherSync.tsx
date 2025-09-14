@@ -111,7 +111,8 @@ export function TallyVoucherSync({
   const updateFromTally = async () => {
     // Open popup immediately with loading state
     setUpdating(true);
-    setStatusMessage('Calling Tally API...');
+    setStatusMessage('Preparing Tally request...');
+    // Initialize dialog with empty stats
     setTallyData({
       success: false,
       statistics: {
@@ -119,15 +120,51 @@ export function TallyVoucherSync({
         depth: 0,
         processingTime: 0,
         stagingRecords: 0
+      },
+      debugInfo: {
+        request: { voucherGuid },
+        response: {},
+        parseTime: 0,
       }
     });
     setShowDialog(true);
+
+    // Prefetch Tally URL and construct the exact XML request for visibility in UI
+    try {
+      const { data: divisionRow } = await supabase
+        .from('divisions')
+        .select('tally_url, tally_company_id')
+        .eq('id', divisionId)
+        .single();
+
+      if (divisionRow?.tally_url) {
+        const url = `${divisionRow.tally_url}:9000`;
+        const requestBody = `\n      <ENVELOPE>\n        <HEADER>\n          <TALLYREQUEST>Export Data</TALLYREQUEST>\n        </HEADER>\n        <BODY>\n          <EXPORTDATA>\n            <REQUESTDESC>\n              <REPORTNAME>Voucher</REPORTNAME>\n              <STATICVARIABLES>\n                <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>\n                <VCHGUID>${voucherGuid}</VCHGUID>\n              </STATICVARIABLES>\n            </REQUESTDESC>\n          </EXPORTDATA>\n        </BODY>\n      </ENVELOPE>\n    `;
+        setTallyData((prev) => ({
+          ...(prev || { success: false }),
+          debugInfo: {
+            ...(prev?.debugInfo || { parseTime: 0, response: {} }),
+            request: {
+              ...(prev?.debugInfo?.request || {}),
+              url,
+              voucherGuid,
+              tallyCompanyId: divisionRow.tally_company_id || null,
+              requestBody,
+            },
+          },
+        }));
+      }
+    } catch (e) {
+      // Non-blocking: if this fails we still proceed
+      console.warn('Could not prefetch division/tally config for debug UI', e);
+    }
 
     const slowTimer = setTimeout(() => {
       setStatusMessage('Still processing... This may take up to a minute depending on Tally.');
     }, 10000);
 
     try {
+      setStatusMessage('Calling Tally API...');
       const invokePromise = supabase.functions.invoke('tally-xml-staging-sync', {
         body: {
           voucherGuid,
@@ -167,17 +204,19 @@ export function TallyVoucherSync({
         description: error.message
       });
       
-      // Show error in dialog
-      setTallyData({
+      // Keep existing request debug info and attach error
+      setTallyData((prev) => ({
+        ...(prev || { success: false }),
         success: false,
         error: error.message,
-        statistics: {
+        statistics: prev?.statistics || {
           totalNodes: 0,
           depth: 0,
           processingTime: 0,
           stagingRecords: 0
-        }
-      });
+        },
+        debugInfo: prev?.debugInfo,
+      }));
     } finally {
       clearTimeout(slowTimer);
       setUpdating(false);
@@ -372,18 +411,36 @@ export function TallyVoucherSync({
                     <div className="space-y-3">
                       <div>
                         <p className="text-sm font-medium mb-2">Request Details:</p>
-                        <div className="bg-muted p-3 rounded text-xs font-mono">
-                          <p><strong>URL:</strong> {tallyData.debugInfo.request.url}</p>
+                        <div className="bg-muted p-3 rounded text-xs font-mono space-y-1">
+                          <p><strong>URL:</strong> {tallyData.debugInfo.request.url || 'N/A'}</p>
                           <p><strong>Voucher GUID:</strong> {tallyData.debugInfo.request.voucherGuid}</p>
+                          {tallyData.debugInfo.request.tallyCompanyId && (
+                            <p><strong>Tally Company ID:</strong> {tallyData.debugInfo.request.tallyCompanyId}</p>
+                          )}
                         </div>
                       </div>
+
+                      {tallyData.debugInfo.request.requestBody && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">XML Request Sent:</p>
+                          <div className="bg-muted p-3 rounded text-xs font-mono max-h-40 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap">
+                              {formatXmlPreview(tallyData.debugInfo.request.requestBody)}
+                            </pre>
+                          </div>
+                        </div>
+                      )}
                       
                       <div>
                         <p className="text-sm font-medium mb-2">Response Details:</p>
                         <div className="bg-muted p-3 rounded text-xs font-mono">
-                          <p><strong>Status:</strong> {tallyData.debugInfo.response.statusCode}</p>
-                          <p><strong>Content Length:</strong> {formatBytes(tallyData.debugInfo.response.contentLength)}</p>
-                          <p><strong>Parse Time:</strong> {tallyData.debugInfo.parseTime}ms</p>
+                          <p><strong>Status:</strong> {tallyData.debugInfo.response.statusCode ?? 'N/A'}</p>
+                          {typeof tallyData.debugInfo.response.contentLength === 'number' && (
+                            <p><strong>Content Length:</strong> {formatBytes(tallyData.debugInfo.response.contentLength)}</p>
+                          )}
+                          {tallyData.debugInfo.parseTime ? (
+                            <p><strong>Parse Time:</strong> {tallyData.debugInfo.parseTime}ms</p>
+                          ) : null}
                         </div>
                       </div>
 
