@@ -55,20 +55,33 @@ export const AccountGroupsSelector: React.FC<AccountGroupsSelectorProps> = ({
 
       if (groupsError) throw groupsError;
 
-      // Get voucher counts per group by joining through ledgers
+      // Get voucher counts by executing the query directly
       const { data: voucherCounts, error: countsError } = await supabase
-        .rpc('get_voucher_counts_by_group', {
-          p_company_id: companyId,
-          p_division_id: divisionId
-        });
+        .from('mst_ledger')
+        .select(`
+          parent,
+          tally_trn_voucher!inner(guid)
+        `)
+        .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
+        .not('parent', 'is', null)
+        .neq('parent', '');
 
       if (countsError) {
         console.warn('Could not fetch voucher counts:', countsError);
       }
 
+      // Count vouchers by group
+      const groupCounts = (voucherCounts || []).reduce((acc: Record<string, number>, item: any) => {
+        const groupName = item.parent;
+        if (groupName) {
+          acc[groupName] = (acc[groupName] || 0) + (item.tally_trn_voucher?.length || 0);
+        }
+        return acc;
+      }, {});
+
       const groupsWithCounts = (groupsData || []).map(group => ({
         ...group,
-        voucherCount: voucherCounts?.find((vc: any) => vc.group_name === group.name)?.voucher_count || 0
+        voucherCount: groupCounts[group.name] || 0
       }));
 
       setGroups(buildGroupTree(groupsWithCounts));

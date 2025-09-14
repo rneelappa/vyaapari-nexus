@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar, FileText, Plus, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AccountGroupsSelector } from '@/components/tally/AccountGroupsSelector';
 
 interface VoucherEntry {
   guid: string;
@@ -45,6 +46,7 @@ const VoucherManagement: React.FC = () => {
   
   // Filters
   const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [amountFrom, setAmountFrom] = useState<string>('');
@@ -58,7 +60,7 @@ const VoucherManagement: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [vouchers, selectedType, dateFrom, dateTo, amountFrom, amountTo]);
+  }, [vouchers, selectedType, selectedGroup, dateFrom, dateTo, amountFrom, amountTo]);
 
   const fetchVouchers = async (reset: boolean = false) => {
     if (!companyId || !divisionId) return;
@@ -156,12 +158,35 @@ const VoucherManagement: React.FC = () => {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = async () => {
     let filtered = [...vouchers];
 
     // Type filter
     if (selectedType && selectedType !== "ALL_TYPES") {
       filtered = filtered.filter(v => v.voucher_type === selectedType);
+    }
+
+    // Group filter - filter by ledgers that belong to the selected group
+    if (selectedGroup) {
+      try {
+        const { data: groupLedgers } = await supabase
+          .from('mst_ledger')
+          .select('name')
+          .eq('parent', selectedGroup)
+          .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
+
+        const ledgerNames = (groupLedgers || []).map(l => l.name);
+        
+        if (ledgerNames.length > 0) {
+          filtered = filtered.filter(v => 
+            v.party_ledger_name && ledgerNames.includes(v.party_ledger_name)
+          );
+        } else {
+          filtered = []; // No ledgers in this group
+        }
+      } catch (error) {
+        console.error('Error filtering by group:', error);
+      }
     }
 
     // Date range filter
@@ -191,6 +216,7 @@ const VoucherManagement: React.FC = () => {
 
   const clearFilters = () => {
     setSelectedType('ALL_TYPES');
+    setSelectedGroup(null);
     setDateFrom('');
     setDateTo('');
     setAmountFrom('');
@@ -289,6 +315,17 @@ const VoucherManagement: React.FC = () => {
       {/* Filters Block */}
       <div className="bg-muted/30 rounded-lg px-4 py-2 border">
         <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Account Groups:</Label>
+            <AccountGroupsSelector
+              companyId={companyId!}
+              divisionId={divisionId!}
+              selectedGroup={selectedGroup}
+              onGroupSelect={setSelectedGroup}
+              totalVouchers={totalCount}
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <Label className="text-xs whitespace-nowrap">Type:</Label>
             <Select value={selectedType} onValueChange={setSelectedType}>

@@ -3676,6 +3676,13 @@ export type Database = {
           division_id: string
         }[]
       }
+      get_voucher_counts_by_group: {
+        Args: { p_company_id: string; p_division_id: string }
+        Returns: {
+          group_name: string
+          voucher_count: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
