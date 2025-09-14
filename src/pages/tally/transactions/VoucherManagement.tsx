@@ -219,15 +219,21 @@ export default function VoucherManagement() {
               </Badge>
             </CardTitle>
             
-            {/* Health Status */}
-            {health && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
-                <Activity className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                  API Connected | {health.totalVouchers || 0} total
-                </span>
-              </div>
-            )}
+            {/* Tally Status */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+              health?.success 
+                ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' 
+                : 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'
+            }`}>
+              <Activity className={`h-4 w-4 ${health?.success ? 'text-green-600' : 'text-red-600'}`} />
+              <span className={`text-sm font-medium ${
+                health?.success 
+                  ? 'text-green-700 dark:text-green-300' 
+                  : 'text-red-700 dark:text-red-300'
+              }`}>
+                Tally {health?.success ? 'Online' : 'Offline'} | {health?.storage?.totalVouchers || 0} vouchers
+              </span>
+            </div>
           </div>
         </CardHeader>
         
