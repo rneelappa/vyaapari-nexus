@@ -263,47 +263,25 @@ const VoucherManagement: React.FC = () => {
 
       {/* Statistics Block */}
       <div className="bg-muted/30 rounded-lg px-4 py-2 border">
-        <div className="grid grid-cols-3 gap-6">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <div className="text-sm font-semibold">{voucherCount.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">
-                Showing {vouchers.length} of {totalCount.toLocaleString()} total
-              </div>
+            <div className="text-sm font-semibold">{voucherCount.toLocaleString()}</div>
+            <div className="text-xs text-muted-foreground">
+              Showing {vouchers.length} of {totalCount.toLocaleString()} total
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <div className="text-sm font-semibold">
-                {new Intl.NumberFormat('en-IN', {
-                  style: 'currency',
-                  currency: 'INR',
-                  notation: 'compact'
-                }).format(totalAmount)}
-              </div>
-              <div className="text-xs text-muted-foreground">Total Amount</div>
+            <div className="text-sm font-semibold">
+              {new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                notation: 'compact'
+              }).format(totalAmount)}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="text-xs h-4">{Object.keys(typeBreakdown).length}</Badge>
-            <div className="flex-1">
-              <div className="flex gap-2 flex-wrap">
-                {Object.entries(typeBreakdown).slice(0, 3).map(([type, count]) => (
-                  <span key={type} className="text-xs bg-background px-2 py-1 rounded border">
-                    {type}: {count}
-                  </span>
-                ))}
-                {Object.keys(typeBreakdown).length > 3 && (
-                  <span className="text-xs text-muted-foreground">
-                    +{Object.keys(typeBreakdown).length - 3} more
-                  </span>
-                )}
-              </div>
-            </div>
+            <div className="text-xs text-muted-foreground">Total Amount</div>
           </div>
         </div>
       </div>
@@ -321,6 +299,25 @@ const VoucherManagement: React.FC = () => {
                 <SelectItem value="ALL_TYPES">All Types</SelectItem>
                 {voucherTypes.map(type => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Voucher Types:</Label>
+            <Select value="" onValueChange={() => {}}>
+              <SelectTrigger className="h-7 w-40 text-xs">
+                <SelectValue placeholder={`${Object.keys(typeBreakdown).length} types`} />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(typeBreakdown).map(([type, count]) => (
+                  <SelectItem key={type} value={type} className="justify-between">
+                    <span className="flex justify-between w-full">
+                      <span>{type}</span>
+                      <span className="ml-4 text-muted-foreground">{count}</span>
+                    </span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
