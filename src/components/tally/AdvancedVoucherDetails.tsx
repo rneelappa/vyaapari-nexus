@@ -141,6 +141,37 @@ export function AdvancedVoucherDetails({
   const partyLedger = editedVoucher.entries?.find(entry => entry.isPartyLedger);
   const otherLedgers = editedVoucher.entries?.filter(entry => !entry.isPartyLedger) || [];
   
+  // Determine expected account type based on voucher type
+  const getExpectedAccountType = (voucherType: string) => {
+    switch (voucherType.toLowerCase()) {
+      case 'sales':
+      case 'sales invoice':
+        return 'Sales Account';
+      case 'purchase':
+      case 'purchase invoice':
+        return 'Purchase Account';
+      case 'payment':
+        return 'Bank/Cash Account';
+      case 'receipt':
+        return 'Bank/Cash Account';
+      case 'contra':
+        return 'Bank/Cash Account';
+      default:
+        return 'Account';
+    }
+  };
+  
+  const expectedAccountType = getExpectedAccountType(editedVoucher.type);
+  
+  // Check if we have the expected main account ledger (non-party)
+  const hasMainAccountLedger = otherLedgers.length > 0;
+  const mainAccountLedger = otherLedgers.find(ledger => 
+    ledger.ledgerName.toLowerCase().includes('sales') ||
+    ledger.ledgerName.toLowerCase().includes('purchase') ||
+    ledger.ledgerName.toLowerCase().includes('bank') ||
+    ledger.ledgerName.toLowerCase().includes('cash')
+  );
+  
   const totalDebit = editedVoucher.entries?.reduce((sum, entry) => 
     entry.amount > 0 ? sum + entry.amount : sum, 0) || 0;
   const totalCredit = editedVoucher.entries?.reduce((sum, entry) => 
@@ -160,6 +191,10 @@ export function AdvancedVoucherDetails({
   const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
   const hasInventory = editedVoucher.inventoryEntries?.length > 0;
   const partyBalanceMatch = Math.abs(partyLedgerAmount - inventoryPlusOthersTotal) < 0.01;
+  
+  // Validation for proper accounting structure
+  const hasBothRequiredLedgers = partyLedger && hasMainAccountLedger;
+  const isProperAccountingVoucher = ['sales', 'purchase', 'payment', 'receipt'].includes(editedVoucher.type.toLowerCase());
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -349,11 +384,28 @@ export function AdvancedVoucherDetails({
                             </TableRow>
                           )}
                           
+                          {/* Main Account Ledgers with highlighting for missing */}
+                          {isProperAccountingVoucher && otherLedgers.length === 0 && (
+                            <TableRow className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+                              <TableCell className="font-medium text-red-700 dark:text-red-300" colSpan={4}>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-3 w-3 rounded-full bg-red-500" />
+                                  <span>Missing {expectedAccountType} - Required for {editedVoucher.type} voucher</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          
                           {/* Other Ledgers */}
                           {otherLedgers.map((entry, index) => (
-                            <TableRow key={index}>
+                            <TableRow key={index} className={mainAccountLedger?.ledgerName === entry.ledgerName ? 'bg-green-50 dark:bg-green-950/30' : ''}>
                               <TableCell className="font-medium">
                                 {entry.ledgerName}
+                                {mainAccountLedger?.ledgerName === entry.ledgerName && (
+                                  <Badge variant="secondary" className="ml-2 text-xs">
+                                    Main Account
+                                  </Badge>
+                                )}
                               </TableCell>
                               <TableCell className="text-right">
                                 {entry.amount > 0 ? formatAmount(entry.amount) : '-'}
@@ -400,6 +452,21 @@ export function AdvancedVoucherDetails({
                             Ledger Balance: {isBalanced ? 'Balanced' : 'Unbalanced'}
                           </span>
                         </div>
+                        
+                        {/* Accounting Structure Validation */}
+                        {isProperAccountingVoucher && (
+                          <div className="flex items-center gap-2">
+                            <div className={`h-3 w-3 rounded-full ${hasBothRequiredLedgers ? 'bg-green-500' : 'bg-red-500'}`} />
+                            <span className="text-sm font-medium">
+                              Accounting Structure: {hasBothRequiredLedgers ? 'Complete' : 'Incomplete'}
+                            </span>
+                            {!hasBothRequiredLedgers && (
+                              <span className="text-xs text-red-600">
+                                (Missing: {!partyLedger ? 'Party Account' : ''} {!hasMainAccountLedger ? expectedAccountType : ''})
+                              </span>
+                            )}
+                          </div>
+                        )}
                         
                         {/* Party Balance Breakdown */}
                         {partyLedger && (
