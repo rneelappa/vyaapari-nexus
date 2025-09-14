@@ -1,594 +1,440 @@
-// VoucherManagement with dependent filters - v2
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { VoucherDisplay } from '@/components/tally/VoucherDisplay';
-import { VoucherDetailsView } from '@/components/tally/VoucherDetailsView';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Calendar, FileText, Plus, RefreshCw } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { AccountGroupsSelector } from '@/components/tally/AccountGroupsSelector';
-import { LedgerFilter } from '@/components/tally/LedgerFilter';
-import { VoucherTypesFilter } from '@/components/tally/VoucherTypesFilter';
-import { GodownsFilter } from '@/components/tally/GodownsFilter';
-import { InventoryFilter } from '@/components/tally/InventoryFilter';
-import { VoucherFilterProvider, useVoucherFilter } from '@/contexts/VoucherFilterContext';
-import { VoucherTypeSelector } from '@/components/tally/VoucherTypeSelector';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { RefreshCw, Plus, Search, Calendar, DollarSign, Filter, X, Activity, RotateCcw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useExternalTallyVouchers } from "@/hooks/useExternalTallyVouchers";
+import { format } from 'date-fns';
 
+// Define VoucherEntry interface for external API
 interface VoucherEntry {
-  guid: string;
-  voucher_number: string;
-  voucher_type: string;
+  id: string;
+  vchkey: string;
+  alterId: string;
   date: string;
-  party_ledger_name: string;
-  total_amount: number;
+  type: string;
+  number: string;
   narration: string;
-  created_at: string;
-  basic_amount?: number;
-  discount_amount?: number;
-  tax_amount?: number;
-  net_amount?: number;
-  reference?: string;
-  due_date?: string;
+  isInvoice: boolean;
+  isModify: boolean;
+  isDeleted: boolean;
+  isOptional: boolean;
+  effectiveDate: string;
+  voucherTypeId: string;
+  voucherTypeName: string;
+  partyLedgerName: string;
+  entries: any[];
+  inventoryEntries: any[];
 }
 
-const VoucherManagementContent: React.FC = () => {
-  console.log('VoucherManagementContent rendering');
-  const { companyId, divisionId } = useParams();
+export default function VoucherManagement() {
+  const { companyId, divisionId } = useParams<{ companyId: string; divisionId: string }>();
   const { toast } = useToast();
   
-  console.log('About to call useVoucherFilter');
-  const { filters, updateFilter, clearFilters } = useVoucherFilter();
-  console.log('Successfully called useVoucherFilter');
-  
-  const [vouchers, setVouchers] = useState<VoucherEntry[]>([]);
-  const [filteredVouchers, setFilteredVouchers] = useState<VoucherEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const {
+    vouchers,
+    loading,
+    error,
+    pagination,
+    health,
+    fetchVouchers,
+    getVoucher,
+    updateVoucher,
+    syncFromTally,
+    exportVoucherXml,
+    checkHealth
+  } = useExternalTallyVouchers(companyId || 'SKM', divisionId || 'MAIN');
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [voucherTypeFilter, setVoucherTypeFilter] = useState('');
   const [selectedVoucher, setSelectedVoucher] = useState<VoucherEntry | null>(null);
-  const [voucherTypes, setVoucherTypes] = useState<string[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const [hasMore, setHasMore] = useState<boolean>(true);
-  
-  // New voucher creation state
-  const [showVoucherTypeSelector, setShowVoucherTypeSelector] = useState(false);
-  const [selectedVoucherTypeForCreation, setSelectedVoucherTypeForCreation] = useState<any>(null);
-  
-  // Legacy filter for backwards compatibility
-  const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [syncFromDate, setSyncFromDate] = useState('');
+  const [syncToDate, setSyncToDate] = useState('');
 
-  useEffect(() => {
-    if (companyId && divisionId) {
-      fetchVouchers(true);
-    }
-  }, [companyId, divisionId]);
+  // Handle filters and search
+  const handleSearch = () => {
+    const filters: any = {};
+    
+    if (searchTerm) filters.search = searchTerm;
+    if (dateFrom) filters.from = format(new Date(dateFrom), 'yyyyMMdd');
+    if (dateTo) filters.to = format(new Date(dateTo), 'yyyyMMdd');
+    if (voucherTypeFilter) filters.type = voucherTypeFilter;
+    
+    fetchVouchers(filters);
+  };
 
-  useEffect(() => {
-    applyFilters();
-  }, [vouchers, selectedType, filters]);
-
-  const fetchVouchers = async (reset: boolean = false) => {
-    if (!companyId || !divisionId) return;
-
-    try {
-      if (reset) {
-        setLoading(true);
-        setCurrentPage(0);
-        setVouchers([]);
-        setHasMore(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      const pageSize = 1000;
-      const from = reset ? 0 : currentPage * pageSize;
-      const to = from + pageSize - 1;
-
-      // First get total count
-      if (reset) {
-        const { count } = await supabase
-          .from('tally_trn_voucher')
-          .select('*', { count: 'exact', head: true })
-          .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
-        
-        setTotalCount(count || 0);
-      }
-      
-      const { data, error } = await supabase
-        .from('tally_trn_voucher')
-        .select('*')
-        .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
-        .order('date', { ascending: false })
-        .range(from, to);
-
-      if (error) {
-        console.error('Error fetching vouchers:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch vouchers",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const voucherData = (data || []).map(voucher => ({
-        guid: voucher.guid,
-        voucher_number: voucher.voucher_number || 'N/A',
-        voucher_type: voucher.voucher_type || 'Unknown',
-        date: voucher.date || new Date().toISOString(),
-        party_ledger_name: voucher.party_ledger_name || '',
-        total_amount: voucher.total_amount || 0,
-        narration: voucher.narration || '',
-        created_at: voucher.created_at || new Date().toISOString(),
-        basic_amount: voucher.basic_amount,
-        discount_amount: voucher.discount_amount,
-        tax_amount: voucher.tax_amount,
-        net_amount: voucher.net_amount,
-        reference: voucher.reference,
-        due_date: voucher.due_date
-      }));
-
-      if (reset) {
-        setVouchers(voucherData);
-      } else {
-        setVouchers(prev => [...prev, ...voucherData]);
-      }
-
-      // Check if there are more records
-      setHasMore(voucherData.length === pageSize);
-      setCurrentPage(prev => reset ? 1 : prev + 1);
-      
-      // Extract unique voucher types (only on reset/first load)
-      if (reset) {
-        const types = Array.from(new Set(voucherData.map(v => v.voucher_type))).filter(Boolean);
-        setVoucherTypes(types);
-      }
-      
-    } catch (err) {
-      console.error('Error:', err);
+  const handleSync = async () => {
+    if (!syncFromDate || !syncToDate) {
       toast({
         title: "Error",
-        description: "Failed to fetch vouchers",
+        description: "Please select both from and to dates for sync",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  };
-
-  const loadMoreVouchers = () => {
-    if (!loadingMore && hasMore) {
-      fetchVouchers(false);
-    }
-  };
-
-  const applyFilters = async () => {
-    let filtered = [...vouchers];
-
-    // Type filter (legacy - now we have VoucherTypesFilter)
-    if (selectedType && selectedType !== "ALL_TYPES") {
-      filtered = filtered.filter(v => v.voucher_type === selectedType);
+      return;
     }
 
-    // Voucher Type filter (new)
-    if (filters.selectedVoucherType) {
-      filtered = filtered.filter(v => v.voucher_type === filters.selectedVoucherType);
-    }
-
-    // Godown filter - filter by vouchers related to selected godown
-    if (filters.selectedGodown) {
-      // Filter by stock-affecting voucher types and location-based matching
-      filtered = filtered.filter(v => {
-        const isStockVoucher = ['Sales', 'Purchase', 'Stock Journal', 'Physical Stock', 'Delivery Note', 'Receipt Note'].includes(v.voucher_type);
-        if (!isStockVoucher) return false;
-        
-        const voucherLocation = v.party_ledger_name?.toLowerCase() || '';
-        const godownName = filters.selectedGodown!.toLowerCase();
-        
-        return voucherLocation.includes(godownName.split(' ')[0]) || voucherLocation.includes('stock') || voucherLocation.includes('inventory');
-      });
-    }
-
-    // Inventory Item filter - filter by vouchers involving selected stock item
-    if (filters.selectedInventoryItem) {
-      filtered = filtered.filter(v => {
-        const isStockVoucher = ['Sales', 'Purchase', 'Stock Journal', 'Physical Stock', 'Delivery Note', 'Receipt Note'].includes(v.voucher_type);
-        if (!isStockVoucher) return false;
-        
-        const voucherText = `${v.party_ledger_name || ''} ${v.narration || ''}`.toLowerCase();
-        const itemName = filters.selectedInventoryItem!.toLowerCase();
-        
-        return voucherText.includes(itemName) || voucherText.includes(itemName.split(' ')[0]);
-      });
-    }
-
-    // Group filter - filter by ledgers that belong to the selected group
-    if (filters.selectedGroup) {
-      try {
-        const { data: groupLedgers } = await supabase
-          .from('mst_ledger')
-          .select('name')
-          .eq('parent', filters.selectedGroup)
-          .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
-
-        const ledgerNames = (groupLedgers || []).map(l => l.name);
-        
-        if (ledgerNames.length > 0) {
-          filtered = filtered.filter(v => 
-            v.party_ledger_name && ledgerNames.includes(v.party_ledger_name)
-          );
-        } else {
-          filtered = []; // No ledgers in this group
-        }
-      } catch (error) {
-        console.error('Error filtering by group:', error);
-      }
-    }
-
-    // Ledger filter
-    if (filters.selectedLedger) {
-      filtered = filtered.filter(v => 
-        v.party_ledger_name === filters.selectedLedger
-      );
-    }
-
-    // Date range filter
-    if (filters.dateFrom) {
-      filtered = filtered.filter(v => new Date(v.date) >= new Date(filters.dateFrom));
-    }
-    if (filters.dateTo) {
-      filtered = filtered.filter(v => new Date(v.date) <= new Date(filters.dateTo));
-    }
-
-    // Amount range filter
-    if (filters.amountFrom) {
-      const minAmount = parseFloat(filters.amountFrom);
-      if (!isNaN(minAmount)) {
-        filtered = filtered.filter(v => v.total_amount >= minAmount);
-      }
-    }
-    if (filters.amountTo) {
-      const maxAmount = parseFloat(filters.amountTo);
-      if (!isNaN(maxAmount)) {
-        filtered = filtered.filter(v => v.total_amount <= maxAmount);
-      }
-    }
-
-    setFilteredVouchers(filtered);
-  };
-
-  const handleClearFilters = () => {
-    setSelectedType('ALL_TYPES');
-    clearFilters();
-  };
-
-  const handleVoucherClick = (voucher: VoucherEntry) => {
-    setSelectedVoucher(voucher);
-  };
-
-  const handleBack = () => {
-    setSelectedVoucher(null);
-  };
-
-  const handleEdit = (voucher: VoucherEntry) => {
-    toast({
-      title: "Edit Voucher",
-      description: `Editing functionality for ${voucher.voucher_number} will be implemented here.`
-    });
-  };
-
-  const handleNewVoucher = () => {
-    setShowVoucherTypeSelector(true);
-  };
-
-  const handleVoucherTypeSelect = (voucherType: any) => {
-    console.log('Selected voucher type:', voucherType);
-    setSelectedVoucherTypeForCreation(voucherType);
-    setShowVoucherTypeSelector(false);
+    const fromFormatted = format(new Date(syncFromDate), 'yyyyMMdd');
+    const toFormatted = format(new Date(syncToDate), 'yyyyMMdd');
     
-    toast({
-      title: "Voucher Type Selected",
-      description: `You selected: ${voucherType.name}. Voucher creation form will be implemented next.`
-    });
+    await syncFromTally(fromFormatted, toFormatted);
+    setShowSyncDialog(false);
   };
 
-  const calculateTotals = () => {
-    const totalAmount = filteredVouchers.reduce((sum, v) => sum + v.total_amount, 0);
-    const voucherCount = filteredVouchers.length;
-    const typeBreakdown = filteredVouchers.reduce((acc, v) => {
-      acc[v.voucher_type] = (acc[v.voucher_type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return { totalAmount, voucherCount, typeBreakdown };
+  const handleVoucherSelect = async (voucher: VoucherEntry) => {
+    const details = await getVoucher(voucher.id);
+    if (details) {
+      setSelectedVoucher(details);
+      setShowDetailsDialog(true);
+    }
   };
 
-  const { totalAmount, voucherCount, typeBreakdown } = calculateTotals();
+  // Load vouchers on component mount
+  useEffect(() => {
+    fetchVouchers();
+    checkHealth();
+  }, []);
 
-  if (selectedVoucher) {
+  // Auto-search on filter changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm || dateFrom || dateTo || voucherTypeFilter) {
+        handleSearch();
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, dateFrom, dateTo, voucherTypeFilter]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDateFrom('');
+    setDateTo('');
+    setVoucherTypeFilter('');
+    fetchVouchers();
+  };
+
+  if (!companyId || !divisionId) {
     return (
-      <VoucherDetailsView
-        voucher={selectedVoucher}
-        onBack={handleBack}
-        onEdit={handleEdit}
-        companyId={companyId}
-        divisionId={divisionId}
-        onSyncComplete={() => {
-          // Refresh voucher data after sync
-          fetchVouchers();
-        }}
-      />
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Company ID and Division ID are required to view vouchers.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full space-y-3">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <FileText className="h-8 w-8" />
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
             Voucher Management
-          </h1>
-          <p className="text-muted-foreground">
-            Manage and view all vouchers
-          </p>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button onClick={() => fetchVouchers(true)} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+        <div className="flex items-center gap-2 mb-6">
+          <Button 
+            onClick={() => fetchVouchers()} 
+            disabled={loading}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={handleNewVoucher}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Voucher
-          </Button>
-        </div>
-      </div>
 
-      {/* Statistics Block */}
-      <div className="bg-muted/30 rounded-lg px-4 py-2 border">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <div className="text-sm font-semibold">{voucherCount.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">
-              Showing {vouchers.length} of {totalCount.toLocaleString()} total
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <div className="text-sm font-semibold">
-              {new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR',
-                notation: 'compact'
-              }).format(totalAmount)}
-            </div>
-            <div className="text-xs text-muted-foreground">Total Amount</div>
-          </div>
-        </div>
-      </div>
+          <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Sync from Tally
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Sync from Tally ERP</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="syncFromDate">From Date</Label>
+                  <Input
+                    id="syncFromDate"
+                    type="date"
+                    value={syncFromDate}
+                    onChange={(e) => setSyncFromDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="syncToDate">To Date</Label>
+                  <Input
+                    id="syncToDate"
+                    type="date"
+                    value={syncToDate}
+                    onChange={(e) => setSyncToDate(e.target.value)}
+                  />
+                </div>
+                <Button onClick={handleSync} disabled={loading} className="w-full">
+                  {loading ? 'Syncing...' : 'Start Sync'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
-      {/* Filters Block */}
-      <div className="bg-muted/30 rounded-lg px-4 py-2 border">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Account Groups:</Label>
-            <AccountGroupsSelector
-              companyId={companyId!}
-              divisionId={divisionId!}
-              selectedGroup={filters.selectedGroup}
-              onGroupSelect={(group) => updateFilter('selectedGroup', group)}
-              totalVouchers={totalCount}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Ledgers:</Label>
-            <LedgerFilter
-              selectedLedger={filters.selectedLedger}
-              onLedgerChange={(ledger) => updateFilter('selectedLedger', ledger)}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Voucher Types:</Label>
-            <VoucherTypesFilter
-              companyId={companyId!}
-              divisionId={divisionId!}
-              selectedType={filters.selectedVoucherType}
-              onTypeSelect={(type) => updateFilter('selectedVoucherType', type)}
-              totalVouchers={totalCount}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Godowns:</Label>
-            <GodownsFilter
-              companyId={companyId!}
-              divisionId={divisionId!}
-              selectedGodown={filters.selectedGodown}
-              onGodownSelect={(godown) => updateFilter('selectedGodown', godown)}
-              totalVouchers={totalCount}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Inventory:</Label>
-            <InventoryFilter
-              companyId={companyId!}
-              divisionId={divisionId!}
-              selectedItem={filters.selectedInventoryItem}
-              onItemSelect={(item) => updateFilter('selectedInventoryItem', item)}
-              totalVouchers={totalCount}
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Legacy Type:</Label>
-            <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="h-7 w-32 text-xs">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL_TYPES">All Types</SelectItem>
-                {voucherTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Voucher Types:</Label>
-            <Select value="" onValueChange={() => {}}>
-              <SelectTrigger className="h-7 w-40 text-xs">
-                <SelectValue placeholder={`${Object.keys(typeBreakdown).length} types`} />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(typeBreakdown).map(([type, count]) => (
-                  <SelectItem key={type} value={type} className="justify-between">
-                    <span className="flex justify-between w-full">
-                      <span>{type}</span>
-                      <span className="ml-4 text-muted-foreground">{count}</span>
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">From:</Label>
-              <Input
-                type="date"
-                className="h-7 w-32 text-xs"
-                value={filters.dateFrom}
-                onChange={(e) => updateFilter('dateFrom', e.target.value)}
-              />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">To:</Label>
-              <Input
-                type="date"
-                className="h-7 w-32 text-xs"
-                value={filters.dateTo}
-                onChange={(e) => updateFilter('dateTo', e.target.value)}
-              />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Min Amount:</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                className="h-7 w-24 text-xs"
-                value={filters.amountFrom}
-                onChange={(e) => updateFilter('amountFrom', e.target.value)}
-              />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Label className="text-xs whitespace-nowrap">Max Amount:</Label>
-              <Input
-                type="number"
-                placeholder="0"
-                className="h-7 w-24 text-xs"
-                value={filters.amountTo}
-                onChange={(e) => updateFilter('amountTo', e.target.value)}
-              />
-          </div>
-          
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={clearFilters}>
-            Clear
-          </Button>
-        </div>
-      </div>
-
-      {/* Voucher Display - Takes remaining space */}
-      <div className="flex-1 min-h-0">
-        <VoucherDisplay
-          vouchers={filteredVouchers}
-          loading={loading}
-          onVoucherClick={handleVoucherClick}
-          onEdit={handleEdit}
-          title="All Vouchers"
-          showActions={true}
-          searchable={true}
-          filterable={false} // We have advanced filters above
-        />
-      </div>
-
-      {/* Load More Section */}
-      {hasMore && vouchers.length > 0 && (
-        <div className="flex justify-center py-2">
           <Button 
-            onClick={loadMoreVouchers} 
-            variant="outline" 
-            disabled={loadingMore}
-            className="min-w-[200px]"
+            onClick={clearFilters}
+            variant="ghost"
+            size="sm"
           >
-            {loadingMore ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Loading more...
-              </>
-            ) : (
-              <>
-                Load More Vouchers
-                <Badge variant="secondary" className="ml-2">
-                  {vouchers.length} / {totalCount.toLocaleString()}
-                </Badge>
-              </>
-            )}
+            <X className="h-4 w-4 mr-2" />
+            Clear Filters
           </Button>
-        </div>
-      )}
 
-      {/* End of Results Message */}
-      {!hasMore && vouchers.length > 0 && (
-        <div className="text-center py-2 text-muted-foreground">
-          <p>You've reached the end of all vouchers ({totalCount.toLocaleString()} total)</p>
-        </div>
-      )}
+          {health && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Activity className="h-4 w-4 text-green-500" />
+              <span className="text-sm text-muted-foreground">
+                API: {health.status || 'Connected'} | Vouchers: {health.totalVouchers || 0}
+              </span>
+            </div>
+          )}
 
-      {/* Voucher Type Selector Dialog */}
-      <VoucherTypeSelector
-        open={showVoucherTypeSelector}
-        onOpenChange={setShowVoucherTypeSelector}
-        onTypeSelect={handleVoucherTypeSelect}
-        companyId={companyId!}
-        divisionId={divisionId!}
-      />
+          <div className="text-sm text-muted-foreground">
+            {loading ? (
+              <Skeleton className="h-4 w-32" />
+            ) : (
+              `Page ${pagination.page} of ${pagination.pages} | Total: ${pagination.total}`
+            )}
+          </div>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="search">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="search"
+                    placeholder="Voucher, party, narration..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateFrom">From Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="dateFrom"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dateTo">To Date</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="dateTo"
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="voucherType">Voucher Type</Label>
+                <Input
+                  id="voucherType"
+                  placeholder="Payment, Receipt, Sales..."
+                  value={voucherTypeFilter}
+                  onChange={(e) => setVoucherTypeFilter(e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Voucher List */}
+        {loading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-1/3" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : error ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-destructive mb-4">{error}</p>
+              <Button onClick={() => fetchVouchers()} variant="outline">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        ) : vouchers.length > 0 ? (
+          <div className="space-y-4">
+            {vouchers.map((voucher) => (
+              <Card key={voucher.id} className="cursor-pointer hover:shadow-md transition-shadow" 
+                    onClick={() => handleVoucherSelect(voucher)}>
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{voucher.type}</Badge>
+                        <span className="font-medium">{voucher.number}</span>
+                        {voucher.isInvoice && <Badge variant="secondary">Invoice</Badge>}
+                        {voucher.isModify && <Badge variant="destructive">Modified</Badge>}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {voucher.date} | {voucher.partyLedgerName}
+                      </p>
+                      {voucher.narration && (
+                        <p className="text-sm">{voucher.narration}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">
+                        {voucher.entries?.reduce((sum, entry) => sum + (entry.amount || 0), 0).toFixed(2)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {voucher.entries?.length || 0} entries
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">No vouchers found. Try syncing from Tally or adjusting your filters.</p>
+              <Button 
+                onClick={() => setShowSyncDialog(true)} 
+                className="mt-4"
+                variant="outline"
+              >
+                Sync from Tally
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        </CardContent>
+      </Card>
+
+      {/* Voucher Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Voucher Details - {selectedVoucher?.type} {selectedVoucher?.number}</DialogTitle>
+          </DialogHeader>
+          {selectedVoucher && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium">Basic Information</h4>
+                  <div className="mt-2 space-y-1 text-sm">
+                    <p><strong>Date:</strong> {selectedVoucher.date}</p>
+                    <p><strong>Party:</strong> {selectedVoucher.partyLedgerName}</p>
+                    <p><strong>Type:</strong> {selectedVoucher.type}</p>
+                    <p><strong>Number:</strong> {selectedVoucher.number}</p>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-medium">Status</h4>
+                  <div className="mt-2 space-y-1">
+                    <Badge variant={selectedVoucher.isInvoice ? "default" : "secondary"}>
+                      {selectedVoucher.isInvoice ? "Invoice" : "Not Invoice"}
+                    </Badge>
+                    <Badge variant={selectedVoucher.isModify ? "destructive" : "secondary"}>
+                      {selectedVoucher.isModify ? "Modified" : "Original"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              
+              {selectedVoucher.narration && (
+                <div>
+                  <h4 className="font-medium">Narration</h4>
+                  <p className="mt-1 text-sm">{selectedVoucher.narration}</p>
+                </div>
+              )}
+
+              {selectedVoucher.entries && selectedVoucher.entries.length > 0 && (
+                <div>
+                  <h4 className="font-medium">Ledger Entries</h4>
+                  <div className="mt-2 space-y-2">
+                    {selectedVoucher.entries.map((entry: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
+                        <span className="text-sm">{entry.ledgerName}</span>
+                        <span className="font-medium">{entry.amount?.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedVoucher.inventoryEntries && selectedVoucher.inventoryEntries.length > 0 && (
+                <div>
+                  <h4 className="font-medium">Inventory Entries</h4>
+                  <div className="mt-2 space-y-2">
+                    {selectedVoucher.inventoryEntries.map((entry: any, index: number) => (
+                      <div key={index} className="p-2 bg-muted rounded">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium">{entry.stockItemName}</span>
+                          <span>{entry.billedQuantity} {entry.unit}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Rate: {entry.rate} | Amount: {entry.amount} | Godown: {entry.godownName}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-const VoucherManagement: React.FC = () => {
-  const { companyId, divisionId } = useParams();
-
-  console.log('VoucherManagement wrapper rendering with:', { companyId, divisionId });
-
-  if (!companyId || !divisionId) {
-    return <div>Missing company or division ID</div>;
-  }
-
-  return (
-    <VoucherFilterProvider companyId={companyId} divisionId={divisionId}>
-      <VoucherManagementContent />
-    </VoucherFilterProvider>
-  );
-};
-
-export default VoucherManagement;
+}
