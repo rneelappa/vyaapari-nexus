@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { 
   FileText, 
   Receipt, 
@@ -18,7 +19,12 @@ import {
   Hash,
   Tag,
   Briefcase,
-  Target
+  Target,
+  Package,
+  ArrowLeft,
+  Database,
+  BarChart3,
+  Warehouse
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -116,6 +122,24 @@ interface Ledger {
   ledger_contact: string;
 }
 
+interface InventoryEntry {
+  guid: string;
+  item: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+  godown?: string;
+  batch?: string;
+}
+
+interface MasterDataType {
+  type: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  count: number;
+  data: any[];
+}
+
 interface EnhancedVoucherDetailsProps {
   voucherGuid: string;
   companyId: string;
@@ -137,6 +161,9 @@ export function EnhancedVoucherDetails({
   const [voucherType, setVoucherType] = useState<VoucherType | null>(null);
   const [partyLedger, setPartyLedger] = useState<Ledger | null>(null);
   const [relatedLedgers, setRelatedLedgers] = useState<Ledger[]>([]);
+  const [inventoryEntries, setInventoryEntries] = useState<InventoryEntry[]>([]);
+  const [masterDataTypes, setMasterDataTypes] = useState<MasterDataType[]>([]);
+  const [selectedMasterData, setSelectedMasterData] = useState<{ type: string; data: any } | null>(null);
 
   useEffect(() => {
     fetchVoucherDetails();
@@ -231,6 +258,61 @@ export function EnhancedVoucherDetails({
         }
       }
 
+      // Fetch inventory entries (mock data - replace with actual table when available)
+      setInventoryEntries([
+        {
+          guid: 'inv-1',
+          item: 'Sample Product A',
+          quantity: 10,
+          rate: 100,
+          amount: 1000,
+          godown: 'Main Warehouse',
+          batch: 'BATCH001'
+        },
+        {
+          guid: 'inv-2', 
+          item: 'Sample Product B',
+          quantity: 5,
+          rate: 200,
+          amount: 1000,
+          godown: 'Secondary Warehouse'
+        }
+      ]);
+
+      // Prepare master data types
+      const masterTypes: MasterDataType[] = [
+        {
+          type: 'voucher_type',
+          label: 'Voucher Type',
+          icon: FileText,
+          count: voucherType ? 1 : 0,
+          data: voucherType ? [voucherType] : []
+        },
+        {
+          type: 'party_ledger',
+          label: 'Party Ledger',
+          icon: Users,
+          count: partyLedger ? 1 : 0,
+          data: partyLedger ? [partyLedger] : []
+        },
+        {
+          type: 'related_ledgers',
+          label: 'Related Ledgers',
+          icon: Receipt,
+          count: relatedLedgers.length,
+          data: relatedLedgers
+        },
+        {
+          type: 'addresses',
+          label: 'Address Details',
+          icon: MapPin,
+          count: addressDetails.length,
+          data: addressDetails
+        }
+      ];
+
+      setMasterDataTypes(masterTypes);
+
     } catch (error) {
       console.error('Error fetching voucher details:', error);
       toast({
@@ -308,9 +390,10 @@ export function EnhancedVoucherDetails({
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="accounting">Accounting ({accountingEntries.length})</TabsTrigger>
+          <TabsTrigger value="inventory">Inventory ({inventoryEntries.length})</TabsTrigger>
           <TabsTrigger value="addresses">Addresses ({addressDetails.length})</TabsTrigger>
           <TabsTrigger value="master-data">Master Data</TabsTrigger>
           <TabsTrigger value="audit">Audit Trail</TabsTrigger>
@@ -494,34 +577,95 @@ export function EnhancedVoucherDetails({
                             )}
                           </div>
                           <div className="text-right">
-                            <p className={`font-bold ${entry.is_deemed_positive ? 'text-green-600' : 'text-red-600'}`}>
-                              {entry.is_deemed_positive ? '+' : '-'} {formatCurrency(entry.amount, entry.currency)}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={entry.is_deemed_positive ? "default" : "destructive"}>
+                                {entry.is_deemed_positive ? "Credit" : "Debit"}
+                              </Badge>
+                              <span className="font-medium">{formatCurrency(entry.amount, entry.currency)}</span>
+                            </div>
                             {entry.amount_forex !== entry.amount && (
-                              <p className="text-sm text-muted-foreground">
-                                Foreign: {formatCurrency(entry.amount_forex, entry.currency)}
-                              </p>
+                              <div className="text-sm text-muted-foreground">
+                                Forex: {formatCurrency(entry.amount_forex, entry.currency)}
+                              </div>
                             )}
                           </div>
                         </div>
                         
-                        <div className="flex gap-2">
-                          {entry.is_party_ledger === 1 && (
-                            <Badge variant="secondary" className="text-xs">Party Ledger</Badge>
-                          )}
-                          {entry.amount_cleared && entry.amount_cleared > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              Cleared: {formatCurrency(entry.amount_cleared, entry.currency)}
-                            </Badge>
-                          )}
-                        </div>
-                        
                         {entry.bill_allocations && (
-                          <div className="mt-2 p-2 bg-muted rounded text-sm">
-                            <p className="text-muted-foreground">Bill Allocations:</p>
-                            <p>{entry.bill_allocations}</p>
+                          <div className="mt-2 pt-2 border-t">
+                            <p className="text-sm text-muted-foreground">Bill Allocations:</p>
+                            <p className="text-sm bg-muted p-2 rounded">{entry.bill_allocations}</p>
                           </div>
                         )}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Inventory Tab */}
+        <TabsContent value="inventory" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Inventory Entries ({inventoryEntries.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {inventoryEntries.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No inventory entries found for this voucher.</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-96">
+                  <div className="space-y-3">
+                    {inventoryEntries.map((entry, index) => (
+                      <div key={entry.guid} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-medium flex items-center gap-2">
+                              <Package className="h-4 w-4" />
+                              {entry.item}
+                            </h4>
+                            {entry.godown && (
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Warehouse className="h-3 w-3" />
+                                Godown: {entry.godown}
+                              </p>
+                            )}
+                            {entry.batch && (
+                              <p className="text-sm text-muted-foreground">
+                                Batch: {entry.batch}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="font-medium">{formatCurrency(entry.amount, voucher.currency)}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {entry.quantity} × {formatCurrency(entry.rate, voucher.currency)}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-4 text-sm mt-3 pt-3 border-t">
+                          <div>
+                            <span className="text-muted-foreground">Quantity:</span>
+                            <p className="font-medium">{entry.quantity}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Rate:</span>
+                            <p className="font-medium">{formatCurrency(entry.rate, voucher.currency)}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Amount:</span>
+                            <p className="font-medium">{formatCurrency(entry.amount, voucher.currency)}</p>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -593,125 +737,170 @@ export function EnhancedVoucherDetails({
 
         {/* Master Data Tab */}
         <TabsContent value="master-data" className="space-y-4">
-          <div className="grid gap-4">
-            {/* Voucher Type Details */}
-            {voucherType && (
-              <Card>
-                <CardHeader>
+          {selectedMasterData ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Tag className="h-4 w-4" />
-                    Voucher Type Details
+                    <Database className="h-4 w-4" />
+                    {selectedMasterData.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Details
                   </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Name:</p>
-                      <p className="font-medium">{voucherType.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Parent:</p>
-                      <p className="font-medium">{voucherType.parent || 'None'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Numbering Method:</p>
-                      <p className="font-medium">{voucherType.numbering_method || 'Default'}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      {voucherType.affects_stock === 1 && (
-                        <Badge variant="secondary">Stock Affecting</Badge>
-                      )}
-                      {voucherType.is_deemedpositive === 1 && (
-                        <Badge variant="outline">Credit Nature</Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Party Ledger Details */}
-            {partyLedger && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Party Ledger Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Name:</p>
-                      <p className="font-medium">{partyLedger.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Parent Group:</p>
-                      <p className="font-medium">{partyLedger.parent || 'None'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Opening Balance:</p>
-                      <p className="font-medium">{formatCurrency(partyLedger.opening_balance)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Closing Balance:</p>
-                      <p className="font-medium">{formatCurrency(partyLedger.closing_balance)}</p>
-                    </div>
-                    {partyLedger.mailing_name && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Mailing Name:</p>
-                        <p className="font-medium">{partyLedger.mailing_name}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSelectedMasterData(null)}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Voucher
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96">
+                  <div className="space-y-4">
+                    {selectedMasterData.type === 'voucher_type' && (
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Name:</span>
+                          <p className="font-medium">{selectedMasterData.data.name}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Parent:</span>
+                          <p className="font-medium">{selectedMasterData.data.parent || 'None'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Affects Stock:</span>
+                          <p className="font-medium">{selectedMasterData.data.affects_stock ? 'Yes' : 'No'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Numbering Method:</span>
+                          <p className="font-medium">{selectedMasterData.data.numbering_method}</p>
+                        </div>
                       </div>
                     )}
-                    {partyLedger.email && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Email:</p>
-                        <p className="font-medium">{partyLedger.email}</p>
+                    
+                    {(selectedMasterData.type === 'party_ledger' || selectedMasterData.type === 'related_ledgers') && (
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Name:</span>
+                          <p className="font-medium">{selectedMasterData.data.name}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Parent Group:</span>
+                          <p className="font-medium">{selectedMasterData.data.parent || 'None'}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Opening Balance:</span>
+                          <p className="font-medium">{formatCurrency(selectedMasterData.data.opening_balance || 0)}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Closing Balance:</span>
+                          <p className="font-medium">{formatCurrency(selectedMasterData.data.closing_balance || 0)}</p>
+                        </div>
+                        {selectedMasterData.data.mailing_name && (
+                          <div>
+                            <span className="text-muted-foreground">Mailing Name:</span>
+                            <p className="font-medium">{selectedMasterData.data.mailing_name}</p>
+                          </div>
+                        )}
+                        {selectedMasterData.data.email && (
+                          <div>
+                            <span className="text-muted-foreground">Email:</span>
+                            <p className="font-medium">{selectedMasterData.data.email}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {selectedMasterData.type === 'addresses' && (
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Address Type:</span>
+                          <p className="font-medium">{selectedMasterData.data.address_type}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Contact Person:</span>
+                          <p className="font-medium">{selectedMasterData.data.contact_person}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Address:</span>
+                          <p className="font-medium">
+                            {[
+                              selectedMasterData.data.address_line1,
+                              selectedMasterData.data.address_line2,
+                              selectedMasterData.data.city,
+                              selectedMasterData.data.state,
+                              selectedMasterData.data.pincode
+                            ].filter(Boolean).join(', ')}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Phone:</span>
+                          <p className="font-medium">{selectedMasterData.data.phone}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Email:</span>
+                          <p className="font-medium">{selectedMasterData.data.email}</p>
+                        </div>
                       </div>
                     )}
                   </div>
-                  {partyLedger.mailing_address && (
-                    <div className="mt-4">
-                      <p className="text-sm text-muted-foreground">Mailing Address:</p>
-                      <p className="text-sm bg-muted p-2 rounded">{partyLedger.mailing_address}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Related Ledgers */}
-            {relatedLedgers.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building className="h-4 w-4" />
-                    Related Ledgers ({relatedLedgers.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-64">
-                    <div className="space-y-3">
-                      {relatedLedgers.map((ledger) => (
-                        <div key={ledger.guid} className="border rounded p-3">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">{ledger.name}</p>
-                              <p className="text-sm text-muted-foreground">Group: {ledger.parent}</p>
-                            </div>
-                            <div className="text-right text-sm">
-                              <p>Opening: {formatCurrency(ledger.opening_balance)}</p>
-                              <p>Closing: {formatCurrency(ledger.closing_balance)}</p>
-                            </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  Master Data References
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {masterDataTypes.map((masterType) => (
+                    <div
+                      key={masterType.type}
+                      className="border rounded-lg p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => {
+                        if (masterType.count > 0) {
+                          if (masterType.data.length === 1) {
+                            setSelectedMasterData({ type: masterType.type, data: masterType.data[0] });
+                          } else {
+                            // For multiple records, show the first one or implement a list view
+                            setSelectedMasterData({ type: masterType.type, data: masterType.data[0] });
+                          }
+                        }
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <masterType.icon className="h-5 w-5 text-primary" />
+                          <div>
+                            <h3 className="font-medium">{masterType.label}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {masterType.count} record{masterType.count !== 1 ? 's' : ''}
+                            </p>
                           </div>
                         </div>
-                      ))}
+                        <Badge variant={masterType.count > 0 ? "default" : "secondary"}>
+                          {masterType.count}
+                        </Badge>
+                      </div>
                     </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                  ))}
+                </div>
+                
+                {masterDataTypes.every(type => type.count === 0) && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No master data references found for this voucher.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Audit Trail Tab */}
@@ -723,53 +912,42 @@ export function EnhancedVoucherDetails({
                 Audit Trail
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Created Date:</p>
-                  <p className="font-medium">{formatDate(voucher.created_at)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">GUID:</p>
-                  <p className="font-mono text-sm break-all">{voucher.guid}</p>
-                </div>
-                {voucher.altered_on && (
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Last Modified:</p>
-                    <p className="font-medium">{formatDate(voucher.altered_on)}</p>
+                    <p className="text-sm text-muted-foreground">Created At:</p>
+                    <p className="font-medium">{formatDate(voucher.created_at)}</p>
                   </div>
-                )}
-                {voucher.altered_by && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Modified By:</p>
-                    <p className="font-medium">{voucher.altered_by}</p>
+                  {voucher.altered_on && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Last Modified:</p>
+                      <p className="font-medium">{formatDate(voucher.altered_on)}</p>
+                    </div>
+                  )}
+                  {voucher.altered_by && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Modified By:</p>
+                      <p className="font-medium">{voucher.altered_by}</p>
+                    </div>
+                  )}
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <h4 className="font-medium mb-2">Status Information</h4>
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant={voucher.is_cancelled === 1 ? "destructive" : "secondary"}>
+                      {voucher.is_cancelled === 1 ? "Cancelled" : "Active"}
+                    </Badge>
+                    <Badge variant={voucher.is_optional === 1 ? "outline" : "secondary"}>
+                      {voucher.is_optional === 1 ? "Optional" : "Mandatory"}
+                    </Badge>
+                    <Badge variant="outline">
+                      Persisted View: {voucher.persistedview}
+                    </Badge>
                   </div>
-                )}
-                <div>
-                  <p className="text-sm text-muted-foreground">Persisted View:</p>
-                  <p className="font-medium">{voucher.persistedview}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Company ID:</p>
-                  <p className="font-mono text-sm break-all">{voucher.company_id || 'Not Set'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Division ID:</p>
-                  <p className="font-mono text-sm break-all">{voucher.division_id || 'Not Set'}</p>
-                </div>
-              </div>
-              
-              <Separator />
-              
-              <div>
-                <h4 className="font-medium mb-2">Status Information</h4>
-                <div className="flex gap-2">
-                  <Badge variant={voucher.is_cancelled === 1 ? "destructive" : "secondary"}>
-                    {voucher.is_cancelled === 1 ? "Cancelled" : "Active"}
-                  </Badge>
-                  <Badge variant={voucher.is_optional === 1 ? "outline" : "secondary"}>
-                    {voucher.is_optional === 1 ? "Optional" : "Standard"}
-                  </Badge>
                 </div>
               </div>
             </CardContent>
