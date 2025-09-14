@@ -298,24 +298,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_attendance_type_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_attendance_type_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_attendance_type_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -396,24 +382,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_cost_category_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_cost_category_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_cost_category_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -455,24 +427,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_cost_centre_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_cost_centre_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_cost_centre_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -609,24 +567,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_employee_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_employee_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_employee_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -689,24 +633,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_godown_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_godown_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_godown_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -766,24 +696,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_group_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_group_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_group_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1016,24 +932,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_ledger_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_ledger_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_ledger_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1226,24 +1128,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_payhead_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_payhead_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_payhead_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1282,24 +1170,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_stock_group_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_stock_group_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_stock_group_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1446,24 +1320,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_stock_item_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_stock_item_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_stock_item_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1623,24 +1483,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_uom_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_uom_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_uom_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1688,24 +1534,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_mst_vouchertype_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_mst_vouchertype_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_mst_vouchertype_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1816,24 +1648,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_tally_mst_group_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_tally_mst_group_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_tally_mst_group_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1878,24 +1696,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_tally_mst_ledger_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_tally_mst_ledger_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_tally_mst_ledger_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -1937,24 +1741,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_tally_mst_stock_item_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_tally_mst_stock_item_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_tally_mst_stock_item_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -2156,24 +1946,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_tally_trn_voucher_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_tally_trn_voucher_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_tally_trn_voucher_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
@@ -2304,24 +2080,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_trn_accounting_company"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "fk_trn_accounting_company_id"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_trn_accounting_division"
-            columns: ["division_id"]
-            isOneToOne: false
-            referencedRelation: "divisions"
             referencedColumns: ["id"]
           },
           {
