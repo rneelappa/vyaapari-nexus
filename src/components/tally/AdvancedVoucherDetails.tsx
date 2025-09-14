@@ -32,6 +32,7 @@ interface InventoryEntry {
   unit: string;
   godownName: string;
   godownId: string;
+  hsnCode?: string;
   batchName?: string;
   expiryDate?: string;
   manufacturingDate?: string;
@@ -368,59 +369,26 @@ export function AdvancedVoucherDetails({
                               <TableHead className="text-right">Rate</TableHead>
                               <TableHead className="text-right">Amount</TableHead>
                               <TableHead>Unit</TableHead>
-                              <TableHead>Godown</TableHead>
-                              <TableHead>Batch</TableHead>
+                              <TableHead>HSN Code</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {editedVoucher.inventoryEntries.map((item, index) => (
-                              <TableRow key={index}>
-                                <TableCell className="font-medium">
-                                  {item.stockItemName}
-                                </TableCell>
-                                <TableCell className="text-center">
-                                  {item.billedQuantity}
-                                  {item.actualQuantity !== item.billedQuantity && (
-                                    <div className="text-xs text-muted-foreground">
-                                      (Actual: {item.actualQuantity})
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {formatAmount(item.rate)}
-                                  {item.mrp && item.mrp !== item.rate && (
-                                    <div className="text-xs text-muted-foreground">
-                                      MRP: {formatAmount(item.mrp)}
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  {formatAmount(item.amount)}
-                                  {item.discount && (
-                                    <div className="text-xs text-green-600">
-                                      -{formatAmount(item.discount)}
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell>{item.unit}</TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                                    {item.godownName}
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {item.batchName && (
-                                    <div className="text-sm">
-                                      <div>{item.batchName}</div>
-                                      {item.expiryDate && (
-                                        <div className="text-xs text-muted-foreground">
-                                          Exp: {formatDate(item.expiryDate)}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </TableCell>
+                               <TableRow key={item.index || index}>
+                                 <TableCell className="font-medium">
+                                   {item.stockItemName}
+                                 </TableCell>
+                                 <TableCell className="text-center">
+                                   {item.billedQuantity}
+                                 </TableCell>
+                                 <TableCell className="text-right">
+                                   ₹{item.rate?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                 </TableCell>
+                                 <TableCell className="text-right">
+                                   ₹{item.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                 </TableCell>
+                                 <TableCell>{item.unit}</TableCell>
+                                 <TableCell>{item.hsnCode || '-'}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
