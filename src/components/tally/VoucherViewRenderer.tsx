@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
 import { VoucherOverview } from './VoucherOverview';
+import { VoucherAccountingEntries } from './VoucherAccountingEntries';
 
 interface TabConfig {
   id: string;
@@ -191,6 +192,12 @@ export function VoucherViewRenderer({
           <TabsContent key={tab.id} value={tab.id}>
             {tab.id === 'overview' ? (
               <VoucherOverview
+                voucherGuid={voucherGuid}
+                companyId={companyId}
+                divisionId={divisionId}
+              />
+            ) : tab.id === 'accounting' ? (
+              <VoucherAccountingEntries
                 voucherGuid={voucherGuid}
                 companyId={companyId}
                 divisionId={divisionId}
