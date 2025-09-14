@@ -12,6 +12,7 @@ import {
   Clock
 } from 'lucide-react';
 import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
+import { VoucherOverview } from './VoucherOverview';
 
 interface TabConfig {
   id: string;
@@ -188,19 +189,25 @@ export function VoucherViewRenderer({
 
         {enabledTabs.map((tab) => (
           <TabsContent key={tab.id} value={tab.id}>
-            {/* For now, show overview content for each tab */}
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground mb-4">
-                Showing {tab.name} content for voucher {voucherGuid}
+            {tab.id === 'overview' ? (
+              <VoucherOverview
+                voucherGuid={voucherGuid}
+                companyId={companyId}
+                divisionId={divisionId}
+              />
+            ) : (
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Showing {tab.name} content for voucher {voucherGuid}
+                </div>
+                <div className="p-4 border rounded-lg bg-muted/50">
+                  <p>Content for {tab.name} tab will be implemented here.</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Tab sections: {tab.sections?.join(', ') || 'None configured'}
+                  </p>
+                </div>
               </div>
-              {/* This is a placeholder - in full implementation, each tab would show different content */}
-              <div className="p-4 border rounded-lg bg-muted/50">
-                <p>Content for {tab.name} tab will be implemented here.</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Tab sections: {tab.sections?.join(', ') || 'None configured'}
-                </p>
-              </div>
-            </div>
+            )}
           </TabsContent>
         ))}
       </Tabs>
