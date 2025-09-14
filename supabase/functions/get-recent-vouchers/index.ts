@@ -164,8 +164,19 @@ serve(async (req) => {
 
     if (((finalVouchers.length || 0) === 0 || forceTally) && division?.tally_url) {
       try {
-        console.log('Fetching Tally DayBook...', { tallyCompany, tallyUrl: division.tally_url, forceTally });
-        const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?>\n<ENVELOPE>\n  <HEADER>\n    <VERSION>1</VERSION>\n    <TALLYREQUEST>Export</TALLYREQUEST>\n    <TYPE>Data</TYPE>\n    <ID>DayBook</ID>\n  </HEADER>\n  <BODY>\n    <DESC>\n      <STATICVARIABLES>\n        <SVFROMDATE>${startDate}</SVFROMDATE>\n        <SVTODATE>${endDate}</SVTODATE>\n        <SVCURRENTCOMPANY>${tallyCompany}</SVCURRENTCOMPANY>\n      </STATICVARIABLES>\n    </DESC>\n  </BODY>\n</ENVELOPE>`;
+        // Convert dates to YYYYMMDD format for Tally
+        const tallyFromDate = startDate.replace(/-/g, '');
+        const tallyToDate = endDate.replace(/-/g, '');
+        
+        console.log('Fetching Tally DayBook...', { 
+          tallyCompany, 
+          tallyUrl: division.tally_url, 
+          forceTally,
+          originalDateRange: `${startDate} to ${endDate}`,
+          tallyDateRange: `${tallyFromDate} to ${tallyToDate}`
+        });
+        
+        const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?>\n<ENVELOPE>\n  <HEADER>\n    <VERSION>1</VERSION>\n    <TALLYREQUEST>Export</TALLYREQUEST>\n    <TYPE>Data</TYPE>\n    <ID>DayBook</ID>\n  </HEADER>\n  <BODY>\n    <DESC>\n      <STATICVARIABLES>\n        <SVFROMDATE>${tallyFromDate}</SVFROMDATE>\n        <SVTODATE>${tallyToDate}</SVTODATE>\n        <SVCURRENTCOMPANY>${tallyCompany}</SVCURRENTCOMPANY>\n      </STATICVARIABLES>\n    </DESC>\n  </BODY>\n</ENVELOPE>`;
 
         const tallyResp = await fetch(division.tally_url, {
           method: 'POST',
@@ -245,14 +256,29 @@ serve(async (req) => {
 
         console.log(`Tally returned ${tallyVouchers.length} vouchers, ${filteredTallyVouchers.length} are within date range ${startDate} to ${endDate}`);
 
+        // Calculate diagnostics
+        const voucherDates = tallyVouchers.map(v => v.date).filter(Boolean);
+        const minDate = voucherDates.length > 0 ? Math.min(...voucherDates.map(d => new Date(d).getTime())) : null;
+        const maxDate = voucherDates.length > 0 ? Math.max(...voucherDates.map(d => new Date(d).getTime())) : null;
+
         tallyInfo = {
           requestedCompany: tallyCompany,
           url: division.tally_url,
           status: tallyResp.status,
-          voucherCount: voucherMatches.length,
+          voucherCount: tallyVouchers.length,
+          filteredVoucherCount: filteredTallyVouchers.length,
           responseLength: xmlText.length,
           requestXml: xmlPayload,
           responseXml: xmlText,
+          diagnostics: {
+            vouchersInXml: tallyVouchers.length,
+            vouchersAfterFilter: filteredTallyVouchers.length,
+            requestedDateRange: `${startDate} to ${endDate}`,
+            tallyDateFormat: `${tallyFromDate} to ${tallyToDate}`,
+            minDateInResponse: minDate ? new Date(minDate).toISOString().split('T')[0] : null,
+            maxDateInResponse: maxDate ? new Date(maxDate).toISOString().split('T')[0] : null,
+            sampleVoucherDates: voucherDates.slice(0, 5)
+          }
         };
         
         console.log('Tally fallback result:', { ...tallyInfo, responseXml: `len=${xmlText.length}` });

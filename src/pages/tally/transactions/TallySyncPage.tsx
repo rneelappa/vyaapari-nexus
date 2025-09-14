@@ -38,9 +38,19 @@ interface SyncData {
     url?: string;
     status?: number;
     voucherCount?: number;
+    filteredVoucherCount?: number;
     responseLength?: number;
     requestXml?: string;
     responseXml?: string;
+    diagnostics?: {
+      vouchersInXml: number;
+      vouchersAfterFilter: number;
+      requestedDateRange: string;
+      tallyDateFormat: string;
+      minDateInResponse: string | null;
+      maxDateInResponse: string | null;
+      sampleVoucherDates: string[];
+    };
   } | null;
   parseResults?: {
     results: {
@@ -844,7 +854,7 @@ export default function TallySyncPage() {
             <CardContent>
               {syncData?.tally ? (
                 <div className="space-y-4">
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid md:grid-cols-3 gap-4 mb-4">
                     <Card>
                       <CardHeader className="pb-2"><CardTitle className="text-sm">Requested Company</CardTitle></CardHeader>
                       <CardContent className="pt-0 text-sm text-muted-foreground">{syncData.tally.requestedCompany || '-'}</CardContent>
@@ -858,6 +868,36 @@ export default function TallySyncPage() {
                       <CardContent className="pt-0 text-sm text-muted-foreground">{syncData.tally.status ?? '-'} / {syncData.tally.voucherCount ?? 0}</CardContent>
                     </Card>
                   </div>
+
+                  {/* Diagnostics Section */}
+                  {syncData.tally.diagnostics && (
+                    <Card className="mb-4">
+                      <CardHeader>
+                        <CardTitle className="text-sm">Diagnostics</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid md:grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <strong>Date Range Analysis:</strong>
+                            <ul className="mt-1 space-y-1 text-muted-foreground">
+                              <li>Requested: {syncData.tally.diagnostics.requestedDateRange}</li>
+                              <li>Tally Format: {syncData.tally.diagnostics.tallyDateFormat}</li>
+                              <li>Response Min Date: {syncData.tally.diagnostics.minDateInResponse || 'N/A'}</li>
+                              <li>Response Max Date: {syncData.tally.diagnostics.maxDateInResponse || 'N/A'}</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <strong>Voucher Count Analysis:</strong>
+                            <ul className="mt-1 space-y-1 text-muted-foreground">
+                              <li>Total in XML: {syncData.tally.diagnostics.vouchersInXml}</li>
+                              <li>After Date Filter: {syncData.tally.diagnostics.vouchersAfterFilter}</li>
+                              <li>Sample Dates: {syncData.tally.diagnostics.sampleVoucherDates?.join(', ') || 'None'}</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   <div>
                     <h3 className="text-sm font-medium mb-2">Request XML</h3>
