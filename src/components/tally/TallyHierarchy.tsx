@@ -58,6 +58,10 @@ const tallyMenuStructure = {
     name: "Transactions",
     icon: TrendingUp,
     children: [{
+      name: "Voucher Management",
+      icon: FileText,
+      path: "/tally/transactions/voucher-management"
+    }, {
       name: "Accounting",
       icon: Calculator,
       path: "/tally/transactions/accounting"

@@ -47,6 +47,7 @@ import AnalyticsDashboard from "@/pages/tally/analytics/AnalyticsDashboard";
 import TallySyncPage from "@/pages/tally/transactions/TallySyncPage";
 import TallySyncLogs from "@/pages/tally/utilities/TallySyncLogs";
 import SyncJobsManagement from "@/pages/tally/utilities/SyncJobsManagement";
+import VoucherManagement from "@/pages/tally/transactions/VoucherManagement";
 
 const queryClient = new QueryClient();
 
@@ -387,13 +388,21 @@ function App() {
                  </AuthGuard>
                } />
                
-               <Route path="/company/:companyId/division/:divisionId/tally/transactions/accounting" element={
-                 <AuthGuard>
-                   <MainLayout>
-                     <AccountingPage />
-                   </MainLayout>
-                 </AuthGuard>
-               } />
+                <Route path="/company/:companyId/division/:divisionId/tally/transactions/voucher-management" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <VoucherManagement />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/company/:companyId/division/:divisionId/tally/transactions/accounting" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <AccountingPage />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
                
                <Route path="/company/:companyId/division/:divisionId/tally/transactions/sales/create" element={
                  <AuthGuard>
