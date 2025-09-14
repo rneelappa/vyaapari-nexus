@@ -43,7 +43,7 @@ export const VoucherDisplay: React.FC<VoucherDisplayProps> = ({
   filterable = true
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
   const [sortBy, setSortBy] = useState<'date' | 'number' | 'amount'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -58,7 +58,7 @@ export const VoucherDisplay: React.FC<VoucherDisplayProps> = ({
         voucher.party_ledger_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         voucher.narration.toLowerCase().includes(searchTerm.toLowerCase());
       
-      const matchesType = selectedType === '' || voucher.voucher_type === selectedType;
+      const matchesType = selectedType === 'ALL_TYPES' || voucher.voucher_type === selectedType;
       
       return matchesSearch && matchesType;
     })
@@ -157,7 +157,7 @@ export const VoucherDisplay: React.FC<VoucherDisplayProps> = ({
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="ALL_TYPES">All Types</SelectItem>
                     {voucherTypes.map(type => (
                       <SelectItem key={type} value={type}>{type}</SelectItem>
                     ))}

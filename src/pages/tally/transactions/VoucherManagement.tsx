@@ -40,7 +40,7 @@ const VoucherManagement: React.FC = () => {
   const [voucherTypes, setVoucherTypes] = useState<string[]>([]);
   
   // Filters
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [amountFrom, setAmountFrom] = useState<string>('');
@@ -119,7 +119,7 @@ const VoucherManagement: React.FC = () => {
     let filtered = [...vouchers];
 
     // Type filter
-    if (selectedType) {
+    if (selectedType && selectedType !== "ALL_TYPES") {
       filtered = filtered.filter(v => v.voucher_type === selectedType);
     }
 
@@ -149,7 +149,7 @@ const VoucherManagement: React.FC = () => {
   };
 
   const clearFilters = () => {
-    setSelectedType('');
+    setSelectedType('ALL_TYPES');
     setDateFrom('');
     setDateTo('');
     setAmountFrom('');
@@ -290,7 +290,7 @@ const VoucherManagement: React.FC = () => {
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="ALL_TYPES">All Types</SelectItem>
                   {voucherTypes.map(type => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
