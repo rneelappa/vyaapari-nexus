@@ -5,20 +5,24 @@ import { useLedgerVouchers } from '@/hooks/useLedgerVouchers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, RefreshCw, FileText, Package, Calculator, Calendar } from 'lucide-react';
+import { Search, RefreshCw, FileText, Package, Calculator, Calendar, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function AccountingPage() {
   const { user } = useAuth();
   const { categories, loading, error, refresh } = useVoucherTypesByCategory();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVoucherType, setSelectedVoucherType] = useState<any>(null);
-  const [showVoucherDialog, setShowVoucherDialog] = useState(false);
+  const [showVoucherView, setShowVoucherView] = useState(false);
   
   const { vouchers, loading: vouchersLoading, fetchVouchersByType } = useLedgerVouchers();
+
+  // Add state for managing collapsed months and fiscal years
+  const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+  const [collapsedFYs, setCollapsedFYs] = useState<Set<string>>(new Set());
 
   if (!user) {
     return (
@@ -30,8 +34,13 @@ export default function AccountingPage() {
 
   const handleVoucherTypeClick = async (voucherType: any) => {
     setSelectedVoucherType(voucherType);
-    setShowVoucherDialog(true);
+    setShowVoucherView(true);
     await fetchVouchersByType(voucherType.name);
+  };
+
+  const handleBackToTypes = () => {
+    setShowVoucherView(false);
+    setSelectedVoucherType(null);
   };
 
   const getCategoryIcon = (category: string) => {
@@ -63,6 +72,26 @@ export default function AccountingPage() {
       currency: 'INR',
       minimumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const toggleMonth = (monthKey: string) => {
+    const newCollapsed = new Set(collapsedMonths);
+    if (newCollapsed.has(monthKey)) {
+      newCollapsed.delete(monthKey);
+    } else {
+      newCollapsed.add(monthKey);
+    }
+    setCollapsedMonths(newCollapsed);
+  };
+
+  const toggleFY = (fyKey: string) => {
+    const newCollapsed = new Set(collapsedFYs);
+    if (newCollapsed.has(fyKey)) {
+      newCollapsed.delete(fyKey);
+    } else {
+      newCollapsed.add(fyKey);
+    }
+    setCollapsedFYs(newCollapsed);
   };
 
   // Build Monthly and Fiscal Year groups
@@ -108,6 +137,233 @@ export default function AccountingPage() {
     result.sort((a,b) => parseInt(b.key) - parseInt(a.key));
     return result;
   })();
+
+  // If showing voucher view, render that instead
+  if (showVoucherView && selectedVoucherType) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={handleBackToTypes}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Voucher Types
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Vouchers: {selectedVoucherType.name}</h1>
+              <p className="text-muted-foreground">
+                Transaction history for this voucher type
+              </p>
+            </div>
+          </div>
+          <Button onClick={refresh} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {vouchersLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Loading vouchers...</span>
+            </div>
+          ) : vouchers.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No vouchers found for this voucher type.</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Tabs defaultValue="all" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="all">All ({vouchers.length})</TabsTrigger>
+                <TabsTrigger value="monthly">Monthly ({monthlyGroups.length} months)</TabsTrigger>
+                <TabsTrigger value="fy">Fiscal Year ({fiscalYearGroups.length} years)</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all" className="mt-0">
+                <Card>
+                  <CardContent className="pt-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Voucher #</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead>Party</TableHead>
+                          <TableHead>Narration</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {vouchers.map((voucher) => (
+                          <TableRow key={voucher.guid}>
+                            <TableCell className="font-medium">
+                              {voucher.voucher_number}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {voucher.voucher_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                {formatDate(voucher.date)}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span className={voucher.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                                {formatCurrency(Math.abs(voucher.amount))}
+                              </span>
+                            </TableCell>
+                            <TableCell>{voucher.party_ledger_name}</TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {voucher.narration}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="monthly" className="mt-0">
+                <div className="space-y-4">
+                  {monthlyGroups.map((group) => {
+                    const monthTotal = group.items.reduce((sum, voucher) => sum + Math.abs(voucher.amount), 0);
+                    const isCollapsed = collapsedMonths.has(group.key);
+                    
+                    return (
+                      <Card key={group.key}>
+                        <Collapsible>
+                          <CollapsibleTrigger 
+                            className="w-full"
+                            onClick={() => toggleMonth(group.key)}
+                          >
+                            <CardHeader className="hover:bg-muted/50 transition-colors">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {isCollapsed ? 
+                                    <ChevronRight className="h-4 w-4" /> : 
+                                    <ChevronDown className="h-4 w-4" />
+                                  }
+                                  <CardTitle className="text-left">{group.label}</CardTitle>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <Badge variant="secondary">{group.items.length} vouchers</Badge>
+                                  <span className="font-mono text-sm">{formatCurrency(monthTotal)}</span>
+                                </div>
+                              </div>
+                            </CardHeader>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <CardContent>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Voucher #</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead>Party</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {group.items.map((voucher) => (
+                                    <TableRow key={voucher.guid}>
+                                      <TableCell className="font-medium">{voucher.voucher_number}</TableCell>
+                                      <TableCell>{formatDate(voucher.date)}</TableCell>
+                                      <TableCell className="text-right">
+                                        <span className={voucher.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                                          {formatCurrency(Math.abs(voucher.amount))}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell>{voucher.party_ledger_name}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="fy" className="mt-0">
+                <div className="space-y-4">
+                  {fiscalYearGroups.map((group) => {
+                    const fyTotal = group.items.reduce((sum, voucher) => sum + Math.abs(voucher.amount), 0);
+                    const isCollapsed = collapsedFYs.has(group.key);
+                    
+                    return (
+                      <Card key={group.key}>
+                        <Collapsible>
+                          <CollapsibleTrigger 
+                            className="w-full"
+                            onClick={() => toggleFY(group.key)}
+                          >
+                            <CardHeader className="hover:bg-muted/50 transition-colors">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {isCollapsed ? 
+                                    <ChevronRight className="h-4 w-4" /> : 
+                                    <ChevronDown className="h-4 w-4" />
+                                  }
+                                  <CardTitle className="text-left">{group.label}</CardTitle>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <Badge variant="secondary">{group.items.length} vouchers</Badge>
+                                  <span className="font-mono text-sm">{formatCurrency(fyTotal)}</span>
+                                </div>
+                              </div>
+                            </CardHeader>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <CardContent>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Voucher #</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Amount</TableHead>
+                                    <TableHead>Party</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {group.items.map((voucher) => (
+                                    <TableRow key={voucher.guid}>
+                                      <TableCell className="font-medium">{voucher.voucher_number}</TableCell>
+                                      <TableCell>{formatDate(voucher.date)}</TableCell>
+                                      <TableCell className="text-right">
+                                        <span className={voucher.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                                          {formatCurrency(Math.abs(voucher.amount))}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell>{voucher.party_ledger_name}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </CardContent>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -305,157 +561,6 @@ export default function AccountingPage() {
           </div>
         </CardContent>
       </Card>
-
-      <Dialog open={showVoucherDialog} onOpenChange={setShowVoucherDialog}>
-        <DialogContent className="max-w-6xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>
-              Vouchers for {selectedVoucherType?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Transaction history for this voucher type
-            </DialogDescription>
-          </DialogHeader>
-          <div className="overflow-auto max-h-[60vh]">
-            {vouchersLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-muted-foreground">Loading vouchers...</span>
-              </div>
-            ) : vouchers.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No vouchers found for this voucher type.</p>
-              </div>
-            ) : (
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                  <TabsTrigger value="fy">Fiscal Year</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="all" className="mt-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Voucher #</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Party</TableHead>
-                        <TableHead>Narration</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {vouchers.map((voucher) => (
-                        <TableRow key={voucher.guid}>
-                          <TableCell className="font-medium">
-                            {voucher.voucher_number}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {voucher.voucher_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              {formatDate(voucher.date)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className={voucher.amount >= 0 ? "text-green-600" : "text-red-600"}>
-                              {formatCurrency(Math.abs(voucher.amount))}
-                            </span>
-                          </TableCell>
-                          <TableCell>{voucher.party_ledger_name}</TableCell>
-                          <TableCell className="max-w-xs truncate">
-                            {voucher.narration}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-
-                <TabsContent value="monthly" className="mt-0">
-                  {monthlyGroups.map((group) => (
-                    <div key={group.key} className="mb-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-semibold">{group.label}</h3>
-                        <Badge variant="secondary">{group.items.length} vouchers</Badge>
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Voucher #</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {group.items.map((voucher) => (
-                            <TableRow key={voucher.guid}>
-                              <TableCell className="font-medium">{voucher.voucher_number}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{voucher.voucher_type}</Badge>
-                              </TableCell>
-                              <TableCell>{formatDate(voucher.date)}</TableCell>
-                              <TableCell className="text-right">
-                                <span className={voucher.amount >= 0 ? "text-green-600" : "text-red-600"}>
-                                  {formatCurrency(Math.abs(voucher.amount))}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ))}
-                </TabsContent>
-
-                <TabsContent value="fy" className="mt-0">
-                  {fiscalYearGroups.map((group) => (
-                    <div key={group.key} className="mb-6">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-semibold">{group.label}</h3>
-                        <Badge variant="secondary">{group.items.length} vouchers</Badge>
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Voucher #</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {group.items.map((voucher) => (
-                            <TableRow key={voucher.guid}>
-                              <TableCell className="font-medium">{voucher.voucher_number}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{voucher.voucher_type}</Badge>
-                              </TableCell>
-                              <TableCell>{formatDate(voucher.date)}</TableCell>
-                              <TableCell className="text-right">
-                                <span className={voucher.amount >= 0 ? "text-green-600" : "text-red-600"}>
-                                  {formatCurrency(Math.abs(voucher.amount))}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ))}
-                </TabsContent>
-              </Tabs>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
