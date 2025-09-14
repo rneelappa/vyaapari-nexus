@@ -103,7 +103,7 @@ export default function VoucherManagement() {
   useEffect(() => {
     fetchVouchers();
     checkHealth();
-  }, []);
+  }, [fetchVouchers, checkHealth]);
 
   // Auto-search on filter changes
   useEffect(() => {
