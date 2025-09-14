@@ -692,27 +692,107 @@ export default function VoucherManagement() {
                     <CardTitle className="text-base">Ledger Entries</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {selectedVoucher.entries.map((entry: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium">{entry.ledgerName}</p>
-                            {entry.isDeemedPositive && (
-                              <Badge variant="outline" className="text-xs mt-1">Deemed Positive</Badge>
+                    {(() => {
+                      const party = selectedVoucher.entries.find((e: any) => e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName);
+                      const others = selectedVoucher.entries.filter((e: any) => !(e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName));
+
+                      const totalDebit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                      const totalCredit = selectedVoucher.entries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
+                      const grandTotal = Math.max(totalDebit, totalCredit);
+                      const totalInventoryValue = (selectedVoucher.inventoryEntries || []).reduce((s: number, i: any) => s + (i.amount || 0), 0);
+                      const otherLedgersTotal = others.reduce((s: number, e: any) => s + Math.abs(e.amount || 0), 0);
+                      const partyAmount = party ? Math.abs(party.amount || 0) : 0;
+                      const inventoryPlusOthers = totalInventoryValue + otherLedgersTotal;
+                      const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+
+                      const t = (selectedVoucher.type || '').toLowerCase();
+                      const expectedAccountType = t.includes('sales') ? 'Sales Account' : t.includes('purchase') ? 'Purchase Account' : (t.includes('payment') || t.includes('receipt') || t.includes('contra')) ? 'Bank/Cash Account' : 'Account';
+                      const needsTwoLedgers = ['sales','purchase','payment','receipt'].some(k => t.includes(k));
+                      const mainAccount = others.find((e: any) => {
+                        const name = (e.ledgerName || '').toLowerCase();
+                        return name.includes('sales') || name.includes('purchase') || name.includes('bank') || name.includes('cash');
+                      });
+                      const hasBothRequiredLedgers = !!party && others.length > 0;
+                      const partyBalanceMatch = Math.abs(partyAmount - inventoryPlusOthers) < 0.01;
+
+                      return (
+                        <div className="space-y-3">
+                          {/* Party first */}
+                          {party && (
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-border">
+                              <div className="flex-1">
+                                <p className="font-semibold">{party.ledgerName}</p>
+                                <Badge variant="default" className="text-xs mt-1">Party Account</Badge>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold">{formatAmount(Math.abs(party.amount || 0))}</p>
+                                <p className="text-xs text-muted-foreground">{(party.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Warning if main account missing */}
+                          {needsTwoLedgers && others.length === 0 && (
+                            <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm">
+                              Missing {expectedAccountType} - required for {selectedVoucher.type} voucher
+                            </div>
+                          )}
+
+                          {/* Other ledgers */}
+                          {others.map((entry: any, index: number) => (
+                            <div key={index} className={`flex items-center justify-between p-3 rounded-lg bg-muted ${mainAccount && mainAccount.ledgerName === entry.ledgerName ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}>
+                              <div className="flex-1">
+                                <p className="font-medium">
+                                  {entry.ledgerName}
+                                  {mainAccount && mainAccount.ledgerName === entry.ledgerName && (
+                                    <Badge variant="secondary" className="ml-2 text-xs">Main Account</Badge>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
+                                <p className="text-xs text-muted-foreground">{(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
+                              </div>
+                            </div>
+                          ))}
+
+                          <Separator />
+                          {/* Totals */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                            <div>
+                              <div className="text-sm text-muted-foreground">Total Debit</div>
+                              <div className="text-xl font-semibold">{formatAmount(totalDebit)}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">Total Credit</div>
+                              <div className="text-xl font-semibold">{formatAmount(totalCredit)}</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-muted-foreground">Grand Total</div>
+                              <div className="text-xl font-semibold text-primary">{formatAmount(grandTotal)}</div>
+                            </div>
+                          </div>
+
+                          {/* Validation */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className={`h-3 w-3 rounded-full ${isBalanced ? 'bg-green-500' : 'bg-red-500'}`} />
+                              <span className="text-sm">Ledger Balance: {isBalanced ? 'Balanced' : 'Unbalanced'}</span>
+                            </div>
+                            {party && (
+                              <div className="flex items-center gap-2">
+                                <div className={`h-3 w-3 rounded-full ${partyBalanceMatch ? 'bg-green-500' : 'bg-red-500'}`} />
+                                <span className="text-sm">Party vs Inventory+Others: {partyBalanceMatch ? 'Balanced' : 'Mismatch'}</span>
+                              </div>
                             )}
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}
-                            </p>
-                          </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               )}
+
 
               {/* Inventory Entries */}
               {selectedVoucher.inventoryEntries && selectedVoucher.inventoryEntries.length > 0 && (
