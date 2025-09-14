@@ -236,7 +236,7 @@ const VoucherManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -262,47 +262,47 @@ const VoucherManagement: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Vouchers</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <Card className="p-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Total Vouchers</CardTitle>
+            <FileText className="h-3 w-3 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{voucherCount}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-0">
+            <div className="text-xl font-bold">{voucherCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               {totalCount > 0 ? `Showing ${vouchers.length} of ${totalCount.toLocaleString()} total` : 'No vouchers'}
             </p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+        <Card className="p-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Total Amount</CardTitle>
+            <Calendar className="h-3 w-3 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-0">
+            <div className="text-xl font-bold">
               {new Intl.NumberFormat('en-IN', {
                 style: 'currency',
                 currency: 'INR'
               }).format(totalAmount)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mt-1">
               Filtered vouchers total
             </p>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Voucher Types</CardTitle>
-            <Badge variant="secondary">{Object.keys(typeBreakdown).length}</Badge>
+        <Card className="p-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+            <CardTitle className="text-xs font-medium text-muted-foreground">Voucher Types</CardTitle>
+            <Badge variant="secondary" className="text-xs">{Object.keys(typeBreakdown).length}</Badge>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="space-y-1">
               {Object.entries(typeBreakdown).slice(0, 3).map(([type, count]) => (
-                <div key={type} className="flex justify-between text-sm">
+                <div key={type} className="flex justify-between text-xs">
                   <span className="truncate">{type}</span>
                   <span className="font-medium">{count}</span>
                 </div>
@@ -318,16 +318,16 @@ const VoucherManagement: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+      <Card className="p-4">
+        <CardHeader className="p-0 pb-3">
+          <CardTitle className="text-sm">Filters</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="space-y-2">
-              <Label>Voucher Type</Label>
+        <CardContent className="p-0">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Voucher Type</Label>
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
@@ -339,47 +339,51 @@ const VoucherManagement: React.FC = () => {
               </Select>
             </div>
             
-            <div className="space-y-2">
-              <Label>Date From</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Date From</Label>
               <Input
                 type="date"
+                className="h-8 text-xs"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Date To</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Date To</Label>
               <Input
                 type="date"
+                className="h-8 text-xs"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Amount From</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Amount From</Label>
               <Input
                 type="number"
                 placeholder="0"
+                className="h-8 text-xs"
                 value={amountFrom}
                 onChange={(e) => setAmountFrom(e.target.value)}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Amount To</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Amount To</Label>
               <Input
                 type="number"
                 placeholder="0"
+                className="h-8 text-xs"
                 value={amountTo}
                 onChange={(e) => setAmountTo(e.target.value)}
               />
             </div>
           </div>
           
-          <div className="flex justify-end mt-4">
-            <Button variant="outline" onClick={clearFilters}>
+          <div className="flex justify-end mt-3">
+            <Button variant="outline" size="sm" onClick={clearFilters}>
               Clear Filters
             </Button>
           </div>
@@ -400,7 +404,7 @@ const VoucherManagement: React.FC = () => {
 
       {/* Load More Section */}
       {hasMore && vouchers.length > 0 && (
-        <div className="flex justify-center py-6">
+        <div className="flex justify-center py-4">
           <Button 
             onClick={loadMoreVouchers} 
             variant="outline" 
@@ -426,7 +430,7 @@ const VoucherManagement: React.FC = () => {
 
       {/* End of Results Message */}
       {!hasMore && vouchers.length > 0 && (
-        <div className="text-center py-6 text-muted-foreground">
+        <div className="text-center py-4 text-muted-foreground">
           <p>You've reached the end of all vouchers ({totalCount.toLocaleString()} total)</p>
         </div>
       )}
