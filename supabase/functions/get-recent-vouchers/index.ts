@@ -229,6 +229,22 @@ serve(async (req) => {
           };
         });
 
+        // Filter vouchers by the requested date range since Tally doesn't seem to filter properly
+        const filteredTallyVouchers = tallyVouchers.filter(voucher => {
+          if (!voucher.date) return false;
+          
+          const voucherDate = voucher.date;
+          const isInRange = voucherDate >= startDate && voucherDate <= endDate;
+          
+          if (!isInRange) {
+            console.log(`Filtering out voucher ${voucher.voucher_number} with date ${voucherDate} (outside range ${startDate} to ${endDate})`);
+          }
+          
+          return isInRange;
+        });
+
+        console.log(`Tally returned ${tallyVouchers.length} vouchers, ${filteredTallyVouchers.length} are within date range ${startDate} to ${endDate}`);
+
         tallyInfo = {
           requestedCompany: tallyCompany,
           url: division.tally_url,
@@ -242,9 +258,9 @@ serve(async (req) => {
         console.log('Tally fallback result:', { ...tallyInfo, responseXml: `len=${xmlText.length}` });
         console.log('Parsed Tally vouchers:', tallyVouchers.length);
         
-        // Use Tally vouchers if database is empty
-        if (tallyVouchers.length > 0) {
-          finalVouchers = tallyVouchers;
+        // Use filtered Tally vouchers if database is empty
+        if (filteredTallyVouchers.length > 0) {
+          finalVouchers = filteredTallyVouchers;
         }
         
       } catch (tallyError) {
