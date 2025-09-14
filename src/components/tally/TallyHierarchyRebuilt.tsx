@@ -50,7 +50,8 @@ const tallyMenuStructure = {
     icon: Settings,
     items: [
       { name: "Sync Tally", path: "/tally/utilities/sync", icon: RefreshCw },
-      { name: "Sync Jobs Management", path: "/tally/utilities/sync-jobs", icon: Database }
+      { name: "Sync Jobs Management", path: "/tally/utilities/sync-jobs", icon: Database },
+      { name: "Voucher Views", path: "/tally/utilities/voucher-views", icon: Settings }
     ]
   }
 };

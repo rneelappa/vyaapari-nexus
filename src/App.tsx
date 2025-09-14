@@ -48,6 +48,7 @@ import TallySyncPage from "@/pages/tally/transactions/TallySyncPage";
 import TallySyncLogs from "@/pages/tally/utilities/TallySyncLogs";
 import SyncJobsManagement from "@/pages/tally/utilities/SyncJobsManagement";
 import VoucherManagement from "@/pages/tally/transactions/VoucherManagement";
+import { VoucherViewsPage } from "@/pages/tally/utilities/VoucherViewsPage";
 
 const queryClient = new QueryClient();
 
@@ -481,6 +482,14 @@ function App() {
                   <AuthGuard>
                     <MainLayout>
                       <TallySyncLogs />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/company/:companyId/division/:divisionId/tally/utilities/voucher-views" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <VoucherViewsPage />
                     </MainLayout>
                   </AuthGuard>
                 } />

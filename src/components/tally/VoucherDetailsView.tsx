@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Edit } from 'lucide-react';
-import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
+import { VoucherViewRenderer } from './VoucherViewRenderer';
 
 interface VoucherEntry {
   guid: string;
@@ -45,11 +45,12 @@ export function VoucherDetailsView({ voucher, onBack, onEdit, companyId, divisio
         </Button>
       </div>
 
-      {/* Enhanced Voucher Details */}
+      {/* Voucher View Renderer */}
       <div className="flex-1 overflow-auto">
         {companyId && divisionId ? (
-          <EnhancedVoucherDetails
+          <VoucherViewRenderer
             voucherGuid={voucher.guid}
+            voucherType={voucher.voucher_type}
             companyId={companyId}
             divisionId={divisionId}
             onClose={onBack}
