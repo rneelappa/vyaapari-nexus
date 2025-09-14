@@ -15,6 +15,7 @@ import { AccountGroupsSelector } from '@/components/tally/AccountGroupsSelector'
 import { LedgerFilter } from '@/components/tally/LedgerFilter';
 import { VoucherTypesFilter } from '@/components/tally/VoucherTypesFilter';
 import { GodownsFilter } from '@/components/tally/GodownsFilter';
+import { InventoryFilter } from '@/components/tally/InventoryFilter';
 
 interface VoucherEntry {
   guid: string;
@@ -53,6 +54,7 @@ const VoucherManagement: React.FC = () => {
   const [selectedLedger, setSelectedLedger] = useState<string | null>(null);
   const [selectedVoucherType, setSelectedVoucherType] = useState<string | null>(null);
   const [selectedGodown, setSelectedGodown] = useState<string | null>(null);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [amountFrom, setAmountFrom] = useState<string>('');
@@ -66,7 +68,7 @@ const VoucherManagement: React.FC = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [vouchers, selectedType, selectedGroup, selectedLedger, selectedVoucherType, selectedGodown, dateFrom, dateTo, amountFrom, amountTo]);
+  }, [vouchers, selectedType, selectedGroup, selectedLedger, selectedVoucherType, selectedGodown, selectedInventoryItem, dateFrom, dateTo, amountFrom, amountTo]);
 
   const fetchVouchers = async (reset: boolean = false) => {
     if (!companyId || !divisionId) return;
@@ -191,6 +193,19 @@ const VoucherManagement: React.FC = () => {
       });
     }
 
+    // Inventory Item filter - filter by vouchers involving selected stock item
+    if (selectedInventoryItem) {
+      filtered = filtered.filter(v => {
+        const isStockVoucher = ['Sales', 'Purchase', 'Stock Journal', 'Physical Stock', 'Delivery Note', 'Receipt Note'].includes(v.voucher_type);
+        if (!isStockVoucher) return false;
+        
+        const voucherText = `${v.party_ledger_name || ''} ${v.narration || ''}`.toLowerCase();
+        const itemName = selectedInventoryItem.toLowerCase();
+        
+        return voucherText.includes(itemName) || voucherText.includes(itemName.split(' ')[0]);
+      });
+    }
+
     // Group filter - filter by ledgers that belong to the selected group
     if (selectedGroup) {
       try {
@@ -252,6 +267,7 @@ const VoucherManagement: React.FC = () => {
     setSelectedLedger(null);
     setSelectedVoucherType(null);
     setSelectedGodown(null);
+    setSelectedInventoryItem(null);
     setDateFrom('');
     setDateTo('');
     setAmountFrom('');
@@ -387,6 +403,17 @@ const VoucherManagement: React.FC = () => {
               divisionId={divisionId!}
               selectedGodown={selectedGodown}
               onGodownSelect={setSelectedGodown}
+              totalVouchers={totalCount}
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label className="text-xs whitespace-nowrap">Inventory:</Label>
+            <InventoryFilter
+              companyId={companyId!}
+              divisionId={divisionId!}
+              selectedItem={selectedInventoryItem}
+              onItemSelect={setSelectedInventoryItem}
               totalVouchers={totalCount}
             />
           </div>
