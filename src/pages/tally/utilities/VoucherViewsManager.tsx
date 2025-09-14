@@ -352,8 +352,8 @@ export function VoucherViewsManager({ companyId, divisionId }: VoucherViewsManag
 
       {/* View Builder Dialog */}
       <Dialog open={showBuilder} onOpenChange={setShowBuilder}>
-        <DialogContent className="max-w-6xl max-h-[90vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               {selectedView ? `Edit View: ${selectedView.name}` : 'Create New View'}
             </DialogTitle>
@@ -362,14 +362,18 @@ export function VoucherViewsManager({ companyId, divisionId }: VoucherViewsManag
             </DialogDescription>
           </DialogHeader>
           
-          <VoucherViewBuilder
-            view={selectedView}
-            companyId={companyId}
-            divisionId={divisionId}
-            voucherTypes={voucherTypes}
-            onSave={handleViewSaved}
-            onCancel={() => setShowBuilder(false)}
-          />
+          <ScrollArea className="flex-1 overflow-auto">
+            <div className="pr-4">
+              <VoucherViewBuilder
+                view={selectedView}
+                companyId={companyId}
+                divisionId={divisionId}
+                voucherTypes={voucherTypes}
+                onSave={handleViewSaved}
+                onCancel={() => setShowBuilder(false)}
+              />
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

@@ -316,7 +316,7 @@ export function VoucherViewBuilder({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-full overflow-auto">
       {/* Basic Information */}
       <Card>
         <CardHeader>
@@ -370,7 +370,7 @@ export function VoucherViewBuilder({
         <CardContent>
           <div className="space-y-2">
             <Label>Associated Voucher Types</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
               {voucherTypes.map((type) => (
                 <Badge
                   key={type}
@@ -400,7 +400,7 @@ export function VoucherViewBuilder({
         <CardHeader>
           <CardTitle>Tab Configuration</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-96 overflow-y-auto">
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="tabs">
               {(provided) => (
@@ -488,8 +488,8 @@ export function VoucherViewBuilder({
         </CardContent>
       </Card>
 
-      {/* Actions */}
-      <div className="flex items-center justify-end gap-2">
+      {/* Actions - Fixed at bottom */}
+      <div className="sticky bottom-0 bg-background border-t pt-4 flex items-center justify-end gap-2">
         <Button variant="outline" onClick={onCancel}>
           <X className="h-4 w-4 mr-2" />
           Cancel
