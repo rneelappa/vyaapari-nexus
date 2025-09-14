@@ -390,9 +390,10 @@ export function EnhancedVoucherDetails({
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="accounting">Accounting ({accountingEntries.length})</TabsTrigger>
+          <TabsTrigger value="ledgers">Ledgers ({(partyLedger ? 1 : 0) + relatedLedgers.length})</TabsTrigger>
           <TabsTrigger value="inventory">Inventory ({inventoryEntries.length})</TabsTrigger>
           <TabsTrigger value="addresses">Addresses ({addressDetails.length})</TabsTrigger>
           <TabsTrigger value="master-data">Master Data</TabsTrigger>
@@ -599,6 +600,163 @@ export function EnhancedVoucherDetails({
                         )}
                       </div>
                     ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Ledgers Tab */}
+        <TabsContent value="ledgers" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Receipt className="h-4 w-4" />
+                Associated Ledgers ({(partyLedger ? 1 : 0) + relatedLedgers.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!partyLedger && relatedLedgers.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No ledgers associated with this voucher.</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-96">
+                  <div className="space-y-4">
+                    {/* Party Ledger */}
+                    {partyLedger && (
+                      <div className="border rounded-lg p-4 bg-primary/5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-primary" />
+                            <h4 className="font-medium">Party Ledger</h4>
+                          </div>
+                          <Badge variant="default">Primary</Badge>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <h5 className="font-medium text-lg mb-2">{partyLedger.name}</h5>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Parent Group:</span>
+                                <span className="font-medium">{partyLedger.parent || 'None'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Opening Balance:</span>
+                                <span className="font-medium">{formatCurrency(partyLedger.opening_balance || 0)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Closing Balance:</span>
+                                <span className="font-medium">{formatCurrency(partyLedger.closing_balance || 0)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h5 className="font-medium mb-2">Contact Details</h5>
+                            <div className="space-y-1 text-sm">
+                              {partyLedger.mailing_name && (
+                                <div>
+                                  <span className="text-muted-foreground">Mailing Name:</span>
+                                  <p className="font-medium">{partyLedger.mailing_name}</p>
+                                </div>
+                              )}
+                              {partyLedger.email && (
+                                <div>
+                                  <span className="text-muted-foreground">Email:</span>
+                                  <p className="font-medium">{partyLedger.email}</p>
+                                </div>
+                              )}
+                              {partyLedger.ledger_contact && (
+                                <div>
+                                  <span className="text-muted-foreground">Contact:</span>
+                                  <p className="font-medium">{partyLedger.ledger_contact}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {partyLedger.mailing_address && (
+                          <div className="mt-3 pt-3 border-t">
+                            <span className="text-sm text-muted-foreground">Address:</span>
+                            <p className="text-sm bg-muted p-2 rounded mt-1">{partyLedger.mailing_address}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Related Ledgers */}
+                    {relatedLedgers.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-3 flex items-center gap-2">
+                          <Building className="h-4 w-4" />
+                          Related Ledgers ({relatedLedgers.length})
+                        </h4>
+                        
+                        <div className="grid gap-3">
+                          {relatedLedgers.map((ledger) => (
+                            <div key={ledger.guid} className="border rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium">{ledger.name}</h5>
+                                <Badge variant="outline">
+                                  {accountingEntries.find(entry => entry.ledger === ledger.name)?.is_deemed_positive ? "Credit" : "Debit"}
+                                </Badge>
+                              </div>
+                              
+                              <div className="grid md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Parent Group:</span>
+                                  <p className="font-medium">{ledger.parent || 'None'}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Opening Balance:</span>
+                                  <p className="font-medium">{formatCurrency(ledger.opening_balance || 0)}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Closing Balance:</span>
+                                  <p className="font-medium">{formatCurrency(ledger.closing_balance || 0)}</p>
+                                </div>
+                              </div>
+                              
+                              {/* Show transaction amount for this ledger */}
+                              {(() => {
+                                const relatedEntry = accountingEntries.find(entry => entry.ledger === ledger.name);
+                                return relatedEntry && (
+                                  <div className="mt-3 pt-3 border-t">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-muted-foreground">Transaction Amount:</span>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant={relatedEntry.is_deemed_positive ? "default" : "destructive"}>
+                                          {relatedEntry.is_deemed_positive ? "Credit" : "Debit"}
+                                        </Badge>
+                                        <span className="font-medium">{formatCurrency(relatedEntry.amount, relatedEntry.currency)}</span>
+                                      </div>
+                                    </div>
+                                    {relatedEntry.cost_centre && (
+                                      <div className="mt-1 text-sm">
+                                        <span className="text-muted-foreground">Cost Centre:</span>
+                                        <span className="ml-2">{relatedEntry.cost_centre}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                              
+                              {ledger.email && (
+                                <div className="mt-2 text-sm">
+                                  <span className="text-muted-foreground">Email:</span>
+                                  <span className="ml-2">{ledger.email}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               )}
