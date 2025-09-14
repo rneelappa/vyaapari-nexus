@@ -28,6 +28,7 @@ interface ViewConfig {
   tabs: TabConfig[];
   theme?: string;
   layout?: string;
+  name?: string;
 }
 
 interface VoucherViewRendererProps {
@@ -143,14 +144,20 @@ export function VoucherViewRenderer({
     .filter(tab => tab.enabled)
     .sort((a, b) => a.order - b.order);
 
+  // Get view name from config or fallback
+  const viewName = viewConfig.name || `${voucherType} Custom View`;
+
   return (
     <div className="p-6 space-y-6">
-      {/* Custom View Header */}
-      <div className="flex items-center gap-2">
-        <Badge variant="outline">Custom View</Badge>
-        <span className="text-sm text-muted-foreground">
+      {/* View Header with prominent name */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">{viewName}</h1>
+          <Badge variant="outline">Custom View</Badge>
+        </div>
+        <p className="text-sm text-muted-foreground">
           Displaying {voucherType} with custom layout
-        </span>
+        </p>
       </div>
 
       {/* Custom Tabs */}
@@ -170,14 +177,19 @@ export function VoucherViewRenderer({
 
         {enabledTabs.map((tab) => (
           <TabsContent key={tab.id} value={tab.id}>
-            {/* For now, we'll render the master view content for each tab */}
-            {/* In a full implementation, each tab would have its own specialized component */}
-            <EnhancedVoucherDetails
-              voucherGuid={voucherGuid}
-              companyId={companyId}
-              divisionId={divisionId}
-              onClose={onClose}
-            />
+            {/* For now, show overview content for each tab */}
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground mb-4">
+                Showing {tab.name} content for voucher {voucherGuid}
+              </div>
+              {/* This is a placeholder - in full implementation, each tab would show different content */}
+              <div className="p-4 border rounded-lg bg-muted/50">
+                <p>Content for {tab.name} tab will be implemented here.</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Tab sections: {tab.sections?.join(', ') || 'None configured'}
+                </p>
+              </div>
+            </div>
           </TabsContent>
         ))}
       </Tabs>
