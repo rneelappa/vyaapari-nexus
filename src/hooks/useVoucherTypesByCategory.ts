@@ -54,24 +54,77 @@ export const useVoucherTypesByCategory = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch voucher types
-      const { data: voucherTypesData, error: voucherTypesError } = await supabase
+      // Fetch voucher types - first try with company and division filters
+      let { data: voucherTypesData, error: voucherTypesError } = await supabase
         .from('mst_vouchertype')
         .select('guid, name, parent, affects_stock, company_id, division_id')
         .eq('company_id', companyId)
         .eq('division_id', divisionId);
+
+      // If no data found with exact match, try with just company_id
+      if (!voucherTypesData || voucherTypesData.length === 0) {
+        const { data: companyData, error: companyError } = await supabase
+          .from('mst_vouchertype')
+          .select('guid, name, parent, affects_stock, company_id, division_id')
+          .eq('company_id', companyId);
+        
+        if (!companyError) {
+          voucherTypesData = companyData;
+          voucherTypesError = null;
+        }
+      }
+
+      // If still no data, try without any filters
+      if (!voucherTypesData || voucherTypesData.length === 0) {
+        const { data: allData, error: allError } = await supabase
+          .from('mst_vouchertype')
+          .select('guid, name, parent, affects_stock, company_id, division_id');
+        
+        if (!allError) {
+          voucherTypesData = allData;
+          voucherTypesError = null;
+        }
+      }
 
       if (voucherTypesError) throw voucherTypesError;
 
       // Fetch voucher counts for each type
       const voucherTypesWithCounts = await Promise.all(
         (voucherTypesData || []).map(async (vt) => {
-          const { count, error: countError } = await supabase
+          // Try to get count with company and division filter first
+          let { count, error: countError } = await supabase
             .from('tally_trn_voucher')
             .select('*', { count: 'exact', head: true })
             .eq('voucher_type', vt.name)
             .eq('company_id', companyId)
             .eq('division_id', divisionId);
+
+          // If no results, try with just company_id
+          if (count === 0 || countError) {
+            const { count: companyCount, error: companyCountError } = await supabase
+              .from('tally_trn_voucher')
+              .select('*', { count: 'exact', head: true })
+              .eq('voucher_type', vt.name)
+              .eq('company_id', companyId);
+            
+            if (!companyCountError) {
+              count = companyCount;
+              countError = null;
+            }
+          }
+
+          // If still no results, try without filters (just voucher type)
+          if (count === 0 || countError) {
+            const { count: allCount, error: allCountError } = await supabase
+              .from('tally_trn_voucher')
+              .select('*', { count: 'exact', head: true })
+              .eq('voucher_type', vt.name);
+            
+            if (!allCountError) {
+              count = allCount;
+              countError = null;
+            }
+          }
 
           if (countError) {
             console.warn(`Error counting vouchers for ${vt.name}:`, countError);
