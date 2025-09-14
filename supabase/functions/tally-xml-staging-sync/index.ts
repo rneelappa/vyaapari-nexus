@@ -1,10 +1,11 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
-import { DOMParser } from 'https://deno.land/x/deno_dom@v0.1.45/deno-dom-wasm.ts';
+import { XMLParser } from 'https://esm.sh/fast-xml-parser@4.3.6';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface TallyRequest {
@@ -29,6 +30,7 @@ interface TallyApiResponse {
     request: any;
     response: any;
     parseTime: number;
+    timeline?: Array<{ step: string; info?: any; at: string }>;
   };
 }
 
@@ -147,6 +149,7 @@ serve(async (req) => {
           request: { url: division.tally_url, voucherGuid, requestBody: tallyRequest },
           response: errInfo,
           parseTime: 0,
+          timeline
         }
       };
 
@@ -275,7 +278,7 @@ serve(async (req) => {
         parseTime: 0,
         request: undefined,
         response: undefined,
-        timeline
+        timeline: []
       }
     };
 
@@ -300,59 +303,63 @@ async function parseAndStageXml(
     timestamp: new Date().toISOString()
   });
 
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+  try {
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "",
+      textNodeName: "#text",
+      parseAttributeValue: true,
+      trimValues: true
+    });
 
-  if (!xmlDoc || xmlDoc.querySelector('parsererror')) {
-    console.error('❌ XML PARSING FAILED: Invalid XML response from Tally');
-    throw new Error('Invalid XML response from Tally');
+    const parsedXml = parser.parse(xmlContent);
+    
+    if (!parsedXml) {
+      console.error('❌ XML PARSING FAILED: Invalid XML response from Tally');
+      throw new Error('Invalid XML response from Tally');
+    }
+
+    console.log('✅ XML PARSED SUCCESSFULLY, PROCESSING NODES...');
+
+    // Recursively process JSON structure
+    let recordCount = 0;
+    await processJsonNode(
+      supabase,
+      parsedXml,
+      null, // parent_id
+      '', // path
+      0, // position
+      companyId,
+      divisionId,
+      0 // depth
+    );
+
+    console.log('📊 COUNTING STAGING RECORDS...');
+
+    // Count records in staging
+    const { count } = await supabase
+      .from('xml_staging')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('division_id', divisionId);
+
+    console.log('📋 STAGING RECORDS COUNT:', {
+      totalRecords: count || 0,
+      companyId,
+      divisionId,
+      timestamp: new Date().toISOString()
+    });
+
+    return count || 0;
+  } catch (error) {
+    console.error('❌ XML PARSING ERROR:', error);
+    throw new Error(`XML parsing failed: ${error.message}`);
   }
-
-  console.log('✅ XML PARSED SUCCESSFULLY, PROCESSING NODES...');
-
-  let recordCount = 0;
-  const rootElement = xmlDoc.documentElement;
-
-  console.log('🌳 ROOT ELEMENT:', {
-    tagName: rootElement.tagName,
-    childElementsCount: rootElement.children.length,
-    timestamp: new Date().toISOString()
-  });
-
-  // Recursively process XML nodes
-  await processXmlNode(
-    supabase,
-    rootElement,
-    null, // parent_id
-    '', // path
-    0, // position
-    companyId,
-    divisionId,
-    0 // depth
-  );
-
-  console.log('📊 COUNTING STAGING RECORDS...');
-
-  // Count records in staging
-  const { count } = await supabase
-    .from('xml_staging')
-    .select('*', { count: 'exact', head: true })
-    .eq('company_id', companyId)
-    .eq('division_id', divisionId);
-
-  console.log('📋 STAGING RECORDS COUNT:', {
-    totalRecords: count || 0,
-    companyId,
-    divisionId,
-    timestamp: new Date().toISOString()
-  });
-
-  return count || 0;
 }
 
-async function processXmlNode(
+async function processJsonNode(
   supabase: any,
-  element: Element,
+  node: any,
   parentId: string | null,
   currentPath: string,
   position: number,
@@ -361,61 +368,90 @@ async function processXmlNode(
   depth: number
 ): Promise<string | null> {
   try {
-    const tagName = element.tagName;
-    const path = currentPath ? `${currentPath}/${tagName}` : tagName;
-    
-    // Get attributes
-    const attributes: Record<string, string> = {};
-    for (let i = 0; i < element.attributes.length; i++) {
-      const attr = element.attributes[i];
-      attributes[attr.name] = attr.value;
-    }
-
-    // Get text content (only direct text, not from child elements)
-    let textContent = '';
-    for (const child of element.childNodes) {
-      if (child.nodeType === 3) { // Text node
-        textContent += child.textContent?.trim() || '';
-      }
-    }
-
-    // Insert node into staging table
-    const { data, error } = await supabase.rpc('insert_xml_node', {
-      p_tag_name: tagName,
-      p_tag_value: textContent || null,
-      p_attributes: Object.keys(attributes).length > 0 ? attributes : null,
-      p_path: path,
-      p_position: position,
-      p_parent_id: parentId,
-      p_company_id: companyId,
-      p_division_id: divisionId
-    });
-
-    if (error) {
-      console.error('Error inserting XML node:', error);
+    if (typeof node !== 'object' || node === null) {
       return null;
     }
 
-    const nodeId = data;
+    for (const [key, value] of Object.entries(node)) {
+      if (key.startsWith('#')) continue; // Skip text nodes and attributes at this level
+      
+      const path = currentPath ? `${currentPath}/${key}` : key;
+      
+      // Extract attributes if they exist
+      let attributes: Record<string, any> = {};
+      let textContent = '';
+      let children: any = {};
 
-    // Process child elements
-    const childElements = Array.from(element.children);
-    for (let i = 0; i < childElements.length; i++) {
-      await processXmlNode(
-        supabase,
-        childElements[i],
-        nodeId,
-        path,
-        i,
-        companyId,
-        divisionId,
-        depth + 1
-      );
+      if (typeof value === 'object' && value !== null) {
+        // Separate attributes, text content, and child elements
+        for (const [subKey, subValue] of Object.entries(value)) {
+          if (subKey === '#text') {
+            textContent = String(subValue || '').trim();
+          } else if (subKey.startsWith('@_')) {
+            // Attribute (fast-xml-parser uses @_ prefix)
+            attributes[subKey.substring(2)] = subValue;
+          } else if (!subKey.startsWith('#')) {
+            children[subKey] = subValue;
+          }
+        }
+      } else {
+        textContent = String(value || '').trim();
+      }
+
+      // Insert node into staging table
+      const { data, error } = await supabase.rpc('insert_xml_node', {
+        p_tag_name: key,
+        p_tag_value: textContent || null,
+        p_attributes: Object.keys(attributes).length > 0 ? attributes : null,
+        p_path: path,
+        p_position: position,
+        p_parent_id: parentId,
+        p_company_id: companyId,
+        p_division_id: divisionId
+      });
+
+      if (error) {
+        console.error('Error inserting XML node:', error);
+        continue;
+      }
+
+      const nodeId = data;
+
+      // Process child elements
+      let childPosition = 0;
+      for (const [childKey, childValue] of Object.entries(children)) {
+        if (Array.isArray(childValue)) {
+          // Handle arrays of elements
+          for (let i = 0; i < childValue.length; i++) {
+            await processJsonNode(
+              supabase,
+              { [childKey]: childValue[i] },
+              nodeId,
+              path,
+              childPosition++,
+              companyId,
+              divisionId,
+              depth + 1
+            );
+          }
+        } else {
+          await processJsonNode(
+            supabase,
+            { [childKey]: childValue },
+            nodeId,
+            path,
+            childPosition++,
+            companyId,
+            divisionId,
+            depth + 1
+          );
+        }
+      }
     }
 
-    return nodeId;
+    return null;
   } catch (error) {
-    console.error('Error processing XML node:', error);
+    console.error('Error processing JSON node:', error);
     return null;
   }
 }

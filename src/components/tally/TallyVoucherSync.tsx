@@ -46,6 +46,7 @@ interface TallyDebugResponse {
     request: any;
     response: any;
     parseTime: number;
+    timeline?: Array<{ step: string; info?: any; at: string }>;
   };
 }
 
@@ -470,14 +471,38 @@ export function TallyVoucherSync({
                            </div>
                          </div>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
 
-          <Separator />
+                      {/* Timeline */}
+                      {tallyData.debugInfo.timeline && tallyData.debugInfo.timeline.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Processing Timeline:</p>
+                          <div className="bg-muted p-3 rounded text-xs font-mono max-h-60 overflow-y-auto">
+                            {tallyData.debugInfo.timeline.map((entry, index) => (
+                              <div key={index} className="mb-2 last:mb-0">
+                                <div className="flex justify-between items-start">
+                                  <span className="font-medium">{entry.step}:</span>
+                                  <span className="text-muted-foreground">{new Date(entry.at).toLocaleTimeString()}</span>
+                                </div>
+                                {entry.info && (
+                                  <div className="ml-2 mt-1 text-muted-foreground">
+                                    <pre className="whitespace-pre-wrap text-xs">
+                                      {JSON.stringify(entry.info, null, 2)}
+                                    </pre>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                     </div>
+                   </CardContent>
+                 </Card>
+               )}
+             </div>
+           )}
+
+           <Separator />
 
           <DialogFooter className="flex items-center justify-between">
             <Button
