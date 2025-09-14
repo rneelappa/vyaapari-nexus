@@ -25,6 +25,7 @@ import { VoucherAccountingEntries } from './VoucherAccountingEntries';
 import { VoucherAssociatedLedgers } from './VoucherAssociatedLedgers';
 import { VoucherInventoryDetails } from './VoucherInventoryDetails';
 import { VoucherAddressDetails } from './VoucherAddressDetails';
+import { VoucherMasterData } from './VoucherMasterData';
 
 interface TabConfig {
   id: string;
@@ -344,6 +345,12 @@ export function VoucherViewRenderer({
               />
             ) : (tab.id === 'addresses' || tab.name === 'Addresses') ? (
               <VoucherAddressDetails
+                voucherGuid={voucherGuid}
+                companyId={companyId}
+                divisionId={divisionId}
+              />
+            ) : (tab.id === 'master-data' || tab.name === 'Master Data') ? (
+              <VoucherMasterData
                 voucherGuid={voucherGuid}
                 companyId={companyId}
                 divisionId={divisionId}
