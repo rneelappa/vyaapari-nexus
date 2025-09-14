@@ -3533,66 +3533,6 @@ export type Database = {
         }
         Relationships: []
       }
-      trn_voucher: {
-        Row: {
-          _party_name: string
-          _voucher_type: string
-          company_id: string
-          date: string
-          division_id: string
-          guid: string
-          is_accounting_voucher: number | null
-          is_inventory_voucher: number | null
-          is_invoice: number | null
-          is_order_voucher: number | null
-          narration: string
-          party_name: string
-          place_of_supply: string
-          reference_date: string | null
-          reference_number: string
-          voucher_number: string
-          voucher_type: string
-        }
-        Insert: {
-          _party_name?: string
-          _voucher_type?: string
-          company_id: string
-          date: string
-          division_id: string
-          guid: string
-          is_accounting_voucher?: number | null
-          is_inventory_voucher?: number | null
-          is_invoice?: number | null
-          is_order_voucher?: number | null
-          narration?: string
-          party_name: string
-          place_of_supply: string
-          reference_date?: string | null
-          reference_number?: string
-          voucher_number?: string
-          voucher_type: string
-        }
-        Update: {
-          _party_name?: string
-          _voucher_type?: string
-          company_id?: string
-          date?: string
-          division_id?: string
-          guid?: string
-          is_accounting_voucher?: number | null
-          is_inventory_voucher?: number | null
-          is_invoice?: number | null
-          is_order_voucher?: number | null
-          narration?: string
-          party_name?: string
-          place_of_supply?: string
-          reference_date?: string | null
-          reference_number?: string
-          voucher_number?: string
-          voucher_type?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           company_id: string | null
