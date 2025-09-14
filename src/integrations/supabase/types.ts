@@ -3337,6 +3337,116 @@ export type Database = {
           },
         ]
       }
+      voucher_type_views: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          division_id: string | null
+          id: string
+          voucher_type_name: string
+          voucher_view_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          division_id?: string | null
+          id?: string
+          voucher_type_name: string
+          voucher_view_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          division_id?: string | null
+          id?: string
+          voucher_type_name?: string
+          voucher_view_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_type_views_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_type_views_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_type_views_voucher_view_id_fkey"
+            columns: ["voucher_view_id"]
+            isOneToOne: false
+            referencedRelation: "voucher_views"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voucher_views: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          division_id: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string
+          view_config: Json
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          division_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          updated_at?: string
+          view_config: Json
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          division_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string
+          view_config?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_views_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_views_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "voucher_views_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           assigned_at: string

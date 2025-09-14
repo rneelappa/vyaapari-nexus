@@ -66,12 +66,10 @@ export function VoucherViewRenderer({
   const fetchVoucherView = async () => {
     setLoading(true);
     try {
-      // First, try to find a specific view for this voucher type
+      // First, try to find a specific view for this voucher type - simplified without relations
       const { data: typeViewData, error: typeViewError } = await supabase
         .from('voucher_type_views' as any)
-        .select(`
-          voucher_view:voucher_views(*)
-        `)
+        .select('*')
         .eq('voucher_type_name', voucherType)
         .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
         .maybeSingle();
@@ -80,7 +78,22 @@ export function VoucherViewRenderer({
         console.warn('Error fetching voucher type view:', typeViewError);
       }
 
-      let selectedView = typeViewData ? (typeViewData as any).voucher_view : null;
+      let selectedView = null;
+
+      // If we found a type association, fetch the actual view
+      if (typeViewData && (typeViewData as any).voucher_view_id) {
+        const { data: viewData, error: viewError } = await supabase
+          .from('voucher_views' as any)
+          .select('*')
+          .eq('id', (typeViewData as any).voucher_view_id)
+          .maybeSingle();
+
+        if (viewError) {
+          console.warn('Error fetching associated view:', viewError);
+        } else {
+          selectedView = viewData;
+        }
+      }
 
       // If no specific view found, try to find a default view
       if (!selectedView) {

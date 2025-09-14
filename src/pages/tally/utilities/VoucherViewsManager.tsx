@@ -82,13 +82,10 @@ export function VoucherViewsManager({ companyId, divisionId }: VoucherViewsManag
 
       if (viewsError) throw viewsError;
 
-      // Fetch voucher type associations
+      // Fetch voucher type associations - simplified without relations
       const { data: typeViewsData, error: typeViewsError } = await supabase
         .from('voucher_type_views' as any)
-        .select(`
-          *,
-          voucher_view:voucher_views(*)
-        `)
+        .select('*')
         .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
 
       if (typeViewsError) throw typeViewsError;
@@ -165,8 +162,8 @@ export function VoucherViewsManager({ companyId, divisionId }: VoucherViewsManag
 
   const getAssociatedTypes = (viewId: string) => {
     return typeViews
-      .filter(tv => tv.voucher_view_id === viewId)
-      .map(tv => tv.voucher_type_name);
+      .filter((tv: any) => tv.voucher_view_id === viewId)
+      .map((tv: any) => tv.voucher_type_name);
   };
 
   if (loading) {
