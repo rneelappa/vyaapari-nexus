@@ -59,6 +59,8 @@ export function TallyVoucherSync({
   const [showDialog, setShowDialog] = useState(false);
   const [tallyData, setTallyData] = useState<TallyDebugResponse | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string>("");
+  const TIMEOUT_MS = 30000; // 30s client-side timeout to avoid endless waiting
 
   const fetchTallyData = async () => {
     setLoading(true);
@@ -109,6 +111,7 @@ export function TallyVoucherSync({
   const updateFromTally = async () => {
     // Open popup immediately with loading state
     setUpdating(true);
+    setStatusMessage('Calling Tally API...');
     setTallyData({
       success: false,
       statistics: {
@@ -120,8 +123,12 @@ export function TallyVoucherSync({
     });
     setShowDialog(true);
 
+    const slowTimer = setTimeout(() => {
+      setStatusMessage('Still processing... This may take up to a minute depending on Tally.');
+    }, 10000);
+
     try {
-      const { data, error } = await supabase.functions.invoke('tally-xml-staging-sync', {
+      const invokePromise = supabase.functions.invoke('tally-xml-staging-sync', {
         body: {
           voucherGuid,
           companyId,
@@ -130,14 +137,22 @@ export function TallyVoucherSync({
         }
       });
 
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Tally request timed out. Please check the Tally server and try again.')), TIMEOUT_MS);
+      });
+
+      const result = await Promise.race([invokePromise, timeoutPromise]) as any;
+      const { data, error } = result;
+
       if (error) {
         throw new Error(error.message);
       }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to update staging table');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to update staging table');
       }
 
+      setStatusMessage('Processing complete.');
       setTallyData(data);
       toast.success('XML staging table updated successfully', {
         description: `Processed ${data.statistics?.stagingRecords || 0} XML nodes`
@@ -147,6 +162,7 @@ export function TallyVoucherSync({
       
     } catch (error: any) {
       console.error('Error updating staging table:', error);
+      setStatusMessage('Error while processing.');
       toast.error('Failed to update staging table', {
         description: error.message
       });
@@ -163,6 +179,7 @@ export function TallyVoucherSync({
         }
       });
     } finally {
+      clearTimeout(slowTimer);
       setUpdating(false);
     }
   };
@@ -288,7 +305,7 @@ export function TallyVoucherSync({
                     <div className="flex items-center gap-2">
                       <RefreshCw className="h-4 w-4 animate-spin" />
                       <p className="text-sm text-muted-foreground">
-                        Calling Tally API and processing XML data...
+                        {statusMessage || 'Calling Tally API and processing XML data...'}
                       </p>
                     </div>
                   ) : tallyData.success ? (
