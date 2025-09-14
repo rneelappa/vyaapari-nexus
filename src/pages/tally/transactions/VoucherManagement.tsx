@@ -89,7 +89,8 @@ export default function VoucherManagement() {
     if (searchTerm) filters.search = searchTerm;
     if (dateFrom) filters.from = format(new Date(dateFrom), 'yyyyMMdd');
     if (dateTo) filters.to = format(new Date(dateTo), 'yyyyMMdd');
-    if (voucherTypeFilter) filters.type = voucherTypeFilter;
+    const type = voucherTypeFilter && voucherTypeFilter !== 'ALL' ? voucherTypeFilter : '';
+    if (type) filters.type = type;
     
     fetchVouchers(filters);
   };
@@ -159,7 +160,8 @@ export default function VoucherManagement() {
     if (searchTerm) filters.search = searchTerm;
     if (dateFrom) filters.from = format(new Date(dateFrom), 'yyyyMMdd');
     if (dateTo) filters.to = format(new Date(dateTo), 'yyyyMMdd');
-    if (voucherTypeFilter) filters.type = voucherTypeFilter;
+    const type = voucherTypeFilter && voucherTypeFilter !== 'ALL' ? voucherTypeFilter : '';
+    if (type) filters.type = type;
     
     fetchVouchers({ ...filters, page: newPage });
   };
@@ -361,8 +363,8 @@ export default function VoucherManagement() {
                     <SelectTrigger>
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                    <SelectContent className="z-50 bg-popover">
+                      <SelectItem value="ALL">All Types</SelectItem>
                       <SelectItem value="Payment">Payment</SelectItem>
                       <SelectItem value="Purchase">Purchase</SelectItem>
                       <SelectItem value="Sales">Sales</SelectItem>
