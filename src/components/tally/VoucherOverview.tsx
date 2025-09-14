@@ -158,6 +158,12 @@ export function VoucherOverview({ voucherGuid, companyId, divisionId }: VoucherO
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="flex items-center gap-2">
                 <Hash className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Tally GUID:</span>
+              </div>
+              <span className="font-mono text-xs break-all">{voucher.guid}</span>
+              
+              <div className="flex items-center gap-2">
+                <Hash className="h-3 w-3 text-muted-foreground" />
                 <span className="text-muted-foreground">Number:</span>
               </div>
               <span className="font-medium">{voucher.voucher_number || 'N/A'}</span>

@@ -26,6 +26,7 @@ import { VoucherAssociatedLedgers } from './VoucherAssociatedLedgers';
 import { VoucherInventoryDetails } from './VoucherInventoryDetails';
 import { VoucherAddressDetails } from './VoucherAddressDetails';
 import { VoucherMasterData } from './VoucherMasterData';
+import { VoucherAuditTrail } from './VoucherAuditTrail';
 
 interface TabConfig {
   id: string;
@@ -351,6 +352,12 @@ export function VoucherViewRenderer({
               />
             ) : (tab.id === 'master-data' || tab.name === 'Master Data') ? (
               <VoucherMasterData
+                voucherGuid={voucherGuid}
+                companyId={companyId}
+                divisionId={divisionId}
+              />
+            ) : (tab.id === 'audit-trail' || tab.name === 'Audit Trail') ? (
+              <VoucherAuditTrail
                 voucherGuid={voucherGuid}
                 companyId={companyId}
                 divisionId={divisionId}
