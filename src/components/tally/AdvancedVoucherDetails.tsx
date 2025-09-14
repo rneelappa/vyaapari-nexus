@@ -338,14 +338,20 @@ export function AdvancedVoucherDetails({
                     
                     {/* Totals */}
                     <Separator className="my-4" />
-                    <div className="flex justify-end space-x-8">
-                      <div className="text-sm">
-                        <span className="font-medium">Total Debit: </span>
-                        <span className="text-green-600">{formatAmount(totalDebit)}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">Total Credit: </span>
-                        <span className="text-red-600">{formatAmount(totalCredit)}</span>
+                    <div className="bg-muted/30 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium text-muted-foreground">Total Debit</div>
+                          <div className="text-2xl font-bold text-green-600">{formatAmount(totalDebit)}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium text-muted-foreground">Total Credit</div>
+                          <div className="text-2xl font-bold text-red-600">{formatAmount(totalCredit)}</div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium text-muted-foreground">Grand Total</div>
+                          <div className="text-2xl font-bold text-primary">{formatAmount(Math.max(totalDebit, totalCredit))}</div>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
