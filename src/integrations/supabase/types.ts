@@ -3539,39 +3539,42 @@ export type Database = {
       xml_staging: {
         Row: {
           attributes: Json | null
-          company_id: string | null
+          company_id: string
           created_at: string
-          division_id: string | null
+          division_id: string
           id: string
-          level: number
           parent_id: string | null
-          position: number
-          xml_tag: string
-          xml_value: string | null
+          path: string
+          position: number | null
+          tag_name: string
+          tag_value: string | null
+          updated_at: string
         }
         Insert: {
           attributes?: Json | null
-          company_id?: string | null
+          company_id: string
           created_at?: string
-          division_id?: string | null
+          division_id: string
           id?: string
-          level?: number
           parent_id?: string | null
-          position?: number
-          xml_tag: string
-          xml_value?: string | null
+          path: string
+          position?: number | null
+          tag_name: string
+          tag_value?: string | null
+          updated_at?: string
         }
         Update: {
           attributes?: Json | null
-          company_id?: string | null
+          company_id?: string
           created_at?: string
-          division_id?: string | null
+          division_id?: string
           id?: string
-          level?: number
           parent_id?: string | null
-          position?: number
-          xml_tag?: string
-          xml_value?: string | null
+          path?: string
+          position?: number | null
+          tag_name?: string
+          tag_value?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -3612,6 +3615,23 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      insert_xml_node: {
+        Args: {
+          p_attributes: Json
+          p_company_id: string
+          p_division_id: string
+          p_parent_id: string
+          p_path: string
+          p_position: number
+          p_tag_name: string
+          p_tag_value: string
+        }
+        Returns: string
+      }
+      reset_xml_staging: {
+        Args: { p_company_id: string; p_division_id: string }
+        Returns: undefined
       }
     }
     Enums: {
