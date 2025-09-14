@@ -111,7 +111,8 @@ export default function TallySyncPage() {
         body: { 
           divisionId,
           fromDate: format(defaultFromDate, 'yyyy-MM-dd'), // YYYY-MM-DD format (local)
-          toDate: format(defaultToDate, 'yyyy-MM-dd')
+          toDate: format(defaultToDate, 'yyyy-MM-dd'),
+          forceTally: true
         }
       });
 
