@@ -126,8 +126,24 @@ class SidebarDataService {
       
       console.log('[SidebarDataService] Fetched divisions:', divisions?.length || 0, 'items');
 
-      // Skip workspaces for now due to RLS permissions
-      const workspaces: any[] = [];
+      // Get workspaces that the user has access to via workspace_members
+      const divisionIds = (divisions || []).map(d => d.id);
+      console.log('[SidebarDataService] Fetching workspaces for division IDs:', divisionIds);
+      
+      const { data: workspaces } = await supabase
+        .from('workspaces')
+        .select(`
+          id, 
+          name, 
+          description, 
+          division_id, 
+          is_default,
+          workspace_members!inner(user_id)
+        `)
+        .in('division_id', divisionIds)
+        .eq('workspace_members.user_id', userId);
+      
+      console.log('[SidebarDataService] Fetched workspaces:', workspaces?.length || 0, 'items');
 
       // Structure hierarchically
       const result = companies.map(company => ({
@@ -145,14 +161,14 @@ class SidebarDataService {
             budget: division.budget,
             employee_count: division.employee_count,
             performance_score: division.performance_score,
-            workspaces: workspaces
+            workspaces: (workspaces || [])
               .filter(ws => ws.division_id === division.id)
               .map(workspace => ({
                 id: workspace.id,
                 name: workspace.name,
-                description: workspace.description,
+                description: workspace.description || '',
                 division_id: workspace.division_id,
-                is_active: workspace.is_active
+                is_active: true // Default to true since user has access
               }))
           }))
       }));
