@@ -137,7 +137,7 @@ export default function SalesVoucherEdit() {
     try {
       // Load voucher header
       const { data: voucherData } = await supabase
-        .from('trn_voucher')
+        .from('tally_trn_voucher')
         .select('*')
         .eq('guid', voucherId)
         .single();
@@ -148,7 +148,7 @@ export default function SalesVoucherEdit() {
         setNarration(voucherData.narration || '');
         
         // Find party and sales ledgers
-        const partyLedgerData = ledgers.find(l => l.name === voucherData.party_name);
+        const partyLedgerData = ledgers.find(l => l.name === voucherData.party_ledger_name);
         if (partyLedgerData) setPartyLedger(partyLedgerData.guid);
       }
 
@@ -362,7 +362,7 @@ export default function SalesVoucherEdit() {
       if (voucherId) {
         // Update existing voucher
         const { error: voucherError } = await supabase
-          .from('trn_voucher')
+          .from('tally_trn_voucher')
           .update(voucherData)
           .eq('guid', voucherId);
 
@@ -375,7 +375,7 @@ export default function SalesVoucherEdit() {
       } else {
         // Insert new voucher
         const { error: voucherError } = await supabase
-          .from('trn_voucher')
+          .from('tally_trn_voucher')
           .insert(voucherData);
 
         if (voucherError) throw voucherError;

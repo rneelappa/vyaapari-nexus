@@ -152,7 +152,7 @@ export default function SalesVoucherCreate() {
       
       // Get last voucher number for current period
       const { data } = await supabase
-        .from('trn_voucher')
+        .from('tally_trn_voucher')
         .select('voucher_number')
         .like('voucher_number', `%/${year}%`)
         .order('voucher_number', { ascending: false })
@@ -306,7 +306,7 @@ export default function SalesVoucherCreate() {
       // Insert main voucher with all required fields
       const voucherGuid = `voucher-${Date.now()}`;
       const { data: voucherInsertData, error: voucherError } = await supabase
-        .from('trn_voucher')
+        .from('tally_trn_voucher')
         .insert({
           guid: voucherGuid,
           voucher_number: voucherNumber,

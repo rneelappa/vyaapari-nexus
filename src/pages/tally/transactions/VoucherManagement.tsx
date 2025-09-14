@@ -36,8 +36,12 @@ const VoucherManagement: React.FC = () => {
   const [vouchers, setVouchers] = useState<VoucherEntry[]>([]);
   const [filteredVouchers, setFilteredVouchers] = useState<VoucherEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState<VoucherEntry | null>(null);
   const [voucherTypes, setVoucherTypes] = useState<string[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [hasMore, setHasMore] = useState<boolean>(true);
   
   // Filters
   const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
@@ -48,7 +52,7 @@ const VoucherManagement: React.FC = () => {
 
   useEffect(() => {
     if (companyId && divisionId) {
-      fetchVouchers();
+      fetchVouchers(true);
     }
   }, [companyId, divisionId]);
 
@@ -56,18 +60,39 @@ const VoucherManagement: React.FC = () => {
     applyFilters();
   }, [vouchers, selectedType, dateFrom, dateTo, amountFrom, amountTo]);
 
-  const fetchVouchers = async () => {
+  const fetchVouchers = async (reset: boolean = false) => {
     if (!companyId || !divisionId) return;
 
     try {
-      setLoading(true);
+      if (reset) {
+        setLoading(true);
+        setCurrentPage(0);
+        setVouchers([]);
+        setHasMore(true);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const pageSize = 1000;
+      const from = reset ? 0 : currentPage * pageSize;
+      const to = from + pageSize - 1;
+
+      // First get total count
+      if (reset) {
+        const { count } = await supabase
+          .from('tally_trn_voucher')
+          .select('*', { count: 'exact', head: true })
+          .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
+        
+        setTotalCount(count || 0);
+      }
       
       const { data, error } = await supabase
         .from('tally_trn_voucher')
         .select('*')
         .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
         .order('date', { ascending: false })
-        .limit(1000);
+        .range(from, to);
 
       if (error) {
         console.error('Error fetching vouchers:', error);
@@ -96,11 +121,21 @@ const VoucherManagement: React.FC = () => {
         due_date: voucher.due_date
       }));
 
-      setVouchers(voucherData);
+      if (reset) {
+        setVouchers(voucherData);
+      } else {
+        setVouchers(prev => [...prev, ...voucherData]);
+      }
+
+      // Check if there are more records
+      setHasMore(voucherData.length === pageSize);
+      setCurrentPage(prev => reset ? 1 : prev + 1);
       
-      // Extract unique voucher types
-      const types = Array.from(new Set(voucherData.map(v => v.voucher_type))).filter(Boolean);
-      setVoucherTypes(types);
+      // Extract unique voucher types (only on reset/first load)
+      if (reset) {
+        const types = Array.from(new Set(voucherData.map(v => v.voucher_type))).filter(Boolean);
+        setVoucherTypes(types);
+      }
       
     } catch (err) {
       console.error('Error:', err);
@@ -111,6 +146,13 @@ const VoucherManagement: React.FC = () => {
       });
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreVouchers = () => {
+    if (!loadingMore && hasMore) {
+      fetchVouchers(false);
     }
   };
 
@@ -208,7 +250,7 @@ const VoucherManagement: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
-          <Button onClick={fetchVouchers} variant="outline">
+          <Button onClick={() => fetchVouchers(true)} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
@@ -229,7 +271,7 @@ const VoucherManagement: React.FC = () => {
           <CardContent>
             <div className="text-2xl font-bold">{voucherCount}</div>
             <p className="text-xs text-muted-foreground">
-              {voucherCount > 0 ? `${((voucherCount / vouchers.length) * 100).toFixed(1)}% of total` : 'No vouchers'}
+              {totalCount > 0 ? `Showing ${vouchers.length} of ${totalCount.toLocaleString()} total` : 'No vouchers'}
             </p>
           </CardContent>
         </Card>
@@ -355,6 +397,39 @@ const VoucherManagement: React.FC = () => {
         searchable={true}
         filterable={false} // We have advanced filters above
       />
+
+      {/* Load More Section */}
+      {hasMore && vouchers.length > 0 && (
+        <div className="flex justify-center py-6">
+          <Button 
+            onClick={loadMoreVouchers} 
+            variant="outline" 
+            disabled={loadingMore}
+            className="min-w-[200px]"
+          >
+            {loadingMore ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Loading more...
+              </>
+            ) : (
+              <>
+                Load More Vouchers
+                <Badge variant="secondary" className="ml-2">
+                  {vouchers.length} / {totalCount.toLocaleString()}
+                </Badge>
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* End of Results Message */}
+      {!hasMore && vouchers.length > 0 && (
+        <div className="text-center py-6 text-muted-foreground">
+          <p>You've reached the end of all vouchers ({totalCount.toLocaleString()} total)</p>
+        </div>
+      )}
     </div>
   );
 };
