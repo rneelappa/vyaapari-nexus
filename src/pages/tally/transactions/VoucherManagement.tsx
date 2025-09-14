@@ -18,6 +18,7 @@ import { VoucherTypesFilter } from '@/components/tally/VoucherTypesFilter';
 import { GodownsFilter } from '@/components/tally/GodownsFilter';
 import { InventoryFilter } from '@/components/tally/InventoryFilter';
 import { VoucherFilterProvider, useVoucherFilter } from '@/contexts/VoucherFilterContext';
+import { VoucherTypeSelector } from '@/components/tally/VoucherTypeSelector';
 
 interface VoucherEntry {
   guid: string;
@@ -54,6 +55,10 @@ const VoucherManagementContent: React.FC = () => {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  
+  // New voucher creation state
+  const [showVoucherTypeSelector, setShowVoucherTypeSelector] = useState(false);
+  const [selectedVoucherTypeForCreation, setSelectedVoucherTypeForCreation] = useState<any>(null);
   
   // Legacy filter for backwards compatibility
   const [selectedType, setSelectedType] = useState<string>('ALL_TYPES');
@@ -279,6 +284,21 @@ const VoucherManagementContent: React.FC = () => {
     });
   };
 
+  const handleNewVoucher = () => {
+    setShowVoucherTypeSelector(true);
+  };
+
+  const handleVoucherTypeSelect = (voucherType: any) => {
+    console.log('Selected voucher type:', voucherType);
+    setSelectedVoucherTypeForCreation(voucherType);
+    setShowVoucherTypeSelector(false);
+    
+    toast({
+      title: "Voucher Type Selected",
+      description: `You selected: ${voucherType.name}. Voucher creation form will be implemented next.`
+    });
+  };
+
   const calculateTotals = () => {
     const totalAmount = filteredVouchers.reduce((sum, v) => sum + v.total_amount, 0);
     const voucherCount = filteredVouchers.length;
@@ -321,7 +341,7 @@ const VoucherManagementContent: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button>
+          <Button onClick={handleNewVoucher}>
             <Plus className="h-4 w-4 mr-2" />
             New Voucher
           </Button>
@@ -536,6 +556,15 @@ const VoucherManagementContent: React.FC = () => {
           <p>You've reached the end of all vouchers ({totalCount.toLocaleString()} total)</p>
         </div>
       )}
+
+      {/* Voucher Type Selector Dialog */}
+      <VoucherTypeSelector
+        open={showVoucherTypeSelector}
+        onOpenChange={setShowVoucherTypeSelector}
+        onTypeSelect={handleVoucherTypeSelect}
+        companyId={companyId!}
+        divisionId={divisionId!}
+      />
     </div>
   );
 };
