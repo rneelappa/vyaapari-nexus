@@ -64,7 +64,38 @@ export function VoucherMasterData({ voucherGuid, companyId, divisionId }: Vouche
     setError(null);
     
     try {
-      // Fetch all master data types in parallel
+      // First, get voucher details and related references
+      const [voucherResult, accountingResult] = await Promise.all([
+        supabase
+          .from('tally_trn_voucher')
+          .select('voucher_type, party_ledger_name')
+          .eq('guid', voucherGuid)
+          .single(),
+        
+        supabase
+          .from('trn_accounting')
+          .select('ledger, cost_centre, cost_category')
+          .eq('voucher_guid', voucherGuid)
+      ]);
+
+      const voucher = voucherResult.data;
+      const accountingEntries = accountingResult.data || [];
+      
+      // Extract referenced names
+      const referencedLedgers = new Set([
+        voucher?.party_ledger_name,
+        ...accountingEntries.map(entry => entry.ledger)
+      ].filter(Boolean));
+      
+      const referencedCostCentres = new Set(
+        accountingEntries.map(entry => entry.cost_centre).filter(Boolean)
+      );
+      
+      const referencedCostCategories = new Set(
+        accountingEntries.map(entry => entry.cost_category).filter(Boolean)
+      );
+
+      // Fetch master data filtered by voucher references
       const [
         ledgersResult,
         stockItemsResult,
@@ -77,71 +108,107 @@ export function VoucherMasterData({ voucherGuid, companyId, divisionId }: Vouche
         employeesResult,
         payheadsResult
       ] = await Promise.all([
-        supabase
+        // Ledgers referenced in accounting entries
+        referencedLedgers.size > 0 ? supabase
           .from('mst_ledger')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .limit(100),
+          .in('name', Array.from(referencedLedgers))
+          : Promise.resolve({ data: [] }),
         
+        // Stock items - get items referenced by ledgers (if any ledgers reference stock groups)
         supabase
           .from('mst_stock_item')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .limit(100),
+          .limit(20), // Show sample if no direct reference
         
+        // Godowns referenced by stock items
         supabase
           .from('mst_godown')
           .select('*')
           .eq('company_id', companyId)
-          .eq('division_id', divisionId),
+          .eq('division_id', divisionId)
+          .limit(10),
         
+        // UOMs used by stock items
         supabase
           .from('mst_uom')
           .select('*')
           .eq('company_id', companyId)
-          .eq('division_id', divisionId),
-        
-        supabase
-          .from('mst_group')
-          .select('*')
-          .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .limit(50),
+          .limit(10),
         
-        supabase
+        // Groups - get groups that are parents of referenced ledgers
+        referencedLedgers.size > 0 ? (async () => {
+          try {
+            const ledgerParents = await supabase
+              .from('mst_ledger')
+              .select('parent')
+              .eq('company_id', companyId)
+              .eq('division_id', divisionId)
+              .in('name', Array.from(referencedLedgers));
+            
+            const parentGroups = ledgerParents.data?.map(l => l.parent).filter(Boolean) || [];
+            
+            if (parentGroups.length > 0) {
+              return supabase
+                .from('mst_group')
+                .select('*')
+                .eq('company_id', companyId)
+                .eq('division_id', divisionId)
+                .in('name', parentGroups);
+            }
+            return { data: [] };
+          } catch {
+            return { data: [] };
+          }
+        })() : Promise.resolve({ data: [] }),
+        
+        // Voucher type for current voucher
+        voucher?.voucher_type ? supabase
           .from('mst_vouchertype')
           .select('*')
           .eq('company_id', companyId)
-          .eq('division_id', divisionId),
+          .eq('division_id', divisionId)
+          .eq('name', voucher.voucher_type)
+          : Promise.resolve({ data: [] }),
         
-        supabase
+        // Cost centres referenced in accounting
+        referencedCostCentres.size > 0 ? supabase
           .from('mst_cost_centre')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .limit(50),
+          .in('name', Array.from(referencedCostCentres))
+          : Promise.resolve({ data: [] }),
         
-        supabase
+        // Cost categories referenced in accounting
+        referencedCostCategories.size > 0 ? supabase
           .from('mst_cost_category')
           .select('*')
           .eq('company_id', companyId)
-          .eq('division_id', divisionId),
+          .eq('division_id', divisionId)
+          .in('name', Array.from(referencedCostCategories))
+          : Promise.resolve({ data: [] }),
         
+        // Employees - limit to small sample if no direct reference
         supabase
           .from('mst_employee')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .limit(50),
+          .limit(5),
         
+        // Payheads - limit to small sample
         supabase
           .from('mst_payhead')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .limit(50)
+          .limit(5)
       ]);
 
       const masterData: MasterDataType[] = [
