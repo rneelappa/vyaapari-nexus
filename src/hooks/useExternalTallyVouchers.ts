@@ -176,11 +176,16 @@ export const useExternalTallyVouchers = (companyId: string, divisionId: string) 
       const result = await externalTallyApi.syncFromTally(companyId, divisionId, fromDate, toDate);
       
       if (result.success) {
+        const syncedCount = result.data?.storedVouchers || result.data?.totalVouchers || 0;
         toast({
           title: "Sync Complete",
-          description: `Successfully synced ${result.data.storedVouchers || 0} vouchers from Tally`
+          description: `Successfully synced ${syncedCount} vouchers from Tally`
         });
-        await fetchVouchers();
+        
+        // Reset pagination to first page and refresh vouchers
+        setPagination(prev => ({ ...prev, page: 1 }));
+        await fetchVouchers({ page: 1 });
+        
         return result.data;
       } else {
         setError(result.error || 'Sync failed');
