@@ -131,14 +131,14 @@ export function TallyVoucherSync({
 
     // Prefetch Tally URL and construct the exact XML request for visibility in UI
     try {
-      const { data: divisionRow } = await supabase
-        .from('divisions')
-        .select('tally_url, tally_company_id')
-        .eq('id', divisionId)
-        .single();
+      const [{ data: divisionRow }, { data: companyRow }] = await Promise.all([
+        supabase.from('divisions').select('tally_url, tally_company_id').eq('id', divisionId).single(),
+        supabase.from('mst_company').select('company_name').eq('vyaapari_company_id', companyId).single()
+      ]);
 
       if (divisionRow?.tally_url) {
         const url = `${divisionRow.tally_url}:9000`;
+        const companyName = companyRow?.company_name || divisionRow.tally_company_id || 'Unknown Company';
         const requestBody = `<?xml version="1.0" encoding="UTF-8"?>
 <ENVELOPE>
   <HEADER>
@@ -150,7 +150,7 @@ export function TallyVoucherSync({
   <BODY>
     <DESC>
       <STATICVARIABLES>
-        <SVCURRENTCOMPANY>${divisionRow.tally_company_id || 'Default Company'}</SVCURRENTCOMPANY>
+        <SVCURRENTCOMPANY>${companyName}</SVCURRENTCOMPANY>
         <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
       </STATICVARIABLES>
     </DESC>
@@ -164,7 +164,7 @@ export function TallyVoucherSync({
               ...(prev?.debugInfo?.request || {}),
               url,
               voucherGuid,
-              tallyCompanyId: divisionRow.tally_company_id || null,
+              companyName,
               requestBody,
             },
           },
@@ -172,7 +172,7 @@ export function TallyVoucherSync({
       }
     } catch (e) {
       // Non-blocking: if this fails we still proceed
-      console.warn('Could not prefetch division/tally config for debug UI', e);
+      console.warn('Could not prefetch division/mst_company config for debug UI', e);
     }
 
     const slowTimer = setTimeout(() => {
