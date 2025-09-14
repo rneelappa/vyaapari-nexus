@@ -65,8 +65,7 @@ const VoucherManagement: React.FC = () => {
       const { data, error } = await supabase
         .from('tally_trn_voucher')
         .select('*')
-        .eq('company_id', companyId)
-        .eq('division_id', divisionId)
+        .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
         .order('date', { ascending: false })
         .limit(1000);
 
