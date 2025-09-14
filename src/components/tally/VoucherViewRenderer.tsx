@@ -14,6 +14,7 @@ import {
 import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
 import { VoucherOverview } from './VoucherOverview';
 import { VoucherAccountingEntries } from './VoucherAccountingEntries';
+import { VoucherAssociatedLedgers } from './VoucherAssociatedLedgers';
 
 interface TabConfig {
   id: string;
@@ -198,6 +199,12 @@ export function VoucherViewRenderer({
               />
             ) : tab.id === 'accounting' ? (
               <VoucherAccountingEntries
+                voucherGuid={voucherGuid}
+                companyId={companyId}
+                divisionId={divisionId}
+              />
+            ) : tab.id === 'ledgers' ? (
+              <VoucherAssociatedLedgers
                 voucherGuid={voucherGuid}
                 companyId={companyId}
                 divisionId={divisionId}
