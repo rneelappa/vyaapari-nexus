@@ -664,6 +664,182 @@ export default function VoucherManagement() {
                 </CardContent>
               </Card>
 
+              {/* Accounting Ledgers */}
+              {selectedVoucher.entries && selectedVoucher.entries.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Accounting Ledgers</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                     {(() => {
+                        // Separate entries by source type
+                        const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
+                        
+                        const party = mainLedgerEntries.find((e: any) => (e.ledgerName === selectedVoucher.partyLedgerName) || e.isPartyLedger);
+                        const otherMainLedgers = mainLedgerEntries.filter((e: any) => party ? (e.ledgerName !== party.ledgerName) : true);
+                        
+                        const t = (selectedVoucher.type || '').toLowerCase();
+                        const expectedAccountType = t.includes('sales') ? 'Sales Account' : t.includes('purchase') ? 'Purchase Account' : (t.includes('payment') || t.includes('receipt') || t.includes('contra')) ? 'Bank/Cash Account' : 'Account';
+                        const needsTwoLedgers = ['sales','purchase','payment','receipt'].some(k => t.includes(k));
+                        const mainAccount = otherMainLedgers.find((e: any) => {
+                          const name = (e.ledgerName || '').toLowerCase();
+                          return name.includes('sales') || name.includes('purchase') || name.includes('bank') || name.includes('cash');
+                        });
+
+                       return (
+                         <div className="space-y-3">
+                           {/* Party first */}
+                           {party && (
+                             <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-border">
+                               <div className="flex-1">
+                                 <p className="font-semibold">{party.ledgerName}</p>
+                                 <Badge variant="default" className="text-xs mt-1">Party Account</Badge>
+                               </div>
+                               <div className="text-right">
+                                 <p className="font-semibold">{formatAmount(Math.abs(party.amount || 0))}</p>
+                                 <p className="text-xs text-muted-foreground">{(party.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
+                               </div>
+                             </div>
+                           )}
+
+                           {/* Warning if main account missing */}
+                           {needsTwoLedgers && otherMainLedgers.length === 0 && (
+                             <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm">
+                               Missing {expectedAccountType} - required for {selectedVoucher.type} voucher
+                             </div>
+                           )}
+
+                           {/* Other main ledgers */}
+                           {otherMainLedgers.map((entry: any, index: number) => (
+                             <div key={index} className={`flex items-center justify-between p-3 rounded-lg bg-muted ${mainAccount && mainAccount.ledgerName === entry.ledgerName ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}>
+                               <div className="flex-1">
+                                  <p className="font-medium">
+                                    {entry.ledgerName}
+                                    {mainAccount && mainAccount.ledgerName === entry.ledgerName && (
+                                      <Badge variant="secondary" className="ml-2 text-xs">Main Account</Badge>
+                                    )}
+                                  </p>
+                                  <Badge variant="outline" className="text-xs mt-1">Main Ledger</Badge>
+                               </div>
+                               <div className="text-right">
+                                 <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
+                                 <p className="text-xs text-muted-foreground">{(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
+                               </div>
+                             </div>
+                            ))}
+                         </div>
+                       );
+                     })()}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Inventory Entries */}
+              {selectedVoucher.inventoryEntries && selectedVoucher.inventoryEntries.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Inventory Entries</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {selectedVoucher.inventoryEntries.map((item: any, index: number) => (
+                        <div key={`inventory-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border">
+                          <div className="flex-1">
+                            <p className="font-medium">{item.stockItemName}</p>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">
+                                Qty: {item.billedQuantity} {item.unit}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                Rate: {formatAmount(item.rate)}
+                              </Badge>
+                              {item.hsnCode && (
+                                <Badge variant="outline" className="text-xs">
+                                  HSN: {item.hsnCode}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{formatAmount(Math.abs(item.amount || 0))}</p>
+                            <p className="text-xs text-muted-foreground">{(item.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Other Ledger Accounts (from inventory accounting) */}
+              {selectedVoucher.entries && selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting').length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Other Ledger Accounts</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting').map((entry: any, index: number) => (
+                        <div key={`inv-accounting-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                          <div className="flex-1">
+                            <p className="font-medium">{entry.ledgerName}</p>
+                            <Badge variant="outline" className="text-xs mt-1">Inventory Accounting</Badge>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
+                            <p className="text-xs text-muted-foreground">{(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Totals */}
+              {selectedVoucher.entries && selectedVoucher.entries.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Totals</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                     {(() => {
+                        // Recalculate totals for display
+                        const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
+                        const inventoryEntries = selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting');
+                        
+                        const inventoryAccountingDebit = inventoryEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                        const inventoryAccountingCredit = inventoryEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
+                        
+                        const mainLedgerDebit = mainLedgerEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                        const mainLedgerCredit = mainLedgerEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
+                        
+                        const totalDebit = inventoryAccountingDebit + mainLedgerDebit;
+                        const totalCredit = inventoryAccountingCredit + mainLedgerCredit;
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                              <div>
+                                <div className="text-sm text-muted-foreground">Total Debit</div>
+                                <div className="text-xl font-semibold">{formatAmount(totalDebit)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-muted-foreground">Total Credit</div>
+                                <div className="text-xl font-semibold">{formatAmount(totalCredit)}</div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-muted-foreground">Grand Total</div>
+                                <div className="text-xl font-semibold text-primary">{formatAmount(Math.max(totalDebit, totalCredit))}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                     })()}
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Narration */}
               <Card>
                 <CardHeader>
@@ -685,173 +861,54 @@ export default function VoucherManagement() {
                 </CardContent>
               </Card>
 
-              {/* Ledger Entries */}
+              {/* Balance Display */}
               {selectedVoucher.entries && selectedVoucher.entries.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Ledger Entries</CardTitle>
+                    <CardTitle className="text-base">Balance Analysis</CardTitle>
                   </CardHeader>
                   <CardContent>
                      {(() => {
-                       // Separate entries by source type
-                       const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
-                       const inventoryEntries = selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting');
-                       
+                        // Recalculate for balance display
+                        const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
+                        const inventoryEntries = selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting');
+                        
+                        const inventoryAccountingDebit = inventoryEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                        const inventoryAccountingCredit = inventoryEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
+                        
+                        const mainLedgerDebit = mainLedgerEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
+                        const mainLedgerCredit = mainLedgerEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
+                        
+                        const totalDebit = inventoryAccountingDebit + mainLedgerDebit;
+                        const totalCredit = inventoryAccountingCredit + mainLedgerCredit;
+                        const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+
                         const party = mainLedgerEntries.find((e: any) => (e.ledgerName === selectedVoucher.partyLedgerName) || e.isPartyLedger);
                         const otherMainLedgers = mainLedgerEntries.filter((e: any) => party ? (e.ledgerName !== party.ledgerName) : true);
-                        
-                       // Calculate totals based on new structure
-                       const inventoryAccountingDebit = inventoryEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
-                       const inventoryAccountingCredit = inventoryEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
-                       
-                       const mainLedgerDebit = mainLedgerEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
-                       const mainLedgerCredit = mainLedgerEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
-                       
-                       // Total Debit = All debit entries from both sources
-                       const totalDebit = inventoryAccountingDebit + mainLedgerDebit;
-                       const totalCredit = inventoryAccountingCredit + mainLedgerCredit;
-                      
-                       const grandTotal = Math.max(totalDebit, totalCredit);
-                       const totalInventoryValue = inventoryAccountingDebit; // For compatibility
-                       const otherLedgersTotal = otherMainLedgers.reduce((s: number, e: any) => s + Math.abs(e.amount || 0), 0);
-                       const partyAmount = party ? Math.abs(party.amount || 0) : 0;
-                       const inventoryPlusOthers = totalInventoryValue + otherLedgersTotal;
-                       const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
+                        const totalInventoryValue = inventoryAccountingDebit;
+                        const otherLedgersTotal = otherMainLedgers.reduce((s: number, e: any) => s + Math.abs(e.amount || 0), 0);
+                        const partyAmount = party ? Math.abs(party.amount || 0) : 0;
+                        const inventoryPlusOthers = totalInventoryValue + otherLedgersTotal;
+                        const partyBalanceMatch = Math.abs(partyAmount - inventoryPlusOthers) < 0.01;
 
-                       const t = (selectedVoucher.type || '').toLowerCase();
-                       const expectedAccountType = t.includes('sales') ? 'Sales Account' : t.includes('purchase') ? 'Purchase Account' : (t.includes('payment') || t.includes('receipt') || t.includes('contra')) ? 'Bank/Cash Account' : 'Account';
-                       const needsTwoLedgers = ['sales','purchase','payment','receipt'].some(k => t.includes(k));
-                       const mainAccount = otherMainLedgers.find((e: any) => {
-                         const name = (e.ledgerName || '').toLowerCase();
-                         return name.includes('sales') || name.includes('purchase') || name.includes('bank') || name.includes('cash');
-                       });
-                      const hasBothRequiredLedgers = !!party && otherMainLedgers.length > 0;
-                      const partyBalanceMatch = Math.abs(partyAmount - inventoryPlusOthers) < 0.01;
-
-                      return (
-                        <div className="space-y-3">
-                          {/* Party first */}
-                          {party && (
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-border">
-                              <div className="flex-1">
-                                <p className="font-semibold">{party.ledgerName}</p>
-                                <Badge variant="default" className="text-xs mt-1">Party Account</Badge>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-semibold">{formatAmount(Math.abs(party.amount || 0))}</p>
-                                <p className="text-xs text-muted-foreground">{(party.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Warning if main account missing */}
-                          {needsTwoLedgers && otherMainLedgers.length === 0 && (
-                            <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm">
-                              Missing {expectedAccountType} - required for {selectedVoucher.type} voucher
-                            </div>
-                          )}
-
-                          {/* Other ledgers */}
-                          {otherMainLedgers.map((entry: any, index: number) => (
-                            <div key={index} className={`flex items-center justify-between p-3 rounded-lg bg-muted ${mainAccount && mainAccount.ledgerName === entry.ledgerName ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}>
-                              <div className="flex-1">
-                                 <p className="font-medium">
-                                   {entry.ledgerName}
-                                   {mainAccount && mainAccount.ledgerName === entry.ledgerName && (
-                                     <Badge variant="secondary" className="ml-2 text-xs">Main Account</Badge>
-                                   )}
-                                 </p>
-                                 <Badge variant="outline" className="text-xs mt-1">
-                                   {entry.source === 'inventory_accounting' ? 'Inventory Accounting' : 'Main Ledger'}
-                                 </Badge>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
-                                <p className="text-xs text-muted-foreground">{(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
-                              </div>
-                            </div>
-                           ))}
-
-                           {/* Inventory Accounting Entries */}
-                           {inventoryEntries.length > 0 && (
-                             <>
-                               <div className="text-sm font-medium text-muted-foreground mt-4 mb-2">Inventory Accounting Entries</div>
-                               {inventoryEntries.map((entry: any, index: number) => (
-                                 <div key={`inv-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                                   <div className="flex-1">
-                                     <p className="font-medium">{entry.ledgerName}</p>
-                                     <Badge variant="outline" className="text-xs mt-1">Inventory Accounting</Badge>
-                                   </div>
-                                   <div className="text-right">
-                                     <p className="font-semibold">{formatAmount(Math.abs(entry.amount || 0))}</p>
-                                     <p className="text-xs text-muted-foreground">{(entry.amount || 0) > 0 ? 'Debit' : 'Credit'}</p>
-                                   </div>
-                                 </div>
-                               ))}
-                             </>
-                           )}
-
-                           <Separator />
-                          {/* Totals */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                            <div>
-                              <div className="text-sm text-muted-foreground">Total Debit</div>
-                              <div className="text-xl font-semibold">{formatAmount(totalDebit)}</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Total Credit</div>
-                              <div className="text-xl font-semibold">{formatAmount(totalCredit)}</div>
-                            </div>
-                            <div>
-                              <div className="text-sm text-muted-foreground">Grand Total</div>
-                              <div className="text-xl font-semibold text-primary">{formatAmount(grandTotal)}</div>
-                            </div>
-                          </div>
-
-                          {/* Validation */}
-                          <div className="space-y-2">
+                        return (
+                          <div className="space-y-3">
                             <div className="flex items-center gap-2">
                               <div className={`h-3 w-3 rounded-full ${isBalanced ? 'bg-green-500' : 'bg-red-500'}`} />
-                              <span className="text-sm">Ledger Balance: {isBalanced ? 'Balanced' : 'Unbalanced'}</span>
+                              <span className={`font-medium ${isBalanced ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                Ledger Balance: {isBalanced ? 'Balanced' : 'Unbalanced'}
+                              </span>
                             </div>
-                            {party && (
-                              <div className="flex items-center gap-2">
-                                <div className={`h-3 w-3 rounded-full ${partyBalanceMatch ? 'bg-green-500' : 'bg-red-500'}`} />
-                                <span className="text-sm">Party vs Inventory+Others: {partyBalanceMatch ? 'Balanced' : 'Mismatch'}</span>
-                              </div>
-                            )}
+                            
+                            <div className="flex items-center gap-2">
+                              <div className={`h-3 w-3 rounded-full ${partyBalanceMatch ? 'bg-green-500' : 'bg-red-500'}`} />
+                              <span className={`font-medium ${partyBalanceMatch ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                Party vs Inventory+Others: {partyBalanceMatch ? 'Match' : 'Mismatch'}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
-              )}
-
-
-              {/* Inventory Entries */}
-              {selectedVoucher.inventoryEntries && selectedVoucher.inventoryEntries.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Inventory Entries</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedVoucher.inventoryEntries.map((item: any, index: number) => (
-                        <div key={index} className="p-3 bg-muted rounded-lg">
-                          <div className="flex justify-between items-start mb-2">
-                            <p className="font-medium">{item.stockItemName}</p>
-                            <p className="font-semibold">{formatAmount(item.amount || 0)}</p>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground">
-                            <span>Qty: {item.billedQuantity} {item.unit}</span>
-                            <span>Rate: {formatAmount(item.rate || 0)}</span>
-                            <span>Godown: {item.godownName}</span>
-                            <span>Stock ID: {item.stockItemId}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        );
+                     })()}
                   </CardContent>
                 </Card>
               )}
