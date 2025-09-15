@@ -8,20 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, RefreshCw, ArrowLeft, ChevronRight, Users, FileText, Receipt, Calendar } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { tallyApi, type Group, type ApiResponse, type HierarchyData, type MonthlyAnalysis } from '@/services/tallyApiService';
 import { toast } from '@/hooks/use-toast';
 
-interface Group {
-  guid: string;
-  name: string;
-  parent: string;
-  primary_group: string;
-  is_revenue: boolean;
-  is_deemedpositive: boolean;
-  affects_gross_profit: boolean;
-  company_id: string;
-  division_id: string;
-}
+// Group interface is now imported from tallyApiService
 
 interface Ledger {
   guid: string;

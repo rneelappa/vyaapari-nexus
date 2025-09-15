@@ -6,67 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard, RefreshCw, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-
-// TEMPORARY DEBUG CODE - Remove after testing
-async function debugAuth() {
-  console.log('[DEBUG] LedgersPage - Checking authentication status...');
-  
-  const { data: session, error: sessionError } = await supabase.auth.getSession();
-  console.log('[DEBUG] LedgersPage - Session:', session, 'Error:', sessionError);
-  
-  const { data: user, error: userError } = await supabase.auth.getUser();
-  console.log('[DEBUG] LedgersPage - User:', user, 'Error:', userError);
-  
-  if (!session?.session) {
-    console.error('[DEBUG] LedgersPage - No session found - user not authenticated');
-  } else {
-    console.log('[DEBUG] LedgersPage - Access token:', session.session.access_token?.substring(0, 20) + '...');
-  }
-  
-  if (!user?.user) {
-    console.error('[DEBUG] LedgersPage - No user found - user not authenticated');
-  }
-  
-  // Test a simple query with explicit auth header
-  if (session?.session?.access_token) {
-    try {
-      console.log('[DEBUG] Testing authenticated query...');
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
-        headers: {
-          'Authorization': `Bearer ${session.session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Accept-Profile': 'public'
-        }
-      });
-      console.log('[DEBUG] Test query response:', response.status, await response.text());
-    } catch (error) {
-      console.error('[DEBUG] Test query failed:', error);
-    }
-  }
-}
-
-// Run debug immediately
-debugAuth();
+import { tallyApi, type Ledger, type ApiResponse } from "@/services/tallyApiService";
 
 // Import useAuth and toast after debugAuth function
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
-interface Ledger {
-  guid: string;
-  name: string;
-  parent: string;
-  alias: string;
-  opening_balance: number;
-  closing_balance: number;
-  is_revenue: boolean;
-  is_deemedpositive: boolean;
-  gstn: string;
-  email: string;
-  mailing_address: string;
-  bank_account_number: string;
-}
+// Ledger interface is now imported from tallyApiService
 
 export default function LedgersPage() {
   const { user } = useAuth();
@@ -114,35 +60,25 @@ export default function LedgersPage() {
       setError(null);
       setLastFetchTime(now);
       
-      console.log('Fetching ledgers from Supabase...');
+      console.log('Fetching ledgers from Tally API...');
       
-      // Fetch from Supabase mst_ledger table
-      const { data, error } = await supabase
-        .from('mst_ledger')
-        .select('*')
-        .order('name');
+      // Get company and division IDs (replace with actual values from context/props)
+      const companyId = '629f49fb-983e-4141-8c48-e1423b39e921';
+      const divisionId = '37f3cc0c-58ad-4baf-b309-360116ffc3cd';
       
-      if (error) {
-        throw error;
+      // Fetch from Tally API with enhanced features
+      const response = await tallyApi.getLedgers(companyId, divisionId, {
+        page: 1,
+        limit: 100,
+        search: searchTerm
+      });
+      
+      if (!response.success) {
+        throw new Error(response.error || 'API call failed');
       }
       
-      // Transform data to match Ledger interface
-      const transformedLedgers: Ledger[] = (data || []).map(item => ({
-        guid: item.guid,
-        name: item.name,
-        parent: item.parent,
-        alias: item.alias,
-        opening_balance: item.opening_balance || 0,
-        closing_balance: item.closing_balance || 0,
-        is_revenue: !!item.is_revenue,
-        is_deemedpositive: !!item.is_deemedpositive,
-        gstn: item.gstn || '',
-        email: item.email || '',
-        mailing_address: item.mailing_address || '',
-        bank_account_number: item.bank_account_number || '',
-      }));
-      
-      setLedgers(transformedLedgers);
+      // Data is already in correct format from API
+      setLedgers(response.data);
       setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching ledgers:', err);
