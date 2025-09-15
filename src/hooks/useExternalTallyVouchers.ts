@@ -9,6 +9,8 @@ interface VoucherFilters {
   to?: string;
   type?: string;
   search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 interface Pagination {
@@ -75,6 +77,8 @@ export const useExternalTallyVouchers = (companyId: string, divisionId: string) 
       const result = await externalTallyApi.getVouchers(companyId, divisionId, {
         page: pagination.page,
         limit: pagination.limit,
+        sortBy: 'date',
+        sortOrder: 'desc',
         ...filters
       });
       

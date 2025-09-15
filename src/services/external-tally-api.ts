@@ -5,6 +5,8 @@ interface TallyApiFilters {
   to?: string;
   type?: string;
   search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 interface TallyApiResponse<T = any> {
@@ -58,6 +60,8 @@ export class ExternalTallyApiService {
       const params = new URLSearchParams({
         page: (filters.page || 1).toString(),
         limit: (filters.limit || 50).toString(),
+        sortBy: filters.sortBy || 'date',
+        sortOrder: filters.sortOrder || 'desc',
         ...(filters.from && { from: filters.from }),
         ...(filters.to && { to: filters.to }),
         ...(filters.type && { type: filters.type?.toUpperCase() }),

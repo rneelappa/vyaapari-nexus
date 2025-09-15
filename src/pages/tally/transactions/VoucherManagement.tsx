@@ -133,7 +133,6 @@ export default function VoucherManagement() {
     }).format(amount);
   };
 
-  // Handle filters and search
   const handleSearch = () => {
     const filters: any = {};
     
@@ -142,6 +141,10 @@ export default function VoucherManagement() {
     if (dateTo) filters.to = format(new Date(dateTo), 'yyyyMMdd');
     const type = voucherTypeFilter && voucherTypeFilter !== 'ALL' ? voucherTypeFilter : '';
     if (type) filters.type = type;
+    
+    // Add sorting to maintain latest first order
+    filters.sortBy = 'date';
+    filters.sortOrder = 'desc';
     
     fetchVouchers(filters);
   };
@@ -296,6 +299,10 @@ export default function VoucherManagement() {
     const type = voucherTypeFilter && voucherTypeFilter !== 'ALL' ? voucherTypeFilter : '';
     if (type) filters.type = type;
     
+    // Add sorting to maintain latest first order
+    filters.sortBy = 'date';
+    filters.sortOrder = 'desc';
+    
     fetchVouchers({ ...filters, page: newPage });
   };
 
@@ -321,7 +328,7 @@ export default function VoucherManagement() {
     setDateFrom('');
     setDateTo('');
     setVoucherTypeFilter('');
-    fetchVouchers();
+    fetchVouchers({ sortBy: 'date', sortOrder: 'desc' });
   };
 
   if (!companyId || !divisionId) {
