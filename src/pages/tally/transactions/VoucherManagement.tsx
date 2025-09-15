@@ -100,6 +100,37 @@ export default function VoucherManagement() {
     fetchVouchers(filters);
   };
 
+  // Update voucher amounts when amount changes
+  const updateVoucherAmounts = (newAmount: number) => {
+    if (!editedVoucher) return;
+
+    const updatedEntries = editedVoucher.entries.map(entry => {
+      if (entry.isPartyLedger) {
+        // Party entry - typically negative for sales/receipts, positive for purchases/payments
+        const voucherType = editedVoucher.type.toLowerCase();
+        if (voucherType.includes('sales') || voucherType.includes('receipt')) {
+          return { ...entry, amount: -newAmount };
+        } else {
+          return { ...entry, amount: newAmount };
+        }
+      } else if (!entry.source || entry.source === 'main_ledger') {
+        // Main ledger entry - opposite of party
+        const voucherType = editedVoucher.type.toLowerCase();
+        if (voucherType.includes('sales') || voucherType.includes('receipt')) {
+          return { ...entry, amount: newAmount };
+        } else {
+          return { ...entry, amount: -newAmount };
+        }
+      }
+      return entry;
+    });
+
+    setEditedVoucher({
+      ...editedVoucher,
+      entries: updatedEntries
+    });
+  };
+
   const handleSync = async () => {
     if (!syncFromDate || !syncToDate) {
       toast({
@@ -149,15 +180,19 @@ export default function VoucherManagement() {
     if (!editedVoucher) return;
 
     if (ledgerDialogType === 'party') {
+      // Update party ledger
       setEditedVoucher({
         ...editedVoucher,
-        partyLedgerName: ledger.name
+        partyLedgerName: ledger.name,
+        entries: editedVoucher.entries.map(entry =>
+          entry.isPartyLedger ? { ...entry, ledgerName: ledger.name } : entry
+        )
       });
     } else {
       // Update main accounting ledger
       const updatedEntries = [...(editedVoucher.entries || [])];
       const mainLedgerIndex = updatedEntries.findIndex(entry => 
-        !entry.isPartyLedger && entry.source === 'main_ledger'
+        !entry.isPartyLedger && (!entry.source || entry.source === 'main_ledger')
       );
       
       if (mainLedgerIndex >= 0) {
@@ -167,10 +202,12 @@ export default function VoucherManagement() {
         };
       } else {
         // Add new main ledger entry if none exists
+        const partyEntry = updatedEntries.find(e => e.isPartyLedger);
+        const partyAmount = partyEntry?.amount || 0;
         updatedEntries.push({
           ledgerName: ledger.name,
-          amount: 0,
-          isDeemedPositive: false,
+          amount: -partyAmount, // Opposite of party amount
+          isDeemedPositive: partyAmount < 0,
           isPartyLedger: false,
           source: 'main_ledger'
         });
@@ -771,6 +808,26 @@ export default function VoucherManagement() {
                         </div>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-amount">Amount</Label>
+                        <Input
+                          id="edit-amount"
+                          type="number"
+                          step="0.01"
+                          value={(() => {
+                            const partyEntry = editedVoucher?.entries?.find(e => e.isPartyLedger);
+                            return Math.abs(partyEntry?.amount || 0).toString();
+                          })()}
+                          onChange={(e) => {
+                            if (editedVoucher) {
+                              const newAmount = parseFloat(e.target.value) || 0;
+                              updateVoucherAmounts(newAmount);
+                            }
+                          }}
+                          placeholder="Enter amount"
+                        />
+                      </div>
+
                       <div className="md:col-span-2 space-y-2">
                         <Label className="text-xs text-muted-foreground">Type</Label>
                         <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
@@ -802,20 +859,24 @@ export default function VoucherManagement() {
               </Card>
 
               {/* Accounting Ledgers */}
-              {selectedVoucher.entries && selectedVoucher.entries.length > 0 && (
+              {(isEditing ? editedVoucher : selectedVoucher)?.entries && (isEditing ? editedVoucher : selectedVoucher)?.entries.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Accounting Ledgers</CardTitle>
                   </CardHeader>
                   <CardContent>
                      {(() => {
+                        // Use edited voucher when in edit mode, otherwise use selected voucher
+                        const currentVoucher = isEditing ? editedVoucher : selectedVoucher;
+                        if (!currentVoucher) return null;
+
                         // Separate entries by source type
-                        const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
+                        const mainLedgerEntries = currentVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
                         
-                        const party = mainLedgerEntries.find((e: any) => (e.ledgerName === selectedVoucher.partyLedgerName) || e.isPartyLedger);
+                        const party = mainLedgerEntries.find((e: any) => (e.ledgerName === currentVoucher.partyLedgerName) || e.isPartyLedger);
                         const otherMainLedgers = mainLedgerEntries.filter((e: any) => party ? (e.ledgerName !== party.ledgerName) : true);
                         
-                        const t = (selectedVoucher.type || '').toLowerCase();
+                        const t = (currentVoucher.type || '').toLowerCase();
                         const expectedAccountType = t.includes('sales') ? 'Sales Account' : t.includes('purchase') ? 'Purchase Account' : (t.includes('payment') || t.includes('receipt') || t.includes('contra')) ? 'Bank/Cash Account' : 'Account';
                         const needsTwoLedgers = ['sales','purchase','payment','receipt'].some(k => t.includes(k));
                         const mainAccount = otherMainLedgers.find((e: any) => {
@@ -827,10 +888,11 @@ export default function VoucherManagement() {
                          <div className="space-y-3">
                            {/* Party first */}
                            {party && (
-                             <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-border">
+                             <div className={`flex items-center justify-between p-3 rounded-lg border ${isEditing ? 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800' : 'bg-primary/5 border-border'}`}>
                                <div className="flex-1">
                                  <p className="font-semibold">{party.ledgerName}</p>
                                  <Badge variant="default" className="text-xs mt-1">Party Account</Badge>
+                                 {isEditing && <Badge variant="secondary" className="text-xs mt-1 ml-2">Editable</Badge>}
                                </div>
                                <div className="text-right">
                                  <p className="font-semibold">{formatAmount(Math.abs(party.amount || 0))}</p>
@@ -842,19 +904,20 @@ export default function VoucherManagement() {
                            {/* Warning if main account missing */}
                            {needsTwoLedgers && otherMainLedgers.length === 0 && (
                              <div className="p-3 rounded-lg border border-destructive/30 bg-destructive/5 text-destructive text-sm">
-                               Missing {expectedAccountType} - required for {selectedVoucher.type} voucher
+                               Missing {expectedAccountType} - required for {currentVoucher.type} voucher
                              </div>
                            )}
 
                            {/* Other main ledgers */}
                            {otherMainLedgers.map((entry: any, index: number) => (
-                             <div key={index} className={`flex items-center justify-between p-3 rounded-lg bg-muted ${mainAccount && mainAccount.ledgerName === entry.ledgerName ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}>
+                             <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${isEditing ? 'bg-blue-50 border border-blue-200 dark:bg-blue-950 dark:border-blue-800' : 'bg-muted'} ${mainAccount && mainAccount.ledgerName === entry.ledgerName ? 'ring-1 ring-primary/30 bg-primary/5' : ''}`}>
                                <div className="flex-1">
                                   <p className="font-medium">
                                     {entry.ledgerName}
                                     {mainAccount && mainAccount.ledgerName === entry.ledgerName && (
                                       <Badge variant="secondary" className="ml-2 text-xs">Main Account</Badge>
                                     )}
+                                    {isEditing && <Badge variant="secondary" className="text-xs mt-1 ml-2">Editable</Badge>}
                                   </p>
                                   <Badge variant="outline" className="text-xs mt-1">Main Ledger</Badge>
                                </div>
@@ -934,16 +997,20 @@ export default function VoucherManagement() {
               )}
 
               {/* Totals */}
-              {selectedVoucher.entries && selectedVoucher.entries.length > 0 && (
+              {(isEditing ? editedVoucher : selectedVoucher)?.entries && (isEditing ? editedVoucher : selectedVoucher)?.entries.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Totals</CardTitle>
                   </CardHeader>
                   <CardContent>
                      {(() => {
+                        // Use edited voucher when in edit mode, otherwise use selected voucher
+                        const currentVoucher = isEditing ? editedVoucher : selectedVoucher;
+                        if (!currentVoucher) return null;
+
                         // Recalculate totals for display
-                        const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
-                        const inventoryEntries = selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting');
+                        const mainLedgerEntries = currentVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
+                        const inventoryEntries = currentVoucher.entries.filter((e: any) => e.source === 'inventory_accounting');
                         
                         const inventoryAccountingDebit = inventoryEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
                         const inventoryAccountingCredit = inventoryEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
@@ -959,17 +1026,24 @@ export default function VoucherManagement() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                               <div>
                                 <div className="text-sm text-muted-foreground">Total Debit</div>
-                                <div className="text-xl font-semibold">{formatAmount(totalDebit)}</div>
+                                <div className={`text-xl font-semibold ${isEditing ? 'text-blue-600 dark:text-blue-400' : ''}`}>{formatAmount(totalDebit)}</div>
                               </div>
                               <div>
                                 <div className="text-sm text-muted-foreground">Total Credit</div>
-                                <div className="text-xl font-semibold">{formatAmount(totalCredit)}</div>
+                                <div className={`text-xl font-semibold ${isEditing ? 'text-blue-600 dark:text-blue-400' : ''}`}>{formatAmount(totalCredit)}</div>
                               </div>
                               <div>
                                 <div className="text-sm text-muted-foreground">Grand Total</div>
-                                <div className="text-xl font-semibold text-primary">{formatAmount(Math.max(totalDebit, totalCredit))}</div>
+                                <div className={`text-xl font-semibold ${isEditing ? 'text-blue-600 dark:text-blue-400' : 'text-primary'}`}>{formatAmount(Math.max(totalDebit, totalCredit))}</div>
                               </div>
                             </div>
+                            {isEditing && (
+                              <div className="text-center">
+                                <Badge variant={totalDebit === totalCredit ? "secondary" : "destructive"} className="text-xs">
+                                  {totalDebit === totalCredit ? "Balanced" : "Unbalanced"}
+                                </Badge>
+                              </div>
+                            )}
                           </div>
                         );
                      })()}
