@@ -69,6 +69,7 @@ export default function VoucherManagement() {
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [syncFromDate, setSyncFromDate] = useState('');
   const [syncToDate, setSyncToDate] = useState('');
+  const [selectedDateRange, setSelectedDateRange] = useState('last30days');
   const [isEditing, setIsEditing] = useState(false);
   const [editedVoucher, setEditedVoucher] = useState<VoucherEntry | null>(null);
   const [showLedgerDialog, setShowLedgerDialog] = useState(false);
@@ -78,6 +79,103 @@ export default function VoucherManagement() {
   const [showShippingDetailsDialog, setShowShippingDetailsDialog] = useState(false);
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
   const [currentVoucherDetails, setCurrentVoucherDetails] = useState<any>(null);
+
+  // Date range calculation functions
+  const getDateRange = (range: string) => {
+    const today = new Date();
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    switch (range) {
+      case 'today':
+        return {
+          from: formatDate(today),
+          to: formatDate(today)
+        };
+      case 'last7days':
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        return {
+          from: formatDate(sevenDaysAgo),
+          to: formatDate(today)
+        };
+      case 'last30days':
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        return {
+          from: formatDate(thirtyDaysAgo),
+          to: formatDate(today)
+        };
+      case 'last3months':
+        const threeMonthsAgo = new Date(today);
+        threeMonthsAgo.setMonth(today.getMonth() - 3);
+        return {
+          from: formatDate(threeMonthsAgo),
+          to: formatDate(today)
+        };
+      case 'currentFY':
+        // Indian Financial Year: April 1 to March 31
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth(); // 0-based
+        
+        let fyStart, fyEnd;
+        if (currentMonth >= 3) { // April (3) onwards
+          fyStart = new Date(currentYear, 3, 1); // April 1
+          fyEnd = new Date(currentYear + 1, 2, 31); // March 31 next year
+        } else { // January to March
+          fyStart = new Date(currentYear - 1, 3, 1); // April 1 previous year
+          fyEnd = new Date(currentYear, 2, 31); // March 31 current year
+        }
+        
+        return {
+          from: formatDate(fyStart),
+          to: formatDate(fyEnd)
+        };
+      default:
+        return { from: '', to: '' };
+    }
+  };
+
+  // Apply date range filter
+  const applyDateRange = (range: string) => {
+    setSelectedDateRange(range);
+    const { from, to } = getDateRange(range);
+    setDateFrom(from);
+    setDateTo(to);
+  };
+
+  // Initialize with last 30 days on component mount
+  React.useEffect(() => {
+    if (!dateFrom && !dateTo) {
+      applyDateRange('last30days');
+    }
+  }, []);
+
+  // Initialize sync dates when sync dialog opens
+  const openSyncDialog = () => {
+    if (!syncFromDate || !syncToDate) {
+      const { from, to } = getDateRange('last30days');
+      setSyncFromDate(from);
+      setSyncToDate(to);
+    }
+    setShowSyncDialog(true);
+  };
+
+  // Reset selected date range when dates are manually changed
+  React.useEffect(() => {
+    // Check if current dates match any preset range
+    const ranges = ['today', 'last7days', 'last30days', 'last3months', 'currentFY'];
+    let matchedRange = '';
+    
+    for (const range of ranges) {
+      const { from, to } = getDateRange(range);
+      if (dateFrom === from && dateTo === to) {
+        matchedRange = range;
+        break;
+      }
+    }
+    
+    setSelectedDateRange(matchedRange);
+  }, [dateFrom, dateTo]);
 
   // Handler to fetch voucher details and show party popup
   const handleShowPartyDetails = async (voucher: VoucherEntry) => {
@@ -181,17 +279,20 @@ export default function VoucherManagement() {
   };
 
   const handleSync = async () => {
-    if (!syncFromDate || !syncToDate) {
-      toast({
-        title: "Error",
-        description: "Please select both from and to dates for sync",
-        variant: "destructive"
-      });
-      return;
+    let syncFrom = syncFromDate;
+    let syncTo = syncToDate;
+    
+    // If no dates selected, use last 30 days as default
+    if (!syncFrom || !syncTo) {
+      const { from, to } = getDateRange('last30days');
+      syncFrom = from;
+      syncTo = to;
+      setSyncFromDate(from);
+      setSyncToDate(to);
     }
 
-    const fromFormatted = format(new Date(syncFromDate), 'yyyyMMdd');
-    const toFormatted = format(new Date(syncToDate), 'yyyyMMdd');
+    const fromFormatted = format(new Date(syncFrom), 'yyyyMMdd');
+    const toFormatted = format(new Date(syncTo), 'yyyyMMdd');
     
     await syncFromTally(fromFormatted, toFormatted);
     setShowSyncDialog(false);
@@ -406,7 +507,7 @@ export default function VoucherManagement() {
 
             <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-primary hover:bg-primary-hover">
+                <Button size="sm" className="bg-primary hover:bg-primary-hover" onClick={openSyncDialog}>
                   <RotateCcw className="h-4 w-4 mr-2" />
                   Sync from Tally
                 </Button>
@@ -416,6 +517,73 @@ export default function VoucherManagement() {
                   <DialogTitle>Sync from Tally ERP</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
+                  {/* Quick Date Range Options for Sync */}
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Quick Date Ranges</Label>
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const { from, to } = getDateRange('today');
+                          setSyncFromDate(from);
+                          setSyncToDate(to);
+                        }}
+                        className="text-xs"
+                      >
+                        Today
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const { from, to } = getDateRange('last7days');
+                          setSyncFromDate(from);
+                          setSyncToDate(to);
+                        }}
+                        className="text-xs"
+                      >
+                        Last 7 Days
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const { from, to } = getDateRange('last30days');
+                          setSyncFromDate(from);
+                          setSyncToDate(to);
+                        }}
+                        className="text-xs"
+                      >
+                        Last 30 Days
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const { from, to } = getDateRange('last3months');
+                          setSyncFromDate(from);
+                          setSyncToDate(to);
+                        }}
+                        className="text-xs"
+                      >
+                        Last 3 Months
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const { from, to } = getDateRange('currentFY');
+                          setSyncFromDate(from);
+                          setSyncToDate(to);
+                        }}
+                        className="text-xs col-span-2"
+                      >
+                        Current FY
+                      </Button>
+                    </div>
+                  </div>
+
                   <div>
                     <Label htmlFor="syncFromDate">From Date</Label>
                     <Input
@@ -473,6 +641,53 @@ export default function VoucherManagement() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Quick Date Range Filters */}
+              <div className="mb-6">
+                <Label className="text-sm font-medium mb-3 block">Quick Date Filters</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={selectedDateRange === 'today' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => applyDateRange('today')}
+                    className="transition-smooth"
+                  >
+                    Today
+                  </Button>
+                  <Button
+                    variant={selectedDateRange === 'last7days' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => applyDateRange('last7days')}
+                    className="transition-smooth"
+                  >
+                    Last 7 Days
+                  </Button>
+                  <Button
+                    variant={selectedDateRange === 'last30days' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => applyDateRange('last30days')}
+                    className="transition-smooth"
+                  >
+                    Last 30 Days
+                  </Button>
+                  <Button
+                    variant={selectedDateRange === 'last3months' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => applyDateRange('last3months')}
+                    className="transition-smooth"
+                  >
+                    Last 3 Months
+                  </Button>
+                  <Button
+                    variant={selectedDateRange === 'currentFY' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => applyDateRange('currentFY')}
+                    className="transition-smooth"
+                  >
+                    Current FY
+                  </Button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="search">Search Vouchers</Label>
@@ -674,7 +889,7 @@ export default function VoucherManagement() {
                   Try syncing from Tally or adjusting your search filters
                 </p>
                 <Button 
-                  onClick={() => setShowSyncDialog(true)} 
+                  onClick={openSyncDialog} 
                   variant="outline"
                 >
                   <RotateCcw className="h-4 w-4 mr-2" />
