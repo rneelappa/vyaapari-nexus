@@ -218,10 +218,53 @@ export default function VoucherManagement() {
   // Format helper functions
   const formatDate = (dateStr: string) => {
     if (!dateStr) return 'N/A';
-    const year = dateStr.substring(0, 4);
-    const month = dateStr.substring(4, 6);
-    const day = dateStr.substring(6, 8);
-    return `${day}/${month}/${year}`;
+    
+    try {
+      // Handle API format like "7-Jul-25" or "07-Jul-25"
+      if (dateStr.includes('-') && dateStr.length <= 10) {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          const day = parts[0].padStart(2, '0');
+          const monthStr = parts[1];
+          const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+          
+          // Convert month abbreviation to number
+          const monthMap: { [key: string]: string } = {
+            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
+            'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
+            'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+          };
+          
+          const month = monthMap[monthStr] || monthStr;
+          return `${day}/${month}/${year}`;
+        }
+      }
+      
+      // Handle numeric format like "20250707" (YYYYMMDD)
+      if (dateStr.length === 8 && /^\d{8}$/.test(dateStr)) {
+        const year = dateStr.substring(0, 4);
+        const month = dateStr.substring(4, 6);
+        const day = dateStr.substring(6, 8);
+        return `${day}/${month}/${year}`;
+      }
+      
+      // Handle ISO date format
+      if (dateStr.includes('T') || dateStr.includes('-') && dateStr.length > 10) {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          const day = date.getDate().toString().padStart(2, '0');
+          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+          const year = date.getFullYear();
+          return `${day}/${month}/${year}`;
+        }
+      }
+      
+      // Fallback: return original if can't parse
+      return dateStr;
+    } catch (error) {
+      console.error('Error formatting date:', dateStr, error);
+      return dateStr;
+    }
   };
 
   const formatAmount = (amount: number) => {
