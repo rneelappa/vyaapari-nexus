@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, Plus, Search, Calendar, DollarSign, Filter, X, Activity, RotateCcw, Eye, Edit, Download, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import { RefreshCw, Plus, Search, Calendar, DollarSign, Filter, X, Activity, RotateCcw, Eye, Edit, Download, ChevronLeft, ChevronRight, Package, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdvancedVoucherDetails } from "@/components/tally/AdvancedVoucherDetails";
 import { InventoryTest } from "@/components/tally/InventoryTest";
 import { LedgerSelectionDialog } from "@/components/tally/LedgerSelectionDialog";
+import { PartyDetailsDialog } from "@/components/tally/PartyDetailsDialog";
+import { InventoryDetailsDialog } from "@/components/tally/InventoryDetailsDialog";
+import { VoucherShippingDetailsDialog } from "@/components/tally/VoucherShippingDetailsDialog";
 
 // Define VoucherEntry interface for external API
 interface VoucherEntry {
@@ -70,6 +73,49 @@ export default function VoucherManagement() {
   const [editedVoucher, setEditedVoucher] = useState<VoucherEntry | null>(null);
   const [showLedgerDialog, setShowLedgerDialog] = useState(false);
   const [ledgerDialogType, setLedgerDialogType] = useState<'party' | 'main'>('party');
+  const [showPartyDetailsDialog, setShowPartyDetailsDialog] = useState(false);
+  const [showInventoryDetailsDialog, setShowInventoryDetailsDialog] = useState(false);
+  const [showShippingDetailsDialog, setShowShippingDetailsDialog] = useState(false);
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<any>(null);
+  const [currentVoucherDetails, setCurrentVoucherDetails] = useState<any>(null);
+
+  // Handler to fetch voucher details and show party popup
+  const handleShowPartyDetails = async (voucher: VoucherEntry) => {
+    try {
+      const voucherDetails = await getVoucher(voucher.id);
+      setCurrentVoucherDetails(voucherDetails);
+      setShowPartyDetailsDialog(true);
+    } catch (error) {
+      console.error('Error fetching voucher details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch party details",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handler to show inventory item details
+  const handleShowInventoryDetails = (inventoryItem: any) => {
+    setSelectedInventoryItem(inventoryItem);
+    setShowInventoryDetailsDialog(true);
+  };
+
+  // Handler to show shipping details
+  const handleShowShippingDetails = async (voucher: VoucherEntry) => {
+    try {
+      const voucherDetails = await getVoucher(voucher.id);
+      setCurrentVoucherDetails(voucherDetails);
+      setShowShippingDetailsDialog(true);
+    } catch (error) {
+      console.error('Error fetching voucher details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch shipping details",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Format helper functions
   const formatDate = (dateStr: string) => {
@@ -851,7 +897,23 @@ export default function VoucherManagement() {
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">Party</Label>
-                        <p className="font-medium">{selectedVoucher.partyLedgerName || 'N/A'}</p>
+                        <button 
+                          onClick={() => handleShowPartyDetails(selectedVoucher)}
+                          className="font-medium text-primary hover:underline text-left"
+                        >
+                          {selectedVoucher.partyLedgerName || 'N/A'}
+                        </button>
+                      </div>
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleShowShippingDetails(selectedVoucher)}
+                          className="text-xs"
+                        >
+                          <Truck className="h-3 w-3 mr-1" />
+                          Shipping
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -943,9 +1005,11 @@ export default function VoucherManagement() {
                   <CardContent>
                     <div className="space-y-3">
                       {selectedVoucher.inventoryEntries.map((item: any, index: number) => (
-                        <div key={`inventory-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border">
+                        <div key={`inventory-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border cursor-pointer hover:bg-secondary/50" onClick={() => handleShowInventoryDetails(item)}>
                           <div className="flex-1">
-                            <p className="font-medium">{item.stockItemName}</p>
+                            <button className="font-medium text-primary hover:underline text-left w-full">
+                              {item.stockItemName}
+                            </button>
                             <div className="flex gap-2 mt-1">
                               <Badge variant="outline" className="text-xs">
                                 Qty: {item.billedQuantity} {item.unit}
@@ -1141,6 +1205,30 @@ export default function VoucherManagement() {
             : editedVoucher?.entries?.find(e => !e.isPartyLedger && e.source === 'main_ledger')?.ledgerName
         }
         title={ledgerDialogType === 'party' ? 'Select Party Account' : 'Select Main Account'}
+      />
+
+      {/* Party Details Dialog */}
+      <PartyDetailsDialog
+        open={showPartyDetailsDialog}
+        onOpenChange={setShowPartyDetailsDialog}
+        partyDetails={currentVoucherDetails?.partyDetails || null}
+        partyName={selectedVoucher?.partyLedgerName || ''}
+      />
+
+      {/* Inventory Details Dialog */}
+      <InventoryDetailsDialog
+        open={showInventoryDetailsDialog}
+        onOpenChange={setShowInventoryDetailsDialog}
+        inventoryEntry={selectedInventoryItem}
+      />
+
+      {/* Shipping Details Dialog */}
+      <VoucherShippingDetailsDialog
+        open={showShippingDetailsDialog}
+        onOpenChange={setShowShippingDetailsDialog}
+        dispatchDetails={currentVoucherDetails?.dispatchDetails || null}
+        receiptDetails={currentVoucherDetails?.receiptDetails || null}
+        voucherNumber={selectedVoucher?.number || ''}
       />
     </div>
   );
