@@ -58,3 +58,6 @@ verify_jwt = false
 
 [functions.tally-voucher-sync]
 verify_jwt = true
+
+[functions.tally-api-diagnostics]
+verify_jwt = false

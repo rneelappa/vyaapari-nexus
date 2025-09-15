@@ -20,6 +20,7 @@ import { LedgerSelectionDialog } from "@/components/tally/LedgerSelectionDialog"
 import { PartyDetailsDialog } from "@/components/tally/PartyDetailsDialog";
 import { InventoryDetailsDialog } from "@/components/tally/InventoryDetailsDialog";
 import { VoucherShippingDetailsDialog } from "@/components/tally/VoucherShippingDetailsDialog";
+import { TallyApiDiagnostics } from "@/components/tally/TallyApiDiagnostics";
 
 // Define VoucherEntry interface for external API
 interface VoucherEntry {
@@ -525,13 +526,23 @@ export default function VoucherManagement() {
           {/* Debug/Test Section */}
           <details className="border rounded-lg p-4">
             <summary className="cursor-pointer font-medium text-sm">
-              🔧 Enhanced API & Inventory Testing
+              🔧 Enhanced API & Diagnostics Testing
             </summary>
-            <div className="mt-4">
-              <InventoryTest 
-                companyId={companyId || 'SKM'} 
-                divisionId={divisionId || 'MAIN'} 
-              />
+            <div className="mt-4 space-y-6">
+              <div>
+                <h4 className="font-medium text-sm mb-3">API Diagnostics</h4>
+                <TallyApiDiagnostics voucherId={selectedVoucher?.id} />
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h4 className="font-medium text-sm mb-3">Inventory Testing</h4>
+                <InventoryTest 
+                  companyId={companyId || 'SKM'} 
+                  divisionId={divisionId || 'MAIN'} 
+                />
+              </div>
             </div>
           </details>
 
