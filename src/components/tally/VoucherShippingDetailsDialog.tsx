@@ -37,22 +37,38 @@ export function VoucherShippingDetailsDialog({
   receiptDetails,
   voucherNumber 
 }: VoucherShippingDetailsDialogProps) {
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | any) => {
     if (!dateStr) return 'N/A';
+    // Handle if dateStr is an object
+    if (typeof dateStr === 'object') {
+      return JSON.stringify(dateStr);
+    }
     try {
       return new Date(dateStr).toLocaleDateString('en-IN');
     } catch {
-      return dateStr;
+      return String(dateStr);
     }
   };
 
-  const hasDispatchDetails = dispatchDetails && Object.values(dispatchDetails).some(value => 
-    Array.isArray(value) ? value.length > 0 : Boolean(value)
-  );
+  const formatValue = (value: any): string => {
+    if (!value) return 'N/A';
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
 
-  const hasReceiptDetails = receiptDetails && Object.values(receiptDetails).some(value => 
-    Array.isArray(value) ? value.length > 0 : Boolean(value)
-  );
+  const hasDispatchDetails = dispatchDetails && Object.values(dispatchDetails).some(value => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object' && value !== null) return Object.keys(value).length > 0;
+    return Boolean(value);
+  });
+
+  const hasReceiptDetails = receiptDetails && Object.values(receiptDetails).some(value => {
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object' && value !== null) return Object.keys(value).length > 0;
+    return Boolean(value);
+  });
 
   if (!hasDispatchDetails && !hasReceiptDetails) {
     return (
@@ -99,7 +115,7 @@ export function VoucherShippingDetailsDialog({
                     <div>
                       <label className="text-sm font-medium">Dispatch Document No.</label>
                       <p className="text-sm text-muted-foreground font-mono">
-                        {dispatchDetails.dispatchDocNo}
+                        {formatValue(dispatchDetails.dispatchDocNo)}
                       </p>
                     </div>
                   )}
@@ -135,7 +151,7 @@ export function VoucherShippingDetailsDialog({
                     <div>
                       <label className="text-sm font-medium">Carrier</label>
                       <p className="text-sm text-muted-foreground">
-                        {dispatchDetails.carrierName}
+                        {formatValue(dispatchDetails.carrierName)}
                       </p>
                     </div>
                   )}
@@ -143,7 +159,7 @@ export function VoucherShippingDetailsDialog({
                     <div>
                       <label className="text-sm font-medium">Dispatched Through</label>
                       <p className="text-sm text-muted-foreground">
-                        {dispatchDetails.dispatchedThrough}
+                        {formatValue(dispatchDetails.dispatchedThrough)}
                       </p>
                     </div>
                   )}
@@ -151,7 +167,7 @@ export function VoucherShippingDetailsDialog({
                     <div>
                       <label className="text-sm font-medium">Destination</label>
                       <p className="text-sm text-muted-foreground">
-                        {dispatchDetails.destination}
+                        {formatValue(dispatchDetails.destination)}
                       </p>
                     </div>
                   )}
@@ -159,7 +175,7 @@ export function VoucherShippingDetailsDialog({
                     <div>
                       <label className="text-sm font-medium">LR Number</label>
                       <p className="text-sm text-muted-foreground font-mono">
-                        {dispatchDetails.lrNumber}
+                        {formatValue(dispatchDetails.lrNumber)}
                       </p>
                     </div>
                   )}
@@ -167,7 +183,7 @@ export function VoucherShippingDetailsDialog({
                     <div>
                       <label className="text-sm font-medium">Vehicle Number</label>
                       <p className="text-sm text-muted-foreground font-mono">
-                        {dispatchDetails.vehicleNo}
+                        {formatValue(dispatchDetails.vehicleNo)}
                       </p>
                     </div>
                   )}
@@ -191,7 +207,7 @@ export function VoucherShippingDetailsDialog({
                     <div>
                       <label className="text-sm font-medium">Receipt Document No.</label>
                       <p className="text-sm text-muted-foreground font-mono">
-                        {receiptDetails.receiptDocNo}
+                        {formatValue(receiptDetails.receiptDocNo)}
                       </p>
                     </div>
                   )}

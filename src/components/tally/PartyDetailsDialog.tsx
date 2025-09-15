@@ -28,6 +28,13 @@ export function PartyDetailsDialog({
   partyDetails, 
   partyName 
 }: PartyDetailsDialogProps) {
+  const formatValue = (value: any): string => {
+    if (!value) return '';
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+    return String(value);
+  };
   if (!partyDetails) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,9 +66,9 @@ export function PartyDetailsDialog({
         <div className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-lg">{partyDetails.name}</h3>
+            <h3 className="font-semibold text-lg">{formatValue(partyDetails.name)}</h3>
             {partyDetails.mailingName && partyDetails.mailingName !== partyDetails.name && (
-              <p className="text-muted-foreground">Mailing Name: {partyDetails.mailingName}</p>
+              <p className="text-muted-foreground">Mailing Name: {formatValue(partyDetails.mailingName)}</p>
             )}
           </div>
 
@@ -77,16 +84,16 @@ export function PartyDetailsDialog({
               {partyDetails.addressLines?.map((line, index) => (
                 line && (
                   <p key={index} className="text-sm text-muted-foreground">
-                    {line}
+                    {formatValue(line)}
                   </p>
                 )
               ))}
               <div className="flex gap-2 text-sm">
                 {partyDetails.state && (
-                  <Badge variant="outline">{partyDetails.state}</Badge>
+                  <Badge variant="outline">{formatValue(partyDetails.state)}</Badge>
                 )}
                 {partyDetails.country && (
-                  <Badge variant="outline">{partyDetails.country}</Badge>
+                  <Badge variant="outline">{formatValue(partyDetails.country)}</Badge>
                 )}
               </div>
             </div>
@@ -105,7 +112,7 @@ export function PartyDetailsDialog({
                 <div>
                   <label className="text-sm font-medium">GSTIN</label>
                   <p className="text-sm text-muted-foreground font-mono">
-                    {partyDetails.gstin}
+                    {formatValue(partyDetails.gstin)}
                   </p>
                 </div>
               )}
@@ -113,7 +120,7 @@ export function PartyDetailsDialog({
                 <div>
                   <label className="text-sm font-medium">GST Registration Type</label>
                   <p className="text-sm text-muted-foreground">
-                    {partyDetails.gstRegistrationType}
+                    {formatValue(partyDetails.gstRegistrationType)}
                   </p>
                 </div>
               )}
@@ -121,7 +128,7 @@ export function PartyDetailsDialog({
                 <div>
                   <label className="text-sm font-medium">Place of Supply</label>
                   <p className="text-sm text-muted-foreground">
-                    {partyDetails.placeOfSupply}
+                    {formatValue(partyDetails.placeOfSupply)}
                   </p>
                 </div>
               )}

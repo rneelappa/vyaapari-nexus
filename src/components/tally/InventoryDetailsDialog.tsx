@@ -51,6 +51,30 @@ export function InventoryDetailsDialog({
   onOpenChange, 
   inventoryEntry 
 }: InventoryDetailsDialogProps) {
+  const formatAmount = (amount: number | any) => {
+    if (typeof amount === 'object') {
+      return JSON.stringify(amount);
+    }
+    const numAmount = Number(amount);
+    if (isNaN(numAmount)) return String(amount);
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(numAmount);
+  };
+
+  const formatDate = (dateStr: string | any) => {
+    if (!dateStr) return 'N/A';
+    if (typeof dateStr === 'object') {
+      return JSON.stringify(dateStr);
+    }
+    try {
+      return new Date(dateStr).toLocaleDateString('en-IN');
+    } catch {
+      return String(dateStr);
+    }
+  };
+  
   if (!inventoryEntry) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -68,21 +92,12 @@ export function InventoryDetailsDialog({
       </Dialog>
     );
   }
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(amount);
-  };
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return 'N/A';
-    try {
-      return new Date(dateStr).toLocaleDateString('en-IN');
-    } catch {
-      return dateStr;
+  const formatValue = (value: any): string => {
+    if (!value && value !== 0) return 'N/A';
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
     }
+    return String(value);
   };
 
   return (
@@ -99,26 +114,26 @@ export function InventoryDetailsDialog({
           {/* Basic Item Information */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">{inventoryEntry.stockItemName}</CardTitle>
+              <CardTitle className="text-lg">{formatValue(inventoryEntry.stockItemName)}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium">Item ID</label>
                   <p className="text-sm text-muted-foreground">
-                    {inventoryEntry.stockItemId || 'N/A'}
+                    {formatValue(inventoryEntry.stockItemId)}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">HSN Code</label>
                   <p className="text-sm text-muted-foreground font-mono">
-                    {inventoryEntry.hsnCode || 'N/A'}
+                    {formatValue(inventoryEntry.hsnCode)}
                   </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">GST Rate</label>
                   <p className="text-sm text-muted-foreground">
-                    {inventoryEntry.gstRate}%
+                    {formatValue(inventoryEntry.gstRate)}%
                   </p>
                 </div>
               </div>
