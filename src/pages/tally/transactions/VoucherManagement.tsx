@@ -697,9 +697,9 @@ export default function VoucherManagement() {
                        const mainLedgerEntries = selectedVoucher.entries.filter((e: any) => !e.source || e.source === 'main_ledger');
                        const inventoryEntries = selectedVoucher.entries.filter((e: any) => e.source === 'inventory_accounting');
                        
-                       const party = mainLedgerEntries.find((e: any) => e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName);
-                       const otherMainLedgers = mainLedgerEntries.filter((e: any) => !(e.isPartyLedger || e.ledgerName === selectedVoucher.partyLedgerName));
-                       
+                        const party = mainLedgerEntries.find((e: any) => (e.ledgerName === selectedVoucher.partyLedgerName) || e.isPartyLedger);
+                        const otherMainLedgers = mainLedgerEntries.filter((e: any) => party ? (e.ledgerName !== party.ledgerName) : true);
+                        
                        // Calculate totals based on new structure
                        const inventoryAccountingDebit = inventoryEntries.reduce((s: number, e: any) => e.amount > 0 ? s + e.amount : s, 0);
                        const inventoryAccountingCredit = inventoryEntries.reduce((s: number, e: any) => e.amount < 0 ? s + Math.abs(e.amount) : s, 0);
