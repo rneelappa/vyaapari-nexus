@@ -136,7 +136,7 @@ export function VoucherShippingDetailsDialog({
                     <div className="flex flex-wrap gap-2 mt-1">
                       {dispatchDetails.deliveryNoteNumbers.map((note, index) => (
                         <Badge key={index} variant="outline" className="font-mono text-xs">
-                          {note}
+                          {formatValue(note)}
                         </Badge>
                       ))}
                     </div>
@@ -228,7 +228,7 @@ export function VoucherShippingDetailsDialog({
                     <div className="flex flex-wrap gap-2 mt-1">
                       {receiptDetails.receiptNoteNumbers.map((note, index) => (
                         <Badge key={index} variant="outline" className="font-mono text-xs">
-                          {note}
+                          {formatValue(note)}
                         </Badge>
                       ))}
                     </div>
