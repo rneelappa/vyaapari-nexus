@@ -46,6 +46,7 @@ export function LedgerSelectionDialog({
     
     setLoading(true);
     try {
+      // Try the new API endpoint first
       const params = new URLSearchParams({
         page: pageNum.toString(),
         limit: '50'
@@ -55,34 +56,112 @@ export function LedgerSelectionDialog({
         params.append('q', query.trim());
       }
 
-      const response = await fetch(
-        `https://tally-sync-vyaapari360-production.up.railway.app/api/v1/ledgers/${companyId}/${divisionId}/suggest?${params}`
+      let response;
+      try {
+        response = await fetch(
+          `https://tally-sync-vyaapari360-production.up.railway.app/api/v1/ledgers/${companyId}/${divisionId}/suggest?${params}`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success) {
+            const newLedgers = data.data.ledgers || [];
+            setLedgers(prev => append ? [...prev, ...newLedgers] : newLedgers);
+            setTotalPages(data.data.pages || 1);
+            setHasMore(pageNum < (data.data.pages || 1));
+            return;
+          }
+        }
+      } catch (apiError) {
+        console.log('New API not available, falling back to voucher data extraction');
+      }
+
+      // Fallback: Extract ledgers from existing voucher data
+      const voucherResponse = await fetch(
+        `https://tally-sync-vyaapari360-production.up.railway.app/api/v1/vouchers/${companyId}/${divisionId}?page=1&limit=100`
       );
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch ledgers');
+      if (!voucherResponse.ok) {
+        throw new Error('Failed to fetch voucher data');
       }
       
-      const data = await response.json();
+      const voucherData = await voucherResponse.json();
       
-      if (data.success) {
-        const newLedgers = data.data.ledgers || [];
-        setLedgers(prev => append ? [...prev, ...newLedgers] : newLedgers);
-        setTotalPages(data.data.pages || 1);
-        setHasMore(pageNum < (data.data.pages || 1));
+      if (voucherData.success) {
+        const vouchers = voucherData.data.vouchers || [];
+        const uniqueLedgers = new Set<string>();
+        const ledgerData: LedgerOption[] = [];
+        
+        // Extract party ledgers
+        vouchers.forEach((voucher: any) => {
+          if (voucher.partyLedgerName && !uniqueLedgers.has(voucher.partyLedgerName)) {
+            uniqueLedgers.add(voucher.partyLedgerName);
+            ledgerData.push({
+              name: voucher.partyLedgerName,
+              type: 'general',
+              source: 'party'
+            });
+          }
+          
+          // Extract ledgers from entries
+          if (voucher.entries) {
+            voucher.entries.forEach((entry: any) => {
+              if (entry.ledgerName && !uniqueLedgers.has(entry.ledgerName)) {
+                uniqueLedgers.add(entry.ledgerName);
+                const type = getLedgerTypeFromName(entry.ledgerName);
+                ledgerData.push({
+                  name: entry.ledgerName,
+                  type: type,
+                  source: entry.source || 'ledger'
+                });
+              }
+            });
+          }
+        });
+        
+        // Filter by search query
+        let filteredLedgers = ledgerData;
+        if (query.trim()) {
+          const searchLower = query.toLowerCase();
+          filteredLedgers = ledgerData.filter(ledger => 
+            ledger.name.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        // Simple pagination
+        const startIndex = (pageNum - 1) * 50;
+        const endIndex = startIndex + 50;
+        const paginatedLedgers = filteredLedgers.slice(startIndex, endIndex);
+        
+        setLedgers(prev => append ? [...prev, ...paginatedLedgers] : paginatedLedgers);
+        setTotalPages(Math.ceil(filteredLedgers.length / 50));
+        setHasMore(endIndex < filteredLedgers.length);
       } else {
-        throw new Error(data.message || 'Failed to fetch ledgers');
+        throw new Error(voucherData.message || 'Failed to fetch voucher data');
       }
     } catch (error) {
       console.error('Error fetching ledgers:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch ledgers",
+        description: "Failed to fetch ledgers. Please try again.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to determine ledger type from name
+  const getLedgerTypeFromName = (name: string): string => {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('cash')) return 'cash';
+    if (nameLower.includes('bank')) return 'bank';
+    if (nameLower.includes('sales')) return 'sales';
+    if (nameLower.includes('purchase')) return 'purchase';
+    if (nameLower.includes('gst') || nameLower.includes('tax') || nameLower.includes('cgst') || nameLower.includes('sgst') || nameLower.includes('igst')) return 'tax';
+    if (nameLower.includes('service') || nameLower.includes('charges')) return 'service';
+    return 'general';
   };
 
   // Initial load
