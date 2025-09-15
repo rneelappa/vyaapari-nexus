@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdvancedVoucherDetails } from "@/components/tally/AdvancedVoucherDetails";
 import { InventoryTest } from "@/components/tally/InventoryTest";
+import { LedgerSelectionDialog } from "@/components/tally/LedgerSelectionDialog";
 
 // Define VoucherEntry interface for external API
 interface VoucherEntry {
@@ -67,6 +68,8 @@ export default function VoucherManagement() {
   const [syncToDate, setSyncToDate] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editedVoucher, setEditedVoucher] = useState<VoucherEntry | null>(null);
+  const [showLedgerDialog, setShowLedgerDialog] = useState(false);
+  const [ledgerDialogType, setLedgerDialogType] = useState<'party' | 'main'>('party');
 
   // Format helper functions
   const formatDate = (dateStr: string) => {
@@ -140,6 +143,51 @@ export default function VoucherManagement() {
         description: "Voucher updated successfully"
       });
     }
+  };
+
+  const handleLedgerSelect = (ledger: { name: string; type: string; source: string }) => {
+    if (!editedVoucher) return;
+
+    if (ledgerDialogType === 'party') {
+      setEditedVoucher({
+        ...editedVoucher,
+        partyLedgerName: ledger.name
+      });
+    } else {
+      // Update main accounting ledger
+      const updatedEntries = [...(editedVoucher.entries || [])];
+      const mainLedgerIndex = updatedEntries.findIndex(entry => 
+        !entry.isPartyLedger && entry.source === 'main_ledger'
+      );
+      
+      if (mainLedgerIndex >= 0) {
+        updatedEntries[mainLedgerIndex] = {
+          ...updatedEntries[mainLedgerIndex],
+          ledgerName: ledger.name
+        };
+      } else {
+        // Add new main ledger entry if none exists
+        updatedEntries.push({
+          ledgerName: ledger.name,
+          amount: 0,
+          isDeemedPositive: false,
+          isPartyLedger: false,
+          source: 'main_ledger'
+        });
+      }
+      
+      setEditedVoucher({
+        ...editedVoucher,
+        entries: updatedEntries
+      });
+    }
+    
+    setShowLedgerDialog(false);
+  };
+
+  const openLedgerDialog = (type: 'party' | 'main') => {
+    setLedgerDialogType(type);
+    setShowLedgerDialog(true);
   };
 
   const handleExportXml = async (voucherId: string) => {
@@ -643,24 +691,113 @@ export default function VoucherManagement() {
                   <CardTitle className="text-base">Basic Information</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Date</Label>
-                      <p className="font-medium">{formatDate(selectedVoucher.date)}</p>
+                  {isEditing ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-date">Date</Label>
+                        <Input
+                          id="edit-date"
+                          type="date"
+                          value={editedVoucher?.date ? new Date(editedVoucher.date.substring(0, 4) + '-' + editedVoucher.date.substring(4, 6) + '-' + editedVoucher.date.substring(6, 8)).toISOString().split('T')[0] : ''}
+                          onChange={(e) => {
+                            if (editedVoucher) {
+                              const dateValue = e.target.value.replace(/-/g, '');
+                              setEditedVoucher({
+                                ...editedVoucher,
+                                date: dateValue
+                              });
+                            }
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-number">Voucher Number</Label>
+                        <Input
+                          id="edit-number"
+                          value={editedVoucher?.number || ''}
+                          onChange={(e) => {
+                            if (editedVoucher) {
+                              setEditedVoucher({
+                                ...editedVoucher,
+                                number: e.target.value
+                              });
+                            }
+                          }}
+                          placeholder="Enter voucher number"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Party Account</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={editedVoucher?.partyLedgerName || ''}
+                            placeholder="Select party ledger"
+                            readOnly
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => openLedgerDialog('party')}
+                          >
+                            Select
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Main Account</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={(() => {
+                              const mainEntry = editedVoucher?.entries?.find(e => 
+                                !e.isPartyLedger && e.source === 'main_ledger'
+                              );
+                              return mainEntry?.ledgerName || '';
+                            })()}
+                            placeholder="Select main ledger"
+                            readOnly
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => openLedgerDialog('main')}
+                          >
+                            Select
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="md:col-span-2 space-y-2">
+                        <Label className="text-xs text-muted-foreground">Type</Label>
+                        <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                          {selectedVoucher.type} (Read-only)
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Type</Label>
-                      <p className="font-medium">{selectedVoucher.type}</p>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Date</Label>
+                        <p className="font-medium">{formatDate(selectedVoucher.date)}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Type</Label>
+                        <p className="font-medium">{selectedVoucher.type}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Number</Label>
+                        <p className="font-medium">{selectedVoucher.number}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Party</Label>
+                        <p className="font-medium">{selectedVoucher.partyLedgerName || 'N/A'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Number</Label>
-                      <p className="font-medium">{selectedVoucher.number}</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Party</Label>
-                      <p className="font-medium">{selectedVoucher.partyLedgerName || 'N/A'}</p>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -916,6 +1053,21 @@ export default function VoucherManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Ledger Selection Dialog */}
+      <LedgerSelectionDialog
+        open={showLedgerDialog}
+        onOpenChange={setShowLedgerDialog}
+        onSelect={handleLedgerSelect}
+        companyId={companyId || ''}
+        divisionId={divisionId || ''}
+        selectedLedger={
+          ledgerDialogType === 'party' 
+            ? editedVoucher?.partyLedgerName 
+            : editedVoucher?.entries?.find(e => !e.isPartyLedger && e.source === 'main_ledger')?.ledgerName
+        }
+        title={ledgerDialogType === 'party' ? 'Select Party Account' : 'Select Main Account'}
+      />
     </div>
   );
 }
