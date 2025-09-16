@@ -100,103 +100,51 @@ export default function UserManagement() {
         workspace_members: 'loading'
       });
 
-      // Load companies
-      addDebugLog('Loading companies...');
-      const { data: companiesData, error: companiesError } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('is_active', true);
-
-      if (companiesError) {
-        setLoadingStatus(prev => ({ ...prev, companies: 'error' }));
-        console.error('Companies query failed:', companiesError);
-        addDebugLog(`Companies query failed: ${companiesError.message}`);
-        throw new Error(`Failed to load companies: ${companiesError.message}`);
-      } else {
-        setLoadingStatus(prev => ({ ...prev, companies: 'success' }));
-        addDebugLog(`Companies loaded successfully: ${companiesData?.length || 0} records`);
+      // Call the admin-list-users edge function
+      addDebugLog('Calling admin-list-users function...');
+      
+      const { data: responseData, error: functionError } = await supabase.functions.invoke('admin-list-users');
+      
+      if (functionError) {
+        addDebugLog(`Function call failed: ${functionError.message}`);
+        setLoadingStatus({
+          companies: 'error',
+          divisions: 'error',
+          workspaces: 'error',
+          profiles: 'error',
+          user_roles: 'error',
+          workspace_members: 'error'
+        });
+        throw new Error(`Failed to load user data: ${functionError.message}`);
       }
-
-      // Load divisions
-      addDebugLog('Loading divisions...');
-      const { data: divisionsData, error: divisionsError } = await supabase
-        .from('divisions')
-        .select('*')
-        .eq('is_active', true);
-
-      if (divisionsError) {
-        setLoadingStatus(prev => ({ ...prev, divisions: 'error' }));
-        console.error('Divisions query failed:', divisionsError);
-        addDebugLog(`Divisions query failed: ${divisionsError.message}`);
-        throw new Error(`Failed to load divisions: ${divisionsError.message}`);
-      } else {
-        setLoadingStatus(prev => ({ ...prev, divisions: 'success' }));
-        addDebugLog(`Divisions loaded successfully: ${divisionsData?.length || 0} records`);
+      
+      if (!responseData) {
+        addDebugLog('Function returned no data');
+        throw new Error('No data returned from admin function');
       }
-
-      // Load workspaces
-      addDebugLog('Loading workspaces...');
-      const { data: workspacesData, error: workspacesError } = await supabase
-        .from('workspaces')
-        .select('*');
-
-      if (workspacesError) {
-        setLoadingStatus(prev => ({ ...prev, workspaces: 'error' }));
-        console.error('Workspaces query failed:', workspacesError);
-        addDebugLog(`Workspaces query failed: ${workspacesError.message}`);
-        throw new Error(`Failed to load workspaces: ${workspacesError.message}`);
-      } else {
-        setLoadingStatus(prev => ({ ...prev, workspaces: 'success' }));
-        addDebugLog(`Workspaces loaded successfully: ${workspacesData?.length || 0} records`);
-      }
-
-      // Load profiles first
-      addDebugLog('Loading profiles...');
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*');
-
-      if (profilesError) {
-        setLoadingStatus(prev => ({ ...prev, profiles: 'error' }));
-        console.error('Profiles query failed:', profilesError);
-        addDebugLog(`Profiles query failed: ${profilesError.message} (Code: ${profilesError.code})`);
-        throw new Error(`Failed to load profiles: ${profilesError.message}`);
-      } else {
-        setLoadingStatus(prev => ({ ...prev, profiles: 'success' }));
-        addDebugLog(`Profiles loaded successfully: ${profilesData?.length || 0} records`);
-      }
-
-      // Load user roles separately
-      addDebugLog('Loading user roles...');
-      const { data: userRolesData, error: userRolesError } = await supabase
-        .from('user_roles')
-        .select('*');
-
-      if (userRolesError) {
-        setLoadingStatus(prev => ({ ...prev, user_roles: 'error' }));
-        console.error('User roles query failed:', userRolesError);
-        addDebugLog(`User roles query failed: ${userRolesError.message} (Code: ${userRolesError.code})`);
-        throw new Error(`Failed to load user roles: ${userRolesError.message}`);
-      } else {
-        setLoadingStatus(prev => ({ ...prev, user_roles: 'success' }));
-        addDebugLog(`User roles loaded successfully: ${userRolesData?.length || 0} records`);
-      }
-
-      // Load workspace members separately
-      addDebugLog('Loading workspace members...');
-      const { data: workspaceMembersData, error: workspaceMembersError } = await supabase
-        .from('workspace_members')
-        .select('*');
-
-      if (workspaceMembersError) {
-        setLoadingStatus(prev => ({ ...prev, workspace_members: 'error' }));
-        console.error('Workspace members query failed:', workspaceMembersError);
-        addDebugLog(`Workspace members query failed: ${workspaceMembersError.message} (Code: ${workspaceMembersError.code})`);
-        throw new Error(`Failed to load workspace members: ${workspaceMembersError.message}`);
-      } else {
-        setLoadingStatus(prev => ({ ...prev, workspace_members: 'success' }));
-        addDebugLog(`Workspace members loaded successfully: ${workspaceMembersData?.length || 0} records`);
-      }
+      
+      addDebugLog('Function call successful, processing data...');
+      
+      const {
+        companies: companiesData,
+        divisions: divisionsData,
+        workspaces: workspacesData,
+        profiles: profilesData,
+        userRoles: userRolesData,
+        workspaceMembers: workspaceMembersData
+      } = responseData;
+      
+      // Update loading status to success
+      setLoadingStatus({
+        companies: 'success',
+        divisions: 'success',
+        workspaces: 'success',
+        profiles: 'success',
+        user_roles: 'success',
+        workspace_members: 'success'
+      });
+      
+      addDebugLog(`Data received - Companies: ${companiesData?.length || 0}, Divisions: ${divisionsData?.length || 0}, Workspaces: ${workspacesData?.length || 0}, Profiles: ${profilesData?.length || 0}, User Roles: ${userRolesData?.length || 0}, Workspace Members: ${workspaceMembersData?.length || 0}`);
 
       // Structure user data
       addDebugLog('Structuring user data...');
