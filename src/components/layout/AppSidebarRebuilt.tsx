@@ -57,7 +57,7 @@ function HierarchyItem({ item, level, type, isExpanded, onToggle, hasChildren, c
         <SidebarMenuButton 
           asChild={!hasChildren}
           className={`
-            ${isActive ? 'bg-accent text-accent-foreground font-medium' : 'hover:bg-accent/50'}
+            ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'hover:bg-sidebar-accent/20'}
             ${level > 0 ? `ml-${level * 4}` : ''}
             transition-colors duration-200
           `}
@@ -304,8 +304,8 @@ function AppSidebarContent({}: AppSidebarContentProps) {
                     className={({ isActive }) => `
                       flex items-center gap-2
                       ${isActive 
-                        ? 'bg-accent text-accent-foreground font-medium' 
-                        : 'hover:bg-accent/50'
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                        : 'hover:bg-sidebar-accent/20'
                       }
                       transition-colors duration-200
                     `}

@@ -90,7 +90,7 @@ function CompanyHierarchyItem({ company, isExpanded, onToggle }: CompanyHierarch
       <SidebarMenuItem>
         <SidebarMenuButton 
           onClick={onToggle}
-          className="flex items-center gap-2 w-full hover:bg-accent/50 transition-colors"
+          className="flex items-center gap-2 w-full hover:bg-sidebar-accent/20 transition-colors"
           aria-expanded={isExpanded}
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${company.name}`}
         >
@@ -174,7 +174,7 @@ function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
       <SidebarMenuItem>
         <SidebarMenuButton 
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 w-full hover:bg-accent/50 transition-colors"
+          className="flex items-center gap-2 w-full hover:bg-sidebar-accent/20 transition-colors"
           aria-expanded={isExpanded}
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${division.name} Tally workspace`}
         >
@@ -219,8 +219,8 @@ function DivisionHierarchyItem({ division }: DivisionHierarchyItemProps) {
 
       {isExpanded && !collapsed && (
         <div className="ml-2 space-y-1">
-          {/* Blue gradient Tally workspace block - PRESERVED STYLING */}
-          <div className="bg-card border border-border rounded-md p-2 space-y-1">
+          {/* Tally workspace section with improved styling */}
+          <div className="bg-sidebar-accent/10 border border-sidebar-border/30 rounded-md p-2 space-y-1">
             {Object.entries(tallyMenuStructure).map(([key, section]) => (
               <TallyMenuSection 
                 key={key} 
@@ -276,7 +276,7 @@ function TallyMenuSection({ section, level, division }: TallyMenuSectionProps) {
         <SidebarMenuButton 
           onClick={() => setIsExpanded(!isExpanded)}
           className={`
-            flex items-center gap-2 w-full text-blue-700 hover:bg-blue-100 hover:text-blue-800 transition-colors
+            flex items-center gap-2 w-full text-sidebar-foreground/90 hover:bg-sidebar-accent/20 hover:text-sidebar-foreground transition-colors
             ${level > 0 ? `ml-${level}` : ''}
           `}
           aria-expanded={isExpanded}
@@ -312,8 +312,8 @@ function TallyMenuSection({ section, level, division }: TallyMenuSectionProps) {
                     className={`
                       flex items-center gap-2 text-sm
                       ${isActive 
-                        ? 'bg-blue-100 text-blue-900 font-medium' 
-                        : 'text-blue-600 hover:bg-blue-50/50'
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                        : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/10'
                       }
                       transition-colors
                     `}
