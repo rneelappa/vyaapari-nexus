@@ -254,19 +254,23 @@ export default function UserManagement() {
               Create User
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
-                Create a new user account with organizational assignments
-              </DialogDescription>
-            </DialogHeader>
-            <CreateUserFormEnhanced 
-              companies={companies}
-              divisions={divisions}
-              workspaces={workspaces}
-              onSubmit={handleCreateUser} 
-            />
+          <DialogContent className="max-w-4xl w-[95vw] h-[95vh] flex flex-col p-0">
+            <div className="flex-shrink-0 p-6 border-b">
+              <DialogHeader>
+                <DialogTitle>Create New User</DialogTitle>
+                <DialogDescription>
+                  Create a new user account with organizational assignments
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <CreateUserFormEnhanced 
+                companies={companies}
+                divisions={divisions}
+                workspaces={workspaces}
+                onSubmit={handleCreateUser} 
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
