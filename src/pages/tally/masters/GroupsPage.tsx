@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useLedgerVouchers } from '@/hooks/useLedgerVouchers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,54 +8,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, RefreshCw, ArrowLeft, ChevronRight, Users, FileText, Receipt, Calendar } from 'lucide-react';
-import { tallyApi, type Group, type ApiResponse, type HierarchyData, type MonthlyAnalysis } from '@/services/tallyApiService';
+import { tallyApi, type Group, type Ledger as ApiLedger, type Voucher as ApiVoucher, type CompleteVoucher, type ApiResponse } from '@/services/tallyApiService';
 import { toast } from '@/hooks/use-toast';
 
-// Group interface is now imported from tallyApiService
-
-interface Ledger {
-  guid: string;
-  name: string;
-  parent: string;
-  opening_balance: number;
-  closing_balance: number;
-  company_id: string;
-  division_id: string;
-}
-
-interface Voucher {
-  guid: string;
-  voucher_number: string;
-  voucher_type: string;
-  date: string;
-  total_amount: number;
-  party_ledger_name: string;
-  narration: string;
-}
-
-interface VoucherDetail {
-  guid: string;
-  voucher_number: string;
-  voucher_type: string;
-  date: string;
-  total_amount: number;
-  party_ledger_name: string;
-  narration: string;
-  basic_amount: number;
-  tax_amount: number;
-  discount_amount: number;
-  final_amount: number;
-  reference: string;
-  due_date: string;
-  currency: string;
-  is_cancelled: boolean;
-}
+// All interfaces are now imported from tallyApiService
 
 type ViewLevel = 'groups' | 'subgroups' | 'ledgers' | 'vouchers' | 'voucher_detail';
 
 export default function GroupsPage() {
   const { user } = useAuth();
-  const { vouchers, loading: vouchersLoading, fetchVouchersByType, fetchVouchersForLedger } = useLedgerVouchers();
+  const { companyId, divisionId } = useParams<{ companyId: string; divisionId: string }>();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -65,48 +26,38 @@ export default function GroupsPage() {
   // Navigation state
   const [currentLevel, setCurrentLevel] = useState<ViewLevel>('groups');
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [selectedLedger, setSelectedLedger] = useState<Ledger | null>(null);
-  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [selectedLedger, setSelectedLedger] = useState<ApiLedger | null>(null);
+  const [selectedVoucher, setSelectedVoucher] = useState<ApiVoucher | null>(null);
   
   // Data state
   const [groups, setGroups] = useState<Group[]>([]);
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
-  const [voucherDetail, setVoucherDetail] = useState<VoucherDetail | null>(null);
+  const [ledgers, setLedgers] = useState<ApiLedger[]>([]);
+  const [vouchers, setVouchers] = useState<ApiVoucher[]>([]);
+  const [voucherDetail, setVoucherDetail] = useState<CompleteVoucher | null>(null);
   
   // Breadcrumb state
   const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
 
   useEffect(() => {
-    if (user) {
+    if (user && companyId && divisionId) {
       fetchGroups();
     }
-  }, [user]);
+  }, [user, companyId, divisionId]);
 
   const fetchGroups = async () => {
+    if (!companyId || !divisionId) return;
+    
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('mst_group')
-        .select('*')
-        .order('name');
+      const response = await tallyApi.getGroups(companyId, divisionId);
 
-      if (error) throw error;
-
-      const transformedGroups: Group[] = (data || []).map(item => ({
-        guid: item.guid,
-        name: item.name,
-        parent: item.parent || '',
-        primary_group: item.primary_group || '',
-        is_revenue: !!item.is_revenue,
-        is_deemedpositive: !!item.is_deemedpositive,
-        affects_gross_profit: !!item.affects_gross_profit,
-        company_id: item.company_id || '',
-        division_id: item.division_id || '',
-      }));
-
-      setGroups(transformedGroups);
+      if (response.success) {
+        setGroups(response.data);
+      } else {
+        throw new Error(response.error || 'Failed to fetch groups');
+      }
     } catch (err) {
       console.error('Error fetching groups:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch groups');
@@ -121,55 +72,18 @@ export default function GroupsPage() {
   };
 
   const fetchLedgersForGroup = async (groupName: string) => {
+    if (!companyId || !divisionId) return;
+    
     try {
       setLoading(true);
       
-      // First try exact match, then fallback to broader searches
-      let { data, error } = await supabase
-        .from('mst_ledger')
-        .select('*')
-        .eq('parent', groupName)
-        .order('name');
+      const response = await tallyApi.getLedgers(companyId, divisionId, { parent: groupName });
 
-      if (!data || data.length === 0) {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('mst_ledger')
-          .select('*')
-          .ilike('parent', `%${groupName}%`)
-          .order('name');
-        
-        if (!fallbackError) {
-          data = fallbackData;
-          error = null;
-        }
+      if (response.success) {
+        setLedgers(response.data);
+      } else {
+        throw new Error(response.error || 'Failed to fetch ledgers');
       }
-
-      if (!data || data.length === 0) {
-        const { data: allData, error: allError } = await supabase
-          .from('mst_ledger')
-          .select('*')
-          .order('name');
-        
-        if (!allError) {
-          data = allData?.filter(ledger => 
-            ledger.parent?.toLowerCase().includes(groupName.toLowerCase())
-          ) || [];
-        }
-      }
-
-      if (error) throw error;
-
-      const transformedLedgers: Ledger[] = (data || []).map(item => ({
-        guid: item.guid,
-        name: item.name,
-        parent: item.parent || '',
-        opening_balance: item.opening_balance || 0,
-        closing_balance: item.closing_balance || 0,
-        company_id: item.company_id || '',
-        division_id: item.division_id || '',
-      }));
-
-      setLedgers(transformedLedgers);
     } catch (err) {
       console.error('Error fetching ledgers:', err);
       toast({
@@ -182,37 +96,44 @@ export default function GroupsPage() {
     }
   };
 
-  const fetchVoucherDetail = async (voucherGuid: string) => {
+  const fetchVouchersForLedger = async (ledgerName: string) => {
+    if (!companyId || !divisionId) return;
+    
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('tally_trn_voucher')
-        .select('*')
-        .eq('guid', voucherGuid)
-        .single();
+      const response = await tallyApi.getEnhancedVouchers(companyId, divisionId, { search: ledgerName });
 
-      if (error) throw error;
+      if (response.success) {
+        setVouchers(response.data);
+      } else {
+        throw new Error(response.error || 'Failed to fetch vouchers');
+      }
+    } catch (err) {
+      console.error('Error fetching vouchers:', err);
+      toast({
+        title: "Error",
+        description: "Failed to fetch vouchers for this ledger",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      const detail: VoucherDetail = {
-        guid: data.guid,
-        voucher_number: data.voucher_number || '',
-        voucher_type: data.voucher_type || '',
-        date: data.date || '',
-        total_amount: data.total_amount || 0,
-        party_ledger_name: data.party_ledger_name || '',
-        narration: data.narration || '',
-        basic_amount: data.basic_amount || 0,
-        tax_amount: data.tax_amount || 0,
-        discount_amount: data.discount_amount || 0,
-        final_amount: data.final_amount || 0,
-        reference: data.reference || '',
-        due_date: data.due_date || '',
-        currency: data.currency || 'INR',
-        is_cancelled: !!data.is_cancelled,
-      };
+  const fetchVoucherDetail = async (voucherId: string) => {
+    if (!companyId || !divisionId) return;
+    
+    try {
+      setLoading(true);
+      
+      const response = await tallyApi.getVoucherComplete(companyId, divisionId, voucherId);
 
-      setVoucherDetail(detail);
+      if (response.success) {
+        setVoucherDetail(response.data);
+      } else {
+        throw new Error(response.error || 'Failed to fetch voucher details');
+      }
     } catch (err) {
       console.error('Error fetching voucher detail:', err);
       toast({
@@ -249,18 +170,18 @@ export default function GroupsPage() {
     await fetchLedgersForGroup(subgroup.name);
   };
 
-  const handleLedgerClick = async (ledger: Ledger) => {
+  const handleLedgerClick = async (ledger: ApiLedger) => {
     setSelectedLedger(ledger);
     setCurrentLevel('vouchers');
     setBreadcrumb([...breadcrumb, ledger.name]);
     await fetchVouchersForLedger(ledger.name);
   };
 
-  const handleVoucherClick = async (voucher: Voucher) => {
+  const handleVoucherClick = async (voucher: ApiVoucher) => {
     setSelectedVoucher(voucher);
     setCurrentLevel('voucher_detail');
-    setBreadcrumb([...breadcrumb, voucher.voucher_number]);
-    await fetchVoucherDetail(voucher.guid);
+    setBreadcrumb([...breadcrumb, voucher.number]);
+    await fetchVoucherDetail(voucher.id);
   };
 
   const handleBack = () => {
@@ -327,9 +248,9 @@ export default function GroupsPage() {
         );
       case 'vouchers':
         return vouchers.filter(voucher =>
-          voucher.voucher_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          voucher.voucher_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          voucher.party_ledger_name.toLowerCase().includes(searchTerm.toLowerCase())
+          voucher.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          voucher.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          voucher.partyLedgerName.toLowerCase().includes(searchTerm.toLowerCase())
         );
       default:
         return [];
@@ -344,13 +265,21 @@ export default function GroupsPage() {
     );
   }
 
+  if (!companyId || !divisionId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">Company and Division IDs are required.</p>
+      </div>
+    );
+  }
+
   const getTitle = () => {
     switch (currentLevel) {
       case 'groups': return 'Account Groups';
       case 'subgroups': return `Subgroups of ${selectedGroup?.name}`;
       case 'ledgers': return `Ledgers in ${breadcrumb[breadcrumb.length - 1]}`;
       case 'vouchers': return `Vouchers for ${selectedLedger?.name}`;
-      case 'voucher_detail': return `Voucher Details: ${selectedVoucher?.voucher_number}`;
+      case 'voucher_detail': return `Voucher Details: ${selectedVoucher?.number}`;
       default: return 'Account Groups';
     }
   };
@@ -382,70 +311,140 @@ export default function GroupsPage() {
 
       {/* Voucher Detail View */}
       {currentLevel === 'voucher_detail' && voucherDetail && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Voucher Details</CardTitle>
-            <CardDescription>Complete information for voucher {voucherDetail.voucher_number}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Voucher Number</label>
-                  <p className="text-lg font-semibold">{voucherDetail.voucher_number}</p>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Voucher Details</CardTitle>
+              <CardDescription>Complete information for voucher {voucherDetail.voucher.number}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Voucher Number</label>
+                    <p className="text-lg font-semibold">{voucherDetail.voucher.number}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <p><Badge variant="outline">{voucherDetail.voucher.type}</Badge></p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Date</label>
+                    <p>{formatDate(voucherDetail.voucher.date)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Party</label>
+                    <p>{voucherDetail.voucher.partyLedgerName}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Type</label>
-                  <p><Badge variant="outline">{voucherDetail.voucher_type}</Badge></p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Date</label>
-                  <p>{formatDate(voucherDetail.date)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Party</label>
-                  <p>{voucherDetail.party_ledger_name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Reference</label>
-                  <p>{voucherDetail.reference || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Basic Amount</label>
-                  <p className="text-lg">{formatCurrency(voucherDetail.basic_amount)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Tax Amount</label>
-                  <p className="text-lg">{formatCurrency(voucherDetail.tax_amount)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Discount</label>
-                  <p className="text-lg">{formatCurrency(voucherDetail.discount_amount)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Final Amount</label>
-                  <p className="text-xl font-bold">{formatCurrency(voucherDetail.final_amount)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Status</label>
-                  <p>
-                    <Badge variant={voucherDetail.is_cancelled ? "destructive" : "default"}>
-                      {voucherDetail.is_cancelled ? "Cancelled" : "Active"}
-                    </Badge>
-                  </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Amount</label>
+                    <p className="text-xl font-bold">{formatCurrency(voucherDetail.voucher.amount)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Ledgers Involved</label>
+                    <p className="text-lg">{voucherDetail.relationshipSummary.totalLedgersInvolved}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Stock Items</label>
+                    <p className="text-lg">{voucherDetail.relationshipSummary.totalStockItemsInvolved}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Complexity</label>
+                    <p>
+                      <Badge variant={voucherDetail.relationshipSummary.transactionComplexity === 'Complex' ? "secondary" : "default"}>
+                        {voucherDetail.relationshipSummary.transactionComplexity}
+                      </Badge>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-            {voucherDetail.narration && (
-              <div className="mt-6">
-                <label className="text-sm font-medium text-muted-foreground">Narration</label>
-                <p className="mt-1 p-3 bg-muted rounded-md">{voucherDetail.narration}</p>
+              {voucherDetail.voucher.narration && (
+                <div className="mt-6">
+                  <label className="text-sm font-medium text-muted-foreground">Narration</label>
+                  <p className="mt-1 p-3 bg-muted rounded-md">{voucherDetail.voucher.narration}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Accounting Entries */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Accounting Entries</CardTitle>
+              <CardDescription>Double-entry accounting breakdown for this voucher</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ledger</TableHead>
+                      <TableHead>Debit</TableHead>
+                      <TableHead>Credit</TableHead>
+                      <TableHead>Type</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {voucherDetail.voucher.entries.map((entry, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{entry.ledgerName}</TableCell>
+                        <TableCell>
+                          {entry.isDebit ? formatCurrency(entry.amount) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {!entry.isDebit ? formatCurrency(entry.amount) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={entry.isPartyledger ? "default" : "secondary"}>
+                            {entry.isPartyledger ? 'Party' : 'Regular'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Inventory Entries (if any) */}
+          {voucherDetail.voucher.inventoryEntries && voucherDetail.voucher.inventoryEntries.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Inventory Entries</CardTitle>
+                <CardDescription>Stock movement details for this voucher</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Stock Item</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Rate</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Godown</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {voucherDetail.voucher.inventoryEntries.map((entry, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{entry.stockItemName}</TableCell>
+                          <TableCell>{entry.actualQuantity}</TableCell>
+                          <TableCell>{formatCurrency(entry.rate)}</TableCell>
+                          <TableCell>{formatCurrency(entry.amount)}</TableCell>
+                          <TableCell>{entry.godownName}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Other Views */}
@@ -606,9 +605,9 @@ export default function GroupsPage() {
                           )}
                           {currentLevel === 'vouchers' && (
                             <>
-                              <TableCell className="font-medium">{item.voucher_number}</TableCell>
+                              <TableCell className="font-medium">{item.number}</TableCell>
                               <TableCell>
-                                <Badge variant="outline">{item.voucher_type}</Badge>
+                                <Badge variant="outline">{item.type}</Badge>
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1">
@@ -621,7 +620,7 @@ export default function GroupsPage() {
                                   {formatCurrency(Math.abs(item.amount))}
                                 </span>
                               </TableCell>
-                              <TableCell>{item.party_ledger_name}</TableCell>
+                              <TableCell>{item.partyLedgerName}</TableCell>
                               <TableCell>
                                 <ChevronRight className="h-4 w-4" />
                               </TableCell>
