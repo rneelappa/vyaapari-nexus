@@ -76,7 +76,10 @@ export default function UserManagement() {
         .select('*')
         .eq('is_active', true);
 
-      if (companiesError) throw companiesError;
+      if (companiesError) {
+        console.error('Companies query failed:', companiesError);
+        throw new Error(`Failed to load companies: ${companiesError.message}`);
+      }
 
       // Load divisions
       const { data: divisionsData, error: divisionsError } = await supabase
@@ -84,31 +87,50 @@ export default function UserManagement() {
         .select('*')
         .eq('is_active', true);
 
-      if (divisionsError) throw divisionsError;
+      if (divisionsError) {
+        console.error('Divisions query failed:', divisionsError);
+        throw new Error(`Failed to load divisions: ${divisionsError.message}`);
+      }
 
       // Load workspaces
       const { data: workspacesData, error: workspacesError } = await supabase
         .from('workspaces')
         .select('*');
 
-      if (workspacesError) throw workspacesError;
+      if (workspacesError) {
+        console.error('Workspaces query failed:', workspacesError);
+        throw new Error(`Failed to load workspaces: ${workspacesError.message}`);
+      }
 
       // Load profiles first
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        console.error('Profiles query failed:', profilesError);
+        throw new Error(`Failed to load profiles: ${profilesError.message}`);
+      }
 
       // Load user roles separately
-      const { data: userRolesData } = await supabase
+      const { data: userRolesData, error: userRolesError } = await supabase
         .from('user_roles')
         .select('*');
 
+      if (userRolesError) {
+        console.error('User roles query failed:', userRolesError);
+        throw new Error(`Failed to load user roles: ${userRolesError.message}`);
+      }
+
       // Load workspace members separately
-      const { data: workspaceMembersData } = await supabase
+      const { data: workspaceMembersData, error: workspaceMembersError } = await supabase
         .from('workspace_members')
         .select('*');
+
+      if (workspaceMembersError) {
+        console.error('Workspace members query failed:', workspaceMembersError);
+        throw new Error(`Failed to load workspace members: ${workspaceMembersError.message}`);
+      }
 
       // Structure user data
       const structuredUsers = profilesData?.map(profile => {
@@ -147,30 +169,42 @@ export default function UserManagement() {
 
   const handleCreateUser = async (userData: { email: string; password: string; fullName: string }) => {
     try {
-      // Create user via Supabase Admin API
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: userData.fullName
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to create users');
+      }
+
+      const response = await fetch(`https://hycyhnjsldiokfkpqzoz.supabase.co/functions/v1/admin-create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          fullName: userData.fullName
+        })
       });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Server returned ${response.status}`);
+      }
 
       toast({
         title: "Success",
-        description: "User created successfully"
+        description: result.message || "User created successfully"
       });
 
       setCreateUserOpen(false);
       loadData(); // Reload data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
         title: "Error",
-        description: "Failed to create user",
+        description: error.message || "Failed to create user",
         variant: "destructive"
       });
     }
@@ -182,20 +216,39 @@ export default function UserManagement() {
     }
 
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('You must be logged in to delete users');
+      }
+
+      const response = await fetch(`https://hycyhnjsldiokfkpqzoz.supabase.co/functions/v1/admin-delete-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          userId: userId
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Server returned ${response.status}`);
+      }
 
       toast({
         title: "Success",
-        description: "User deleted successfully"
+        description: result.message || "User deleted successfully"
       });
 
       loadData(); // Reload data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: error.message || "Failed to delete user",
         variant: "destructive"
       });
     }
