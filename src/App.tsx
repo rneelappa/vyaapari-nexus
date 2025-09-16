@@ -22,6 +22,9 @@ import { WorkspaceChat } from "@/components/workspace/WorkspaceChat";
 import { WorkspaceDrive } from "@/components/workspace/WorkspaceDrive";
 import { WorkspaceTasks } from "@/components/workspace/WorkspaceTasks";
 
+// Tally Router
+import { TallyRouter } from "@/components/tally/TallyRouter";
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -66,6 +69,18 @@ function App() {
                     <AuthGuard>
                       <MainLayout>
                         <DivisionPage />
+                      </MainLayout>
+                    </AuthGuard>
+                  }
+                />
+
+                {/* Tally Routes */}
+                <Route
+                  path="/company/:companyId/division/:divisionId/tally/*"
+                  element={
+                    <AuthGuard>
+                      <MainLayout>
+                        <TallyRouter />
                       </MainLayout>
                     </AuthGuard>
                   }
