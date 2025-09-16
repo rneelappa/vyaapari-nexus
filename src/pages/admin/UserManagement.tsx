@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { CreateUserFormEnhanced } from '@/components/admin/CreateUserFormEnhanced';
-import { UserAssignmentForm } from '@/components/admin/UserAssignmentForm';
+import { EditUserWizard } from '@/components/admin/EditUserWizard';
 import { Search, UserPlus, Users, Building2, Shield, Edit, Trash2 } from 'lucide-react';
 
 // User interface with role objects
@@ -461,25 +461,32 @@ export default function UserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User Assignments</DialogTitle>
-            <DialogDescription>
-              Manage organizational assignments for {selectedUser?.email}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <UserAssignmentForm
-              user={selectedUser}
-              companies={companies}
-              divisions={divisions}
-              workspaces={workspaces}
-              onUpdate={() => {
-                loadData();
-                setEditUserOpen(false);
-              }}
-            />
-          )}
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[95vh] overflow-hidden p-0">
+          <div className="flex flex-col h-full max-h-[95vh]">
+            <div className="flex-shrink-0 p-6 border-b bg-background">
+              <DialogHeader>
+                <DialogTitle>Edit User Assignments</DialogTitle>
+                <DialogDescription>
+                  Manage organizational assignments for {selectedUser?.email}
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {selectedUser && (
+                <EditUserWizard
+                  user={selectedUser}
+                  companies={companies}
+                  divisions={divisions}
+                  workspaces={workspaces}
+                  onUpdate={() => {
+                    loadData();
+                    setEditUserOpen(false);
+                  }}
+                  onClose={() => setEditUserOpen(false)}
+                />
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
