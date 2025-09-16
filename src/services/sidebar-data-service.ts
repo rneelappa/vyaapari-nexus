@@ -130,18 +130,20 @@ class SidebarDataService {
       const divisionIds = (divisions || []).map(d => d.id);
       console.log('[SidebarDataService] Fetching workspaces for division IDs:', divisionIds);
       
+      // First get workspace memberships for the user
+      const { data: userWorkspaceMemberships } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', userId);
+      
+      const userWorkspaceIds = (userWorkspaceMemberships || []).map(m => m.workspace_id);
+      
+      // Then get workspaces that the user has access to and are in the relevant divisions
       const { data: workspaces } = await supabase
         .from('workspaces')
-        .select(`
-          id, 
-          name, 
-          description, 
-          division_id, 
-          is_default,
-          workspace_members!inner(user_id)
-        `)
+        .select('id, name, description, division_id, is_default')
         .in('division_id', divisionIds)
-        .eq('workspace_members.user_id', userId);
+        .in('id', userWorkspaceIds.length > 0 ? userWorkspaceIds : ['']);
       
       console.log('[SidebarDataService] Fetched workspaces:', workspaces?.length || 0, 'items');
 
