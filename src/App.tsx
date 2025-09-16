@@ -57,6 +57,7 @@ import TallySyncLogs from "@/pages/tally/utilities/TallySyncLogs";
 import SyncJobsManagement from "@/pages/tally/utilities/SyncJobsManagement";
 import { VoucherViewsPage } from "@/pages/tally/utilities/VoucherViewsPage";
 
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -171,93 +172,93 @@ function App() {
                 </AuthGuard>
               } />
               
-              <Route path="/tally/masters/godowns" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <GodownsPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              
-              <Route path="/tally/masters/cost-centers" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <CostCentersPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              
-               <Route path="/tally/masters/voucher-types" element={
+               <Route path="/tally/masters/godowns" element={
                  <AuthGuard>
                    <MainLayout>
-                     <VoucherTypesPage />
+                     <GodownsPageEnhanced />
                    </MainLayout>
                  </AuthGuard>
                } />
                
-               <Route path="/tally/masters/employees" element={
+               <Route path="/tally/masters/cost-centers" element={
                  <AuthGuard>
                    <MainLayout>
-                     <EmployeesPage />
+                     <CostCentersPageEnhanced />
                    </MainLayout>
                  </AuthGuard>
                } />
                
-               <Route path="/tally/masters/uom" element={
-                 <AuthGuard>
-                   <MainLayout>
-                     <UOMPage />
-                   </MainLayout>
-                 </AuthGuard>
-               } />
-               
-               <Route path="/tally/masters/cost-categories" element={
-                 <AuthGuard>
-                   <MainLayout>
-                     <CostCategoriesPage />
-                   </MainLayout>
-                 </AuthGuard>
-               } />
-               
-               <Route path="/tally/masters/payheads" element={
-                 <AuthGuard>
-                   <MainLayout>
-                     <PayheadsPage />
-                   </MainLayout>
-                 </AuthGuard>
-               } />
-              
-              <Route path="/tally/transactions/accounting" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <AccountingPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              
-              <Route path="/tally/transactions/non-accounting" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <NonAccountingPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              
-              <Route path="/tally/transactions/inventory" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <InventoryPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              
-              <Route path="/tally/transactions/sales/create" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <SalesVoucherCreate />
-                  </MainLayout>
-                </AuthGuard>
+                <Route path="/tally/masters/voucher-types" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <VoucherTypesPageEnhanced />
+                    </MainLayout>
+                  </AuthGuard>
                 } />
+                
+                <Route path="/tally/masters/employees" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <EmployeesPageEnhanced />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/tally/masters/uom" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <UOMPageEnhanced />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/tally/masters/cost-categories" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <CostCategoriesPage />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                
+                <Route path="/tally/masters/payheads" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <PayheadsPageEnhanced />
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+              
+               <Route path="/tally/transactions/accounting" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <AccountingPageEnhanced />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/transactions/non-accounting" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <NonAccountingPage />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/transactions/inventory" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <InventoryPageEnhanced />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/transactions/sales/create" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <SalesVoucherCreateEnhanced />
+                   </MainLayout>
+                 </AuthGuard>
+                 } />
                 
                 {/* Redirect old sync path to new utilities location */}
                 <Route path="/tally/transactions/sync" element={
@@ -276,21 +277,21 @@ function App() {
                 </AuthGuard>
               } />
               
-              <Route path="/tally/display/statistics" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <StatisticsPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              
-              <Route path="/tally/display/financial-statements" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <FinancialStatementsPage />
-                  </MainLayout>
-                </AuthGuard>
-              } />
+               <Route path="/tally/display/statistics" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <StatisticsPageEnhanced />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
+               
+               <Route path="/tally/display/financial-statements" element={
+                 <AuthGuard>
+                   <MainLayout>
+                     <FinancialReportsEnhanced />
+                   </MainLayout>
+                 </AuthGuard>
+               } />
               
               <Route path="/tally/display/reports" element={
                 <AuthGuard>

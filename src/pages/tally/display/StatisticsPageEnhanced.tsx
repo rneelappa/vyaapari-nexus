@@ -441,7 +441,7 @@ export function StatisticsPageEnhanced({
                   <div className={`text-2xl font-bold ${getMetricColor(performanceMetrics.profitMargin, 'percentage')}`}>
                     {performanceMetrics.profitMargin.toFixed(1)}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Target: >10%</div>
+                  <div className="text-xs text-muted-foreground">Target: &gt;10%</div>
                 </CardContent>
               </Card>
 
@@ -454,7 +454,7 @@ export function StatisticsPageEnhanced({
                   <div className={`text-2xl font-bold ${getMetricColor(performanceMetrics.assetTurnover, 'ratio')}`}>
                     {performanceMetrics.assetTurnover.toFixed(2)}x
                   </div>
-                  <div className="text-xs text-muted-foreground">Target: >1.0x</div>
+                  <div className="text-xs text-muted-foreground">Target: &gt;1.0x</div>
                 </CardContent>
               </Card>
 
@@ -467,7 +467,7 @@ export function StatisticsPageEnhanced({
                   <div className={`text-2xl font-bold ${getMetricColor(performanceMetrics.currentRatio, 'ratio')}`}>
                     {performanceMetrics.currentRatio.toFixed(2)}
                   </div>
-                  <div className="text-xs text-muted-foreground">Target: >1.5</div>
+                  <div className="text-xs text-muted-foreground">Target: &gt;1.5</div>
                 </CardContent>
               </Card>
 
@@ -480,7 +480,7 @@ export function StatisticsPageEnhanced({
                   <div className={`text-2xl font-bold ${getMetricColor(performanceMetrics.revenueGrowth, 'percentage')}`}>
                     {performanceMetrics.revenueGrowth.toFixed(1)}%
                   </div>
-                  <div className="text-xs text-muted-foreground">Target: >10%</div>
+                  <div className="text-xs text-muted-foreground">Target: &gt;10%</div>
                 </CardContent>
               </Card>
             </div>
