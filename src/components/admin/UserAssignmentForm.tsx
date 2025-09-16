@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Search, Building, Building2, Users, MapPin, Briefcase, UserCheck } from 'lucide-react';
 
 interface User {
   id: string;
   email: string;
   full_name?: string;
-  roles: { role: string; company_id?: string; division_id?: string }[];
+  roles: Array<{
+    id: string;
+    user_id: string;
+    role: string;
+    company_id?: string;
+    division_id?: string;
+  }>;
   company_assignments: string[];
   division_assignments: string[];
   workspace_assignments: string[];
@@ -36,7 +45,7 @@ interface Workspace {
   division_id: string;
 }
 
-interface UserAssignmentFormProps {
+export interface UserAssignmentFormProps {
   user: User;
   companies: Company[];
   divisions: Division[];
@@ -48,56 +57,81 @@ export function UserAssignmentForm({ user, companies, divisions, workspaces, onU
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>('workspace_member');
-  const [selectedCompanies, setSelectedCompanies] = useState<string[]>(user.company_assignments);
-  const [selectedDivisions, setSelectedDivisions] = useState<string[]>(user.division_assignments);
-  const [selectedWorkspaces, setSelectedWorkspaces] = useState<string[]>(user.workspace_assignments);
+  const [companySearch, setCompanySearch] = useState('');
+  const [divisionSearch, setDivisionSearch] = useState('');
+  const [workspaceSearch, setWorkspaceSearch] = useState('');
+  const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
+  const [selectedDivisions, setSelectedDivisions] = useState<string[]>([]);
+  const [selectedWorkspaces, setSelectedWorkspaces] = useState<string[]>([]);
 
-  // Filter divisions based on selected companies
-  const availableDivisions = divisions.filter(division => 
-    selectedCompanies.includes(division.company_id)
+  // Filtered lists based on search
+  const filteredCompanies = companies.filter(c => 
+    c.name.toLowerCase().includes(companySearch.toLowerCase())
+  );
+  const filteredDivisions = divisions.filter(d => 
+    d.name.toLowerCase().includes(divisionSearch.toLowerCase()) &&
+    (selectedCompanies.length === 0 || selectedCompanies.includes(d.company_id))
+  );
+  const filteredWorkspaces = workspaces.filter(w => 
+    w.name.toLowerCase().includes(workspaceSearch.toLowerCase()) &&
+    (selectedDivisions.length === 0 || selectedDivisions.includes(w.division_id))
   );
 
-  // Filter workspaces based on selected divisions
-  const availableWorkspaces = workspaces.filter(workspace => 
-    selectedDivisions.includes(workspace.division_id)
-  );
-
+  // Initialize selections based on user's current assignments
   useEffect(() => {
-    // Auto-deselect divisions if their company is unselected
-    setSelectedDivisions(prev => prev.filter(divId => 
-      availableDivisions.some(div => div.id === divId)
-    ));
-  }, [selectedCompanies, availableDivisions]);
+    setSelectedCompanies(user.company_assignments || []);
+    setSelectedDivisions(user.division_assignments || []);
+    setSelectedWorkspaces(user.workspace_assignments || []);
+  }, [user]);
 
-  useEffect(() => {
-    // Auto-deselect workspaces if their division is unselected
-    setSelectedWorkspaces(prev => prev.filter(wsId => 
-      availableWorkspaces.some(ws => ws.id === wsId)
-    ));
-  }, [selectedDivisions, availableWorkspaces]);
-
-  const handleCompanyToggle = (companyId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCompanies(prev => [...prev, companyId]);
-    } else {
-      setSelectedCompanies(prev => prev.filter(id => id !== companyId));
-    }
+  // Helper functions
+  const toggleCompany = (companyId: string) => {
+    setSelectedCompanies(prev => {
+      const newSelection = prev.includes(companyId)
+        ? prev.filter(id => id !== companyId)
+        : [...prev, companyId];
+      
+      // Remove divisions and workspaces that are no longer valid
+      if (!newSelection.includes(companyId)) {
+        const invalidDivisions = divisions
+          .filter(d => d.company_id === companyId)
+          .map(d => d.id);
+        setSelectedDivisions(prev => prev.filter(id => !invalidDivisions.includes(id)));
+        
+        const invalidWorkspaces = workspaces
+          .filter(w => invalidDivisions.includes(w.division_id))
+          .map(w => w.id);
+        setSelectedWorkspaces(prev => prev.filter(id => !invalidWorkspaces.includes(id)));
+      }
+      
+      return newSelection;
+    });
   };
 
-  const handleDivisionToggle = (divisionId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedDivisions(prev => [...prev, divisionId]);
-    } else {
-      setSelectedDivisions(prev => prev.filter(id => id !== divisionId));
-    }
+  const toggleDivision = (divisionId: string) => {
+    setSelectedDivisions(prev => {
+      const newSelection = prev.includes(divisionId)
+        ? prev.filter(id => id !== divisionId)
+        : [...prev, divisionId];
+      
+      // Remove workspaces that are no longer valid
+      if (!newSelection.includes(divisionId)) {
+        const invalidWorkspaces = workspaces
+          .filter(w => w.division_id === divisionId)
+          .map(w => w.id);
+        setSelectedWorkspaces(prev => prev.filter(id => !invalidWorkspaces.includes(id)));
+      }
+      
+      return newSelection;
+    });
   };
 
-  const handleWorkspaceToggle = (workspaceId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedWorkspaces(prev => [...prev, workspaceId]);
-    } else {
-      setSelectedWorkspaces(prev => prev.filter(id => id !== workspaceId));
-    }
+  const toggleWorkspace = (workspaceId: string) => {
+    setSelectedWorkspaces(prev => 
+      prev.includes(workspaceId)
+        ? prev.filter(id => id !== workspaceId)
+        : [...prev, workspaceId]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,7 +139,7 @@ export function UserAssignmentForm({ user, companies, divisions, workspaces, onU
     setLoading(true);
 
     try {
-      // Remove existing user roles
+      // Remove existing roles
       const { error: deleteError } = await supabase
         .from('user_roles')
         .delete()
@@ -191,189 +225,348 @@ export function UserAssignmentForm({ user, companies, divisions, workspaces, onU
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* User Info */}
-      <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
-        <div>
-          <h3 className="font-medium">{user.full_name || 'Unnamed User'}</h3>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
-        </div>
-      </div>
-
-      {/* Base Role Selection */}
+      {/* User Info Header */}
       <Card>
         <CardHeader>
-          <CardTitle>Base Role</CardTitle>
-          <CardDescription>Select the primary role for this user</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <UserCheck className="w-5 h-5" />
+            Editing User: {user.email}
+          </CardTitle>
+          <CardDescription>
+            Manage organizational assignments and role permissions
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedRole} onValueChange={setSelectedRole}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="super_admin">Super Admin</SelectItem>
-              <SelectItem value="company_admin">Company Admin</SelectItem>
-              <SelectItem value="division_admin">Division Admin</SelectItem>
-              <SelectItem value="workspace_admin">Workspace Admin</SelectItem>
-              <SelectItem value="workspace_member">Member</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Name:</span>
+              <span className="ml-2 font-medium">{user.full_name || user.email}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Current Roles:</span>
+              <div className="ml-2 inline-flex gap-1">
+                {user.roles.map((role, index) => (
+                  <Badge key={index} variant="outline">
+                    {role.role}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Role Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Assignment</CardTitle>
+          <CardDescription>Select the role to assign to this user</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="role">User Role</Label>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border z-50">
+                <SelectItem value="workspace_member">Workspace Member</SelectItem>
+                <SelectItem value="workspace_admin">Workspace Admin</SelectItem>
+                <SelectItem value="division_admin">Division Admin</SelectItem>
+                <SelectItem value="company_admin">Company Admin</SelectItem>
+                <SelectItem value="super_admin">Super Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
       {/* Company Assignments */}
       <Card>
         <CardHeader>
-          <CardTitle>Company Assignments</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Building className="w-5 h-5" />
+            Company Assignments
+            <Badge variant="outline" className="ml-auto">
+              {selectedCompanies.length} selected
+            </Badge>
+          </CardTitle>
           <CardDescription>Select companies this user has access to</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {companies.map(company => (
-              <div key={company.id} className="flex items-center space-x-3">
-                <Checkbox
-                  id={`company-${company.id}`}
-                  checked={selectedCompanies.includes(company.id)}
-                  onCheckedChange={(checked) => handleCompanyToggle(company.id, !!checked)}
-                />
-                <Label htmlFor={`company-${company.id}`} className="flex-1">
-                  <div className="font-medium">{company.name}</div>
-                  {company.description && (
-                    <div className="text-sm text-muted-foreground">{company.description}</div>
-                  )}
-                </Label>
+        <CardContent className="space-y-4">
+          {/* Search */}
+          <div className="space-y-2">
+            <Label>Search Companies</Label>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Type to search companies..."
+                value={companySearch}
+                onChange={(e) => setCompanySearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
+
+          {/* Companies List */}
+          <div className="space-y-2">
+            <Label>Available Companies</Label>
+            <ScrollArea className="h-[250px] border rounded-lg p-2">
+              <div className="space-y-2">
+                {filteredCompanies.map((company) => (
+                  <div
+                    key={company.id}
+                    className={`p-3 border rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
+                      selectedCompanies.includes(company.id)
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-border'
+                    }`}
+                    onClick={() => toggleCompany(company.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Building className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">{company.name}</span>
+                      </div>
+                      {selectedCompanies.includes(company.id) && (
+                        <Badge variant="default">Selected</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </ScrollArea>
+            
+            {filteredCompanies.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No companies found matching your search</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Division Assignments */}
-      {selectedCompanies.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Division Assignments</CardTitle>
-            <CardDescription>Select divisions within assigned companies</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {availableDivisions.map(division => {
-                const company = companies.find(c => c.id === division.company_id);
-                return (
-                  <div key={division.id} className="flex items-center space-x-3">
-                    <Checkbox
-                      id={`division-${division.id}`}
-                      checked={selectedDivisions.includes(division.id)}
-                      onCheckedChange={(checked) => handleDivisionToggle(division.id, !!checked)}
-                    />
-                    <Label htmlFor={`division-${division.id}`} className="flex-1">
-                      <div className="font-medium">{division.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Company: {company?.name}
-                      </div>
-                    </Label>
-                  </div>
-                );
-              })}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            Division Assignments
+            <Badge variant="outline" className="ml-auto">
+              {selectedDivisions.length} selected
+            </Badge>
+          </CardTitle>
+          <CardDescription>Select divisions within assigned companies</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Search */}
+          <div className="space-y-2">
+            <Label>Search Divisions</Label>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Type to search divisions..."
+                value={divisionSearch}
+                onChange={(e) => setDivisionSearch(e.target.value)}
+                className="pl-8"
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+
+          {/* Divisions List */}
+          <div className="space-y-2">
+            <Label>Available Divisions</Label>
+            {selectedCompanies.length > 0 ? (
+              <ScrollArea className="h-[250px] border rounded-lg p-2">
+                <div className="space-y-2">
+                  {filteredDivisions.map((division) => (
+                    <div
+                      key={division.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
+                        selectedDivisions.includes(division.id)
+                          ? 'border-primary bg-primary/5 shadow-sm'
+                          : 'border-border'
+                      }`}
+                      onClick={() => toggleDivision(division.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <span className="font-medium">{division.name}</span>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Company: {companies.find(c => c.id === division.company_id)?.name}
+                            </p>
+                          </div>
+                        </div>
+                        {selectedDivisions.includes(division.id) && (
+                          <Badge variant="default">Selected</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                <Building2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Select companies first to see available divisions</p>
+              </div>
+            )}
+            
+            {selectedCompanies.length > 0 && filteredDivisions.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No divisions found matching your search</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Workspace Assignments */}
-      {selectedDivisions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Workspace Assignments</CardTitle>
-            <CardDescription>Select workspaces within assigned divisions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {availableWorkspaces.map(workspace => {
-                const division = divisions.find(d => d.id === workspace.division_id);
-                const company = companies.find(c => c.id === division?.company_id);
-                return (
-                  <div key={workspace.id} className="flex items-center space-x-3">
-                    <Checkbox
-                      id={`workspace-${workspace.id}`}
-                      checked={selectedWorkspaces.includes(workspace.id)}
-                      onCheckedChange={(checked) => handleWorkspaceToggle(workspace.id, !!checked)}
-                    />
-                    <Label htmlFor={`workspace-${workspace.id}`} className="flex-1">
-                      <div className="font-medium">{workspace.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {company?.name} › {division?.name}
-                      </div>
-                    </Label>
-                  </div>
-                );
-              })}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="w-5 h-5" />
+            Workspace Assignments
+            <Badge variant="outline" className="ml-auto">
+              {selectedWorkspaces.length} selected
+            </Badge>
+          </CardTitle>
+          <CardDescription>Select workspaces within assigned divisions</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Search */}
+          <div className="space-y-2">
+            <Label>Search Workspaces</Label>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Type to search workspaces..."
+                value={workspaceSearch}
+                onChange={(e) => setWorkspaceSearch(e.target.value)}
+                className="pl-8"
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      {/* Current Assignments Summary */}
+          {/* Workspaces List */}
+          <div className="space-y-2">
+            <Label>Available Workspaces</Label>
+            {selectedDivisions.length > 0 ? (
+              <ScrollArea className="h-[250px] border rounded-lg p-2">
+                <div className="space-y-2">
+                  {filteredWorkspaces.map((workspace) => (
+                    <div
+                      key={workspace.id}
+                      className={`p-3 border rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
+                        selectedWorkspaces.includes(workspace.id)
+                          ? 'border-primary bg-primary/5 shadow-sm'
+                          : 'border-border'
+                      }`}
+                      onClick={() => toggleWorkspace(workspace.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <div>
+                            <span className="font-medium">{workspace.name}</span>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Division: {divisions.find(d => d.id === workspace.division_id)?.name}
+                            </p>
+                          </div>
+                        </div>
+                        {selectedWorkspaces.includes(workspace.id) && (
+                          <Badge variant="default">Selected</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                <Briefcase className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>Select divisions first to see available workspaces</p>
+              </div>
+            )}
+            
+            {selectedDivisions.length > 0 && filteredWorkspaces.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Briefcase className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No workspaces found matching your search</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Assignment Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Assignment Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <strong>Companies:</strong> 
-              {selectedCompanies.length > 0 ? (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {selectedCompanies.map(companyId => {
-                    const company = companies.find(c => c.id === companyId);
-                    return (
-                      <Badge key={companyId} variant="secondary">
-                        {company?.name}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              ) : (
-                <span className="text-muted-foreground ml-2">None selected</span>
-              )}
+              <p className="text-muted-foreground">User:</p>
+              <p className="font-medium">{user.email}</p>
             </div>
-            
             <div>
-              <strong>Divisions:</strong>
-              {selectedDivisions.length > 0 ? (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {selectedDivisions.map(divisionId => {
-                    const division = divisions.find(d => d.id === divisionId);
-                    return (
-                      <Badge key={divisionId} variant="secondary">
-                        {division?.name}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              ) : (
-                <span className="text-muted-foreground ml-2">None selected</span>
-              )}
-            </div>
-            
-            <div>
-              <strong>Workspaces:</strong>
-              {selectedWorkspaces.length > 0 ? (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {selectedWorkspaces.map(workspaceId => {
-                    const workspace = workspaces.find(w => w.id === workspaceId);
-                    return (
-                      <Badge key={workspaceId} variant="secondary">
-                        {workspace?.name}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              ) : (
-                <span className="text-muted-foreground ml-2">None selected</span>
-              )}
+              <p className="text-muted-foreground">Role:</p>
+              <Badge variant="secondary">{selectedRole}</Badge>
             </div>
           </div>
+          
+          {selectedCompanies.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Selected Companies:</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedCompanies.map(id => {
+                  const company = companies.find(c => c.id === id);
+                  return company ? (
+                    <Badge key={id} variant="outline" className="text-xs">
+                      {company.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
+          
+          {selectedDivisions.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Selected Divisions:</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedDivisions.map(id => {
+                  const division = divisions.find(d => d.id === id);
+                  return division ? (
+                    <Badge key={id} variant="outline" className="text-xs">
+                      {division.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
+          
+          {selectedWorkspaces.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Selected Workspaces:</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedWorkspaces.map(id => {
+                  const workspace = workspaces.find(w => w.id === id);
+                  return workspace ? (
+                    <Badge key={id} variant="outline" className="text-xs">
+                      {workspace.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
