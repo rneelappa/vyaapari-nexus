@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, BookOpen, TrendingUp, TrendingDown, MapPin, CreditCard, RefreshCw, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { LedgerForm, type LedgerFormData } from '@/components/tally/master-forms/LedgerForm';
 import { tallyApi, type Ledger, type ApiResponse } from "@/services/tallyApiService";
 
 // Import useAuth and toast after debugAuth function
@@ -20,6 +23,14 @@ export default function LedgersPage() {
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // CRUD state
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedLedgerForEdit, setSelectedLedgerForEdit] = useState<Ledger | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedLedgerForDelete, setSelectedLedgerForDelete] = useState<Ledger | null>(null);
+  const [availableGroups, setAvailableGroups] = useState<Array<{ name: string; guid: string }>>([]);
 
   // Add circuit breaker state
   const [fetchAttempts, setFetchAttempts] = useState(0);
@@ -32,6 +43,7 @@ export default function LedgersPage() {
       const now = Date.now();
       if (now - lastFetchTime > FETCH_COOLDOWN) {
         fetchLedgers();
+        fetchGroups(); // Fetch groups for the form dropdown
       }
     }
   }, [user, fetchAttempts, lastFetchTime]);
@@ -101,6 +113,105 @@ export default function LedgersPage() {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const response = await tallyApi.getGroups('629f49fb-983e-4141-8c48-e1423b39e921', '37f3cc0c-58ad-4baf-b309-360116ffc3cd');
+      if (response.success) {
+        setAvailableGroups(response.data.map(group => ({ name: group.name, guid: group.guid })));
+      }
+    } catch (err) {
+      console.error('Error fetching groups:', err);
+    }
+  };
+
+  // CRUD operations
+  const handleCreateLedger = async (data: LedgerFormData) => {
+    try {
+      setLoading(true);
+      const response = await tallyApi.createLedger('629f49fb-983e-4141-8c48-e1423b39e921', '37f3cc0c-58ad-4baf-b309-360116ffc3cd', data);
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Ledger created successfully",
+        });
+        setIsCreateDialogOpen(false);
+        await fetchLedgers(); // Refresh data
+      } else {
+        throw new Error(response.error || 'Failed to create ledger');
+      }
+    } catch (err) {
+      console.error('Error creating ledger:', err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to create ledger",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditLedger = async (data: LedgerFormData) => {
+    if (!selectedLedgerForEdit) return;
+    
+    try {
+      setLoading(true);
+      const response = await tallyApi.updateLedger('629f49fb-983e-4141-8c48-e1423b39e921', '37f3cc0c-58ad-4baf-b309-360116ffc3cd', selectedLedgerForEdit.guid, data);
+      
+      if (response.success) {
+        toast({
+          title: "Success", 
+          description: "Ledger updated successfully",
+        });
+        setIsEditDialogOpen(false);
+        setSelectedLedgerForEdit(null);
+        await fetchLedgers(); // Refresh data
+      } else {
+        throw new Error(response.error || 'Failed to update ledger');
+      }
+    } catch (err) {
+      console.error('Error updating ledger:', err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to update ledger",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteLedger = async () => {
+    if (!selectedLedgerForDelete) return;
+    
+    try {
+      setLoading(true);
+      const response = await tallyApi.deleteLedger('629f49fb-983e-4141-8c48-e1423b39e921', '37f3cc0c-58ad-4baf-b309-360116ffc3cd', selectedLedgerForDelete.guid);
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Ledger deleted successfully",
+        });
+        setIsDeleteDialogOpen(false);
+        setSelectedLedgerForDelete(null);
+        await fetchLedgers(); // Refresh data
+      } else {
+        throw new Error(response.error || 'Failed to delete ledger');
+      }
+    } catch (err) {
+      console.error('Error deleting ledger:', err);
+      toast({
+        title: "Error", 
+        description: err instanceof Error ? err.message : "Failed to delete ledger",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRefresh = () => {
     setFetchAttempts(0);
     setLastFetchTime(0);
@@ -155,10 +266,28 @@ export default function LedgersPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Ledger
-          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Ledger
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create New Ledger</DialogTitle>
+                <DialogDescription>
+                  Create a new ledger account in your chart of accounts
+                </DialogDescription>
+              </DialogHeader>
+              <LedgerForm
+                availableGroups={availableGroups}
+                onSubmit={handleCreateLedger}
+                onCancel={() => setIsCreateDialogOpen(false)}
+                isLoading={loading}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -288,10 +417,24 @@ export default function LedgersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedLedgerForEdit(ledger);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedLedgerForDelete(ledger);
+                              setIsDeleteDialogOpen(true);
+                            }}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -306,6 +449,75 @@ export default function LedgersPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Ledger</DialogTitle>
+            <DialogDescription>
+              Update ledger account information
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLedgerForEdit && (
+            <LedgerForm
+              initialData={{
+                name: selectedLedgerForEdit.name,
+                parent: selectedLedgerForEdit.parent,
+                alias: selectedLedgerForEdit.alias || '',
+                opening_balance: selectedLedgerForEdit.opening_balance || 0,
+                credit_limit: (selectedLedgerForEdit as any).credit_limit || 0,
+                credit_days: (selectedLedgerForEdit as any).credit_days || 0,
+                mailing_name: (selectedLedgerForEdit as any).mailing_name || '',
+                mailing_address: selectedLedgerForEdit.mailing_address || '',
+                mailing_state: (selectedLedgerForEdit as any).mailing_state || '',
+                mailing_country: (selectedLedgerForEdit as any).mailing_country || 'India',
+                mailing_pincode: (selectedLedgerForEdit as any).mailing_pincode || '',
+                email: selectedLedgerForEdit.email || '',
+                it_pan: (selectedLedgerForEdit as any).it_pan || '',
+                gstn: selectedLedgerForEdit.gstn || '',
+                gst_registration_type: (selectedLedgerForEdit as any).gst_registration_type || '',
+                bank_account_number: (selectedLedgerForEdit as any).bank_account_number || '',
+                bank_ifsc: (selectedLedgerForEdit as any).bank_ifsc || '',
+                bank_name: (selectedLedgerForEdit as any).bank_name || '',
+                bank_branch: (selectedLedgerForEdit as any).bank_branch || '',
+                ledger_contact: (selectedLedgerForEdit as any).ledger_contact || '',
+                ledger_mobile: (selectedLedgerForEdit as any).ledger_mobile || '',
+              }}
+              availableGroups={availableGroups}
+              onSubmit={handleEditLedger}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedLedgerForEdit(null);
+              }}
+              isLoading={loading}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Ledger</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedLedgerForDelete?.name}"? This action cannot be undone and will affect all related transactions.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setSelectedLedgerForDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLedger}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

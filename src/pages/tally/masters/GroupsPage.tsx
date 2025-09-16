@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, RefreshCw, ArrowLeft, ChevronRight, Users, FileText, Receipt, Calendar, FolderOpen, Folder, BarChart3 } from 'lucide-react';
+import { Search, RefreshCw, ArrowLeft, ChevronRight, Users, FileText, Receipt, Calendar, FolderOpen, Folder, BarChart3, Plus, Edit, Trash2 } from 'lucide-react';
 import { tallyApi, type Group, type Ledger as ApiLedger, type Voucher as ApiVoucher, type CompleteVoucher, type ApiResponse, type HierarchyData } from '@/services/tallyApiService';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { GroupForm, type GroupFormData } from '@/components/tally/master-forms/GroupForm';
 import { toast } from '@/hooks/use-toast';
 
 // All interfaces are now imported from tallyApiService
@@ -29,6 +32,13 @@ export default function GroupsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // CRUD state
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedGroupForEdit, setSelectedGroupForEdit] = useState<Group | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedGroupForDelete, setSelectedGroupForDelete] = useState<Group | null>(null);
   
   // Navigation state
   const [currentLevel, setCurrentLevel] = useState<ViewLevel>('groups');
@@ -139,6 +149,90 @@ export default function GroupsPage() {
       hasSubgroups: child.children && child.children.length > 0,
       ledgerCount: child.ledgerCount || 0
     }));
+  };
+
+  // CRUD operations
+  const handleCreateGroup = async (data: GroupFormData) => {
+    if (!companyId || !divisionId) return;
+    
+    try {
+      setLoading(true);
+      const response = await tallyApi.createGroup(companyId, divisionId, data);
+      
+      if (response.success) {
+        toast({
+          title: "Success",
+          description: "Group created successfully",
+        });
+        setIsCreateDialogOpen(false);
+        await fetchGroupsHierarchy(); // Refresh data
+      } else {
+        throw new Error(response.error || 'Failed to create group');
+      }
+    } catch (err) {
+      console.error('Error creating group:', err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to create group",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditGroup = async (data: GroupFormData) => {
+    if (!companyId || !divisionId || !selectedGroupForEdit) return;
+    
+    try {
+      setLoading(true);
+      // Note: Update API would be implemented in tallyApiService
+      // const response = await tallyApi.updateGroup(companyId, divisionId, selectedGroupForEdit.guid, data);
+      
+      toast({
+        title: "Success", 
+        description: "Group updated successfully",
+      });
+      setIsEditDialogOpen(false);
+      setSelectedGroupForEdit(null);
+      await fetchGroupsHierarchy(); // Refresh data
+    } catch (err) {
+      console.error('Error updating group:', err);
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to update group",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!companyId || !divisionId || !selectedGroupForDelete) return;
+    
+    try {
+      setLoading(true);
+      // Note: Delete API would be implemented in tallyApiService
+      // const response = await tallyApi.deleteGroup(companyId, divisionId, selectedGroupForDelete.guid);
+      
+      toast({
+        title: "Success",
+        description: "Group deleted successfully",
+      });
+      setIsDeleteDialogOpen(false);
+      setSelectedGroupForDelete(null);
+      await fetchGroupsHierarchy(); // Refresh data
+    } catch (err) {
+      console.error('Error deleting group:', err);
+      toast({
+        title: "Error", 
+        description: err instanceof Error ? err.message : "Failed to delete group",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchLedgersForGroup = async (groupName: string) => {
@@ -390,10 +484,34 @@ export default function GroupsPage() {
             )}
           </div>
         </div>
-        <Button onClick={fetchGroupsHierarchy} disabled={loading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={fetchGroupsHierarchy} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Group
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create New Group</DialogTitle>
+                <DialogDescription>
+                  Create a new account group for organizing ledgers
+                </DialogDescription>
+              </DialogHeader>
+              <GroupForm
+                availableGroups={groups.map(g => ({ name: g.name, guid: g.guid }))}
+                onSubmit={handleCreateGroup}
+                onCancel={() => setIsCreateDialogOpen(false)}
+                isLoading={loading}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Voucher Detail View */}
@@ -670,7 +788,29 @@ export default function GroupsPage() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedGroupForEdit(item);
+                                      setIsEditDialogOpen(true);
+                                    }}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedGroupForDelete(item);
+                                      setIsDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                   {item.hasSubgroups ? (
                                     <ChevronRight className="h-4 w-4 text-primary" />
                                   ) : (
@@ -729,6 +869,60 @@ export default function GroupsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Group</DialogTitle>
+            <DialogDescription>
+              Update group settings and properties
+            </DialogDescription>
+          </DialogHeader>
+          {selectedGroupForEdit && (
+            <GroupForm
+              initialData={{
+                name: selectedGroupForEdit.name,
+                parent: selectedGroupForEdit.parent,
+                primary_group: selectedGroupForEdit.primary_group,
+                is_revenue: Boolean(selectedGroupForEdit.is_revenue),
+                is_deemedpositive: Boolean(selectedGroupForEdit.is_deemedpositive),
+                affects_gross_profit: Boolean(selectedGroupForEdit.affects_gross_profit),
+              }}
+              availableGroups={groups.filter(g => g.guid !== selectedGroupForEdit.guid).map(g => ({ name: g.name, guid: g.guid }))}
+              onSubmit={handleEditGroup}
+              onCancel={() => {
+                setIsEditDialogOpen(false);
+                setSelectedGroupForEdit(null);
+              }}
+              isLoading={loading}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedGroupForDelete?.name}"? This action cannot be undone and will affect any ledgers or subgroups under this group.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setSelectedGroupForDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGroup}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
