@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Building, Building2, Users, ChevronRight, ChevronDown, AlertTriangle } from "lucide-react";
+import { Building, Building2, Users, ChevronRight, ChevronDown, AlertTriangle, UserCog } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -292,6 +292,32 @@ function AppSidebarContent({}: AppSidebarContentProps) {
             <TallyHierarchyRebuilt />
           </ErrorBoundary>
         )}
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink 
+                    to="/admin/users"
+                    className={({ isActive }) => `
+                      flex items-center gap-2
+                      ${isActive 
+                        ? 'bg-accent text-accent-foreground font-medium' 
+                        : 'hover:bg-accent/50'
+                      }
+                      transition-colors duration-200
+                    `}
+                  >
+                    <UserCog className="h-4 w-4 flex-shrink-0" />
+                    {!collapsed && <span className="truncate">User Management</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       
       <UserProfile />
