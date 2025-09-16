@@ -27,7 +27,8 @@ export default function Index() {
       try {
         const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
-          .select('*');
+          .select('*')
+          .eq('archived', false);
 
         if (companiesError) {
           console.error('Error fetching companies:', companiesError);

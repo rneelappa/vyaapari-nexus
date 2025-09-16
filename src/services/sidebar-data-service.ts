@@ -103,10 +103,11 @@ class SidebarDataService {
 
     try {
       console.log('[SidebarDataService] Fetching companies...');
-      // Get companies
+      // Get companies (exclude archived)
       const { data: companies, error: companiesError } = await supabase
         .from('companies')
-        .select('id, name, description');
+        .select('id, name, description')
+        .eq('archived', false);
 
       if (companiesError || !companies?.length) {
         console.error('[SidebarDataService] Error fetching companies:', companiesError);
@@ -212,10 +213,11 @@ class SidebarDataService {
     console.log('[SidebarDataService] No Tally cache found, fetching fresh data');
 
     try {
-      // Get companies
+      // Get companies (exclude archived)
       const { data: companies, error: companiesError } = await supabase
         .from('companies')
-        .select('id, name');
+        .select('id, name')
+        .eq('archived', false);
 
       if (companiesError || !companies?.length) {
         console.error('Error fetching companies for Tally:', companiesError);
