@@ -695,30 +695,6 @@ export function StatisticsPageEnhanced({
     </div>
   );
 
-  function getMetricColor(value: number, type: 'percentage' | 'ratio' | 'days'): string {
-    switch (type) {
-      case 'percentage':
-        if (value > 15) return 'text-green-600';
-        if (value > 5) return 'text-yellow-600';
-        return 'text-red-600';
-      case 'ratio':
-        if (value > 1.5) return 'text-green-600';
-        if (value > 1.0) return 'text-yellow-600';
-        return 'text-red-600';
-      case 'days':
-        if (value < 30) return 'text-green-600';
-        if (value < 60) return 'text-yellow-600';
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
-  }
-
-  function getMetricIcon(value: number, benchmark: number) {
-    if (value > benchmark) return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (value < benchmark * 0.8) return <TrendingDown className="h-4 w-4 text-red-600" />;
-    return <Activity className="h-4 w-4 text-yellow-600" />;
-  }
 }
 
 export default StatisticsPageEnhanced;

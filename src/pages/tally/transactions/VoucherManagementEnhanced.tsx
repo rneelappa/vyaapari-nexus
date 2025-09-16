@@ -347,13 +347,13 @@ export function VoucherManagementEnhanced({
                                voucher.type?.toLowerCase().includes('material') && (
                                 <Badge variant="destructive" className="text-xs">Transfer of Materials</Badge>
                               )}
-                              {voucher.isInvoice && (
+                              {(voucher as any)?.isInvoice && (
                                 <Badge variant="default" className="text-xs">Invoice</Badge>
                               )}
-                              {voucher.isAccounting && (
+                              {(voucher as any)?.isAccounting && (
                                 <Badge variant="outline" className="text-xs">Accounting</Badge>
                               )}
-                              {voucher.isInventory && (
+                              {(voucher as any)?.isInventory && (
                                 <Badge variant="secondary" className="text-xs">Inventory</Badge>
                               )}
                             </div>
@@ -488,8 +488,8 @@ export function VoucherManagementEnhanced({
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Is Invoice:</span>
-                      <Badge variant={selectedVoucher.isInvoice ? 'default' : 'secondary'}>
-                        {selectedVoucher.isInvoice ? 'Yes' : 'No'}
+                      <Badge variant={(selectedVoucher as any)?.isInvoice ? 'default' : 'secondary'}>
+                        {(selectedVoucher as any)?.isInvoice ? 'Yes' : 'No'}
                       </Badge>
                     </div>
                   </div>
@@ -570,13 +570,13 @@ export function VoucherManagementEnhanced({
                 <div className="flex justify-between">
                   <span className="text-sm">With Inventory:</span>
                   <Badge variant="secondary">
-                    {filteredVouchers.filter(v => v.isInventory).length}
+                    {filteredVouchers.filter(v => (v as any)?.isInventory).length}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Invoices:</span>
                   <Badge variant="secondary">
-                    {filteredVouchers.filter(v => v.isInvoice).length}
+                    {filteredVouchers.filter(v => (v as any)?.isInvoice).length}
                   </Badge>
                 </div>
               </div>

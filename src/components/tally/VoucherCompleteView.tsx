@@ -30,7 +30,9 @@ import {
   TrendingUp,
   Eye,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  AlertCircle,
+  Calculator
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { tallyApi, type CompleteVoucher, type ApiResponse } from '@/services/tallyApiService';
@@ -418,10 +420,10 @@ export function VoucherCompleteView({
                               </span>
                             </div>
                           </div>
-                          {relationship.trackingNumber && (
+                          {(relationship as any)?.trackingNumber && (
                             <div className="mt-2 text-sm">
                               <span className="text-muted-foreground">Tracking:</span>
-                              <span className="ml-2 font-mono">{relationship.trackingNumber}</span>
+                              <span className="ml-2 font-mono">{(relationship as any).trackingNumber}</span>
                             </div>
                           )}
                         </div>

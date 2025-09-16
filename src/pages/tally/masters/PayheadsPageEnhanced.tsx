@@ -841,23 +841,6 @@ export function PayheadsPageEnhanced({ companyId, divisionId }: PayheadsPageEnha
     </div>
   );
 
-  function getTypeIcon(type: string) {
-    switch (type) {
-      case 'Earnings': return <TrendingUp className="h-4 w-4 text-green-600" />;
-      case 'Deductions': return <TrendingDown className="h-4 w-4 text-red-600" />;
-      case 'Employer Liabilities': return <Calculator className="h-4 w-4 text-blue-600" />;
-      default: return <DollarSign className="h-4 w-4" />;
-    }
-  }
-
-  function getTypeColor(type: string): string {
-    switch (type) {
-      case 'Earnings': return 'text-green-600';
-      case 'Deductions': return 'text-red-600';
-      case 'Employer Liabilities': return 'text-blue-600';
-      default: return 'text-gray-600';
-    }
-  }
 }
 
 export default PayheadsPageEnhanced;

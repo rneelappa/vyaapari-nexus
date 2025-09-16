@@ -18,6 +18,7 @@ import {
   Users, 
   Edit,
   Trash2,
+  BarChart3,
   Save,
   AlertCircle,
   User,

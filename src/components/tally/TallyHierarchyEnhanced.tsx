@@ -162,12 +162,9 @@ export function TallyHierarchyEnhanced({
       <SidebarGroup>
         <SidebarGroupLabel>Tally Workspace</SidebarGroupLabel>
         <SidebarGroupContent>
-          <LoadingErrorState 
-            isLoading={true} 
-            error={null} 
-            onRetry={() => {}} 
-            loadingMessage="Loading Tally workspace..."
-          />
+          <div className="p-4 text-sm text-muted-foreground">
+            Loading Tally workspace...
+          </div>
         </SidebarGroupContent>
       </SidebarGroup>
     );
@@ -178,12 +175,9 @@ export function TallyHierarchyEnhanced({
       <SidebarGroup>
         <SidebarGroupLabel>Tally Workspace</SidebarGroupLabel>
         <SidebarGroupContent>
-          <LoadingErrorState 
-            isLoading={false} 
-            error={error || "No companies available"} 
-            onRetry={onRefresh}
-            retryLabel="Refresh Companies"
-          />
+          <div className="p-4 text-sm text-muted-foreground">
+            {error || "No companies available"}
+          </div>
         </SidebarGroupContent>
       </SidebarGroup>
     );

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Plus, 
   Minus, 
@@ -18,6 +19,7 @@ import {
   Calculator,
   Package,
   Trash2,
+  Target,
   Eye,
   RefreshCw,
   CheckCircle,

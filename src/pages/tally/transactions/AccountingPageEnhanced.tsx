@@ -473,7 +473,7 @@ export function AccountingPageEnhanced({
                       </p>
                     </div>
                     
-                    {monthlyAnalysis.ledgers?.slice(0, 10).map((ledgerData, index) => (
+                    {((monthlyAnalysis as any)?.ledgers || []).slice(0, 10).map((ledgerData: any, index: number) => (
                       <div key={index} className="border rounded-lg p-4">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-2">

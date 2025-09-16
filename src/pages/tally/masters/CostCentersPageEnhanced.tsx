@@ -741,11 +741,6 @@ export function CostCentersPageEnhanced({ companyId, divisionId }: CostCentersPa
     </div>
   );
 
-  function getVarianceColor(variance: number): string {
-    if (variance > 10) return 'text-green-600';
-    if (variance < -10) return 'text-red-600';
-    return 'text-yellow-600';
-  }
 }
 
 export default CostCentersPageEnhanced;

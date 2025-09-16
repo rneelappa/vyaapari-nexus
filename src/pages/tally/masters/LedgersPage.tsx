@@ -278,10 +278,10 @@ export default function LedgersPage() {
                               <span className="truncate max-w-32">{ledger.mailing_address}</span>
                             </div>
                           )}
-                          {ledger.bank_account_number && (
+                          {(ledger as any)?.bank_account_number && (
                             <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                               <CreditCard className="h-3 w-3" />
-                              <span>****{ledger.bank_account_number.slice(-4)}</span>
+                              <span>****{(ledger as any).bank_account_number.slice(-4)}</span>
                             </div>
                           )}
                         </div>
