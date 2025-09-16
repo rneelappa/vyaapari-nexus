@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,169 +7,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Plus, Edit, Trash2, Package, Warehouse, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useApiInventoryEntries } from "@/hooks/useApiInventoryEntries";
 
-// TEMPORARY DEBUG CODE - Remove after testing
-async function debugAuth() {
-  console.log('[DEBUG] InventoryPage - Checking authentication status...');
-  
-  const { data: session, error: sessionError } = await supabase.auth.getSession();
-  console.log('[DEBUG] InventoryPage - Session:', session, 'Error:', sessionError);
-  
-  const { data: user, error: userError } = await supabase.auth.getUser();
-  console.log('[DEBUG] InventoryPage - User:', user, 'Error:', userError);
-  
-  if (!session?.session) {
-    console.error('[DEBUG] InventoryPage - No session found - user not authenticated');
-  } else {
-    console.log('[DEBUG] InventoryPage - Access token:', session.session.access_token?.substring(0, 20) + '...');
-  }
-  
-  if (!user?.user) {
-    console.error('[DEBUG] InventoryPage - No user found - user not authenticated');
-  }
-  
-  // Test a simple query with explicit auth header
-  if (session?.session?.access_token) {
-    try {
-      console.log('[DEBUG] Testing authenticated query...');
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/companies?select=id,name&limit=1`, {
-        headers: {
-          'Authorization': `Bearer ${session.session.access_token}`,
-          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Accept-Profile': 'public'
-        }
-      });
-      console.log('[DEBUG] Test query response:', response.status, await response.text());
-    } catch (error) {
-      console.error('[DEBUG] Test query failed:', error);
-    }
-  }
-}
-
-// Run debug immediately
-debugAuth();
-
-interface InventoryEntry {
-  guid: string;
-  company_id: string | null;
-  division_id: string | null;
-  item: string;
-  _item: string;
-  quantity: number;
-  amount: number;
-  godown: string | null;
-  destination_godown: string | null;
-  _godown: string;
-  _destination_godown: string;
-  tracking_number: string | null;
-  name: string;
-}
 
 export default function InventoryPage() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [inventoryEntries, setInventoryEntries] = useState<InventoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Add circuit breaker state
-  const [fetchAttempts, setFetchAttempts] = useState(0);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
-  const MAX_FETCH_ATTEMPTS = 3;
-  const FETCH_COOLDOWN = 5000; // 5 seconds
-
-  useEffect(() => {
-    if (user && fetchAttempts < MAX_FETCH_ATTEMPTS) {
-      const now = Date.now();
-      if (now - lastFetchTime > FETCH_COOLDOWN) {
-        fetchInventoryEntries();
-      }
-    }
-  }, [user, fetchAttempts, lastFetchTime]);
-
-  const fetchInventoryEntries = async () => {
-    // Circuit breaker: prevent too many rapid calls
-    const now = Date.now();
-    if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
-      setError(`Too many failed attempts. Please refresh the page to try again.`);
-      return;
-    }
-
-    if (now - lastFetchTime < FETCH_COOLDOWN) {
-      console.log('Skipping fetch due to cooldown period');
-      return;
-    }
-
-    if (!user) {
-      setError('Authentication required');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      setLastFetchTime(now);
-      
-      console.log('Fetching inventory entries from Supabase...');
-      
-      const { data, error } = await supabase
-        .from('trn_batch')
-        .select('*')
-        .order('guid')
-        .limit(100);
-      
-      if (error) {
-        throw error;
-      }
-      
-      const transformedData: InventoryEntry[] = (data || []).map(item => ({
-        guid: item.guid,
-        company_id: item.company_id,
-        division_id: item.division_id,
-        item: item.item,
-        _item: item._item,
-        quantity: item.quantity || 0,
-        amount: item.amount || 0,
-        godown: item.godown,
-        destination_godown: item.destination_godown,
-        _godown: item._godown,
-        _destination_godown: item._destination_godown,
-        tracking_number: item.tracking_number,
-        name: item.name,
-      }));
-      
-      setInventoryEntries(transformedData);
-      setFetchAttempts(0); // Reset attempts on success
-    } catch (err) {
-      console.error('Error fetching inventory entries:', err);
-      setFetchAttempts(prev => prev + 1);
-      
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch inventory entries';
-      setError(errorMessage);
-      setInventoryEntries([]);
-      
-      // Don't show destructive toasts for permission errors as they spam the UI
-      if (!errorMessage.includes('permission denied')) {
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setFetchAttempts(0);
-    setLastFetchTime(0);
-    setError(null);
-    fetchInventoryEntries();
-  };
+  
+  const { inventoryEntries, loading, error, refresh } = useApiInventoryEntries();
 
   const filteredEntries = inventoryEntries.filter(entry =>
     entry.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,7 +71,7 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+          <Button variant="outline" onClick={refresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -272,7 +118,7 @@ export default function InventoryPage() {
               ) : error ? (
                 <div className="text-center py-8">
                   <div className="text-destructive mb-2">Error: {error}</div>
-                  <Button onClick={fetchInventoryEntries} variant="outline">
+                  <Button onClick={refresh} variant="outline">
                     Try Again
                   </Button>
                 </div>

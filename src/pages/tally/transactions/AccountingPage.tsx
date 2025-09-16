@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useVoucherTypesByCategory } from '@/hooks/useVoucherTypesByCategory';
-import { useLedgerVouchers } from '@/hooks/useLedgerVouchers';
+import { useApiVoucherTypesByCategory } from '@/hooks/useApiVoucherTypesByCategory';
+import { useApiLedgerVouchers } from '@/hooks/useApiLedgerVouchers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 export default function AccountingPage() {
   const { user } = useAuth();
-  const { categories, loading, error, refresh } = useVoucherTypesByCategory();
+  const { categories, loading, error, refresh } = useApiVoucherTypesByCategory();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVoucherType, setSelectedVoucherType] = useState<any>(null);
   const [showVoucherView, setShowVoucherView] = useState(false);
   
-  const { vouchers, loading: vouchersLoading, fetchVouchersByType } = useLedgerVouchers();
+  const { vouchers, loading: vouchersLoading, fetchVouchersByType } = useApiLedgerVouchers();
 
   // Add state for managing collapsed months and fiscal years
   const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
