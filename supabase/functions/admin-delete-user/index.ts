@@ -60,14 +60,13 @@ Deno.serve(async (req) => {
     }
 
     // Check if user has admin role
-    const { data: userRole, error: roleError } = await supabaseServiceRole
+    const { data: userRoles, error: roleError } = await supabaseServiceRole
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .in('role', ['super_admin', 'company_admin'])
-      .single();
+      .in('role', ['super_admin', 'company_admin']);
 
-    if (roleError || !userRole) {
+    if (roleError || !userRoles || userRoles.length === 0) {
       console.error('Role check error:', roleError);
       return new Response(
         JSON.stringify({ error: 'Insufficient privileges' }),
