@@ -810,15 +810,6 @@ export function GodownsPageEnhanced({ companyId, divisionId }: GodownsPageEnhanc
     </div>
   );
 
-  function getUtilizationPercentage(godown: Godown): number {
-    return godown.capacity > 0 ? (godown.current_utilization / godown.capacity) * 100 : 0;
-  }
-
-  function getUtilizationColor(percentage: number): string {
-    if (percentage >= 90) return 'text-red-600';
-    if (percentage >= 70) return 'text-yellow-600';
-    return 'text-green-600';
-  }
 }
 
 export default GodownsPageEnhanced;
