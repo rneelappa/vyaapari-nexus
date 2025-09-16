@@ -34,6 +34,7 @@ import { format, subDays } from 'date-fns';
 import { tallyApi, type Voucher, type CompleteVoucher, type ApiResponse } from '@/services/tallyApiService';
 import { VoucherCompleteView } from '@/components/tally/VoucherCompleteView';
 import { EntityRelationshipExplorer } from '@/components/tally/EntityRelationshipExplorer';
+import { TransferOfMaterialsView } from '@/components/tally/TransferOfMaterialsView';
 
 interface VoucherManagementEnhancedProps {
   companyId?: string;
@@ -342,6 +343,10 @@ export function VoucherManagementEnhanced({
                           <div className="text-right">
                             <div className="font-semibold">₹{voucher.amount.toLocaleString('en-IN')}</div>
                             <div className="flex items-center space-x-1">
+                              {voucher.type?.toLowerCase().includes('transfer') && 
+                               voucher.type?.toLowerCase().includes('material') && (
+                                <Badge variant="destructive" className="text-xs">Transfer of Materials</Badge>
+                              )}
                               {voucher.isInvoice && (
                                 <Badge variant="default" className="text-xs">Invoice</Badge>
                               )}
@@ -585,12 +590,32 @@ export function VoucherManagementEnhanced({
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
           <div className="fixed inset-4 bg-background border rounded-lg shadow-lg overflow-auto">
             <div className="p-6">
-              <VoucherCompleteView
-                voucherId={selectedVoucher.id}
-                companyId={companyId}
-                divisionId={divisionId}
-                onBack={() => setShowVoucherDetails(false)}
-              />
+              {/* Check if this is a Transfer of Materials voucher */}
+              {selectedVoucher.type?.toLowerCase().includes('transfer') && 
+               selectedVoucher.type?.toLowerCase().includes('material') ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold">Transfer of Materials Details</h2>
+                    <Button onClick={() => setShowVoucherDetails(false)} variant="outline">
+                      Close
+                    </Button>
+                  </div>
+                  <TransferOfMaterialsView 
+                    voucher={selectedVoucher as any}
+                    onSave={(updatedVoucher) => {
+                      console.log('Transfer of Materials voucher updated:', updatedVoucher);
+                      // TODO: Implement save functionality
+                    }}
+                  />
+                </div>
+              ) : (
+                <VoucherCompleteView
+                  voucherId={selectedVoucher.id}
+                  companyId={companyId}
+                  divisionId={divisionId}
+                  onBack={() => setShowVoucherDetails(false)}
+                />
+              )}
             </div>
           </div>
         </div>
