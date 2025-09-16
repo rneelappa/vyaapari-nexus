@@ -89,8 +89,11 @@ export default function LedgersPage() {
         throw new Error(response.error || 'API call failed');
       }
       
-      // Data is already in correct format from API
-      setLedgers(response.data);
+      // Extract ledgers array from the nested data structure
+      const ledgersData = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data as any)?.ledgers || [];
+      setLedgers(ledgersData);
       setFetchAttempts(0); // Reset attempts on success
     } catch (err) {
       console.error('Error fetching ledgers:', err);
