@@ -234,9 +234,10 @@ export default function GroupsPage() {
   const getFilteredData = () => {
     switch (currentLevel) {
       case 'groups':
-        return groups.filter(g => !g.parent || g.parent === '').filter(group =>
+        return groups.filter(group =>
           group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          group.primary_group.toLowerCase().includes(searchTerm.toLowerCase())
+          group.primary_group.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (group.parent && group.parent.toLowerCase().includes(searchTerm.toLowerCase()))
         );
       case 'subgroups':
         return groups.filter(g => g.parent === selectedGroup?.name).filter(group =>
