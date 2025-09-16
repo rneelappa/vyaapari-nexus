@@ -60,6 +60,25 @@ export default function UserManagement() {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  
+  // Debug state for detailed loading feedback
+  const [loadingStatus, setLoadingStatus] = useState({
+    companies: 'pending',
+    divisions: 'pending',
+    workspaces: 'pending',
+    profiles: 'pending',
+    user_roles: 'pending',
+    workspace_members: 'pending'
+  });
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+
+  // Add debug log
+  const addDebugLog = (message: string) => {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    console.log(logMessage);
+    setDebugLogs(prev => [...prev, logMessage]);
+  };
 
   // Load data
   useEffect(() => {
@@ -69,70 +88,118 @@ export default function UserManagement() {
   const loadData = async () => {
     try {
       setLoading(true);
+      addDebugLog('Starting data load process...');
+      
+      // Reset loading status
+      setLoadingStatus({
+        companies: 'loading',
+        divisions: 'loading',
+        workspaces: 'loading',
+        profiles: 'loading',
+        user_roles: 'loading',
+        workspace_members: 'loading'
+      });
 
       // Load companies
+      addDebugLog('Loading companies...');
       const { data: companiesData, error: companiesError } = await supabase
         .from('companies')
         .select('*')
         .eq('is_active', true);
 
       if (companiesError) {
+        setLoadingStatus(prev => ({ ...prev, companies: 'error' }));
         console.error('Companies query failed:', companiesError);
+        addDebugLog(`Companies query failed: ${companiesError.message}`);
         throw new Error(`Failed to load companies: ${companiesError.message}`);
+      } else {
+        setLoadingStatus(prev => ({ ...prev, companies: 'success' }));
+        addDebugLog(`Companies loaded successfully: ${companiesData?.length || 0} records`);
       }
 
       // Load divisions
+      addDebugLog('Loading divisions...');
       const { data: divisionsData, error: divisionsError } = await supabase
         .from('divisions')
         .select('*')
         .eq('is_active', true);
 
       if (divisionsError) {
+        setLoadingStatus(prev => ({ ...prev, divisions: 'error' }));
         console.error('Divisions query failed:', divisionsError);
+        addDebugLog(`Divisions query failed: ${divisionsError.message}`);
         throw new Error(`Failed to load divisions: ${divisionsError.message}`);
+      } else {
+        setLoadingStatus(prev => ({ ...prev, divisions: 'success' }));
+        addDebugLog(`Divisions loaded successfully: ${divisionsData?.length || 0} records`);
       }
 
       // Load workspaces
+      addDebugLog('Loading workspaces...');
       const { data: workspacesData, error: workspacesError } = await supabase
         .from('workspaces')
         .select('*');
 
       if (workspacesError) {
+        setLoadingStatus(prev => ({ ...prev, workspaces: 'error' }));
         console.error('Workspaces query failed:', workspacesError);
+        addDebugLog(`Workspaces query failed: ${workspacesError.message}`);
         throw new Error(`Failed to load workspaces: ${workspacesError.message}`);
+      } else {
+        setLoadingStatus(prev => ({ ...prev, workspaces: 'success' }));
+        addDebugLog(`Workspaces loaded successfully: ${workspacesData?.length || 0} records`);
       }
 
       // Load profiles first
+      addDebugLog('Loading profiles...');
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*');
 
       if (profilesError) {
+        setLoadingStatus(prev => ({ ...prev, profiles: 'error' }));
         console.error('Profiles query failed:', profilesError);
+        addDebugLog(`Profiles query failed: ${profilesError.message} (Code: ${profilesError.code})`);
         throw new Error(`Failed to load profiles: ${profilesError.message}`);
+      } else {
+        setLoadingStatus(prev => ({ ...prev, profiles: 'success' }));
+        addDebugLog(`Profiles loaded successfully: ${profilesData?.length || 0} records`);
       }
 
       // Load user roles separately
+      addDebugLog('Loading user roles...');
       const { data: userRolesData, error: userRolesError } = await supabase
         .from('user_roles')
         .select('*');
 
       if (userRolesError) {
+        setLoadingStatus(prev => ({ ...prev, user_roles: 'error' }));
         console.error('User roles query failed:', userRolesError);
+        addDebugLog(`User roles query failed: ${userRolesError.message} (Code: ${userRolesError.code})`);
         throw new Error(`Failed to load user roles: ${userRolesError.message}`);
+      } else {
+        setLoadingStatus(prev => ({ ...prev, user_roles: 'success' }));
+        addDebugLog(`User roles loaded successfully: ${userRolesData?.length || 0} records`);
       }
 
       // Load workspace members separately
+      addDebugLog('Loading workspace members...');
       const { data: workspaceMembersData, error: workspaceMembersError } = await supabase
         .from('workspace_members')
         .select('*');
 
       if (workspaceMembersError) {
+        setLoadingStatus(prev => ({ ...prev, workspace_members: 'error' }));
         console.error('Workspace members query failed:', workspaceMembersError);
+        addDebugLog(`Workspace members query failed: ${workspaceMembersError.message} (Code: ${workspaceMembersError.code})`);
         throw new Error(`Failed to load workspace members: ${workspaceMembersError.message}`);
+      } else {
+        setLoadingStatus(prev => ({ ...prev, workspace_members: 'success' }));
+        addDebugLog(`Workspace members loaded successfully: ${workspaceMembersData?.length || 0} records`);
       }
 
       // Structure user data
+      addDebugLog('Structuring user data...');
       const structuredUsers = profilesData?.map(profile => {
         const userRoles = userRolesData?.filter(role => role.user_id === profile.user_id) || [];
         const workspaceMembers = workspaceMembersData?.filter(member => member.user_id === profile.user_id) || [];
@@ -151,15 +218,20 @@ export default function UserManagement() {
         };
       }) || [];
 
+      addDebugLog(`Data structuring complete. ${structuredUsers.length} users structured.`);
+
       setUsers(structuredUsers);
       setCompanies(companiesData || []);
       setDivisions(divisionsData || []);
       setWorkspaces(workspacesData || []);
-    } catch (error) {
+      
+      addDebugLog('All data loaded successfully!');
+    } catch (error: any) {
       console.error('Error loading data:', error);
+      addDebugLog(`ERROR: ${error.message}`);
       toast({
         title: "Error",
-        description: "Failed to load user management data",
+        description: `Failed to load user management data: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -279,11 +351,48 @@ export default function UserManagement() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-6 space-y-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="h-64 bg-muted rounded"></div>
         </div>
+        
+        {/* Debug Panel */}
+        <Card className="bg-muted/10">
+          <CardHeader>
+            <CardTitle className="text-sm">Loading Status</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {Object.entries(loadingStatus).map(([table, status]) => (
+              <div key={table} className="flex justify-between items-center">
+                <span className="text-sm font-medium">{table}:</span>
+                <Badge variant={
+                  status === 'success' ? 'default' : 
+                  status === 'error' ? 'destructive' : 
+                  status === 'loading' ? 'secondary' : 'outline'
+                }>
+                  {status}
+                </Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Debug Logs */}
+        {debugLogs.length > 0 && (
+          <Card className="bg-muted/5">
+            <CardHeader>
+              <CardTitle className="text-sm">Debug Logs</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-xs font-mono space-y-1 max-h-48 overflow-y-auto">
+                {debugLogs.map((log, index) => (
+                  <div key={index} className="text-muted-foreground">{log}</div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
@@ -295,6 +404,12 @@ export default function UserManagement() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">User Management</h1>
           <p className="text-muted-foreground">Manage users, roles, and organizational assignments</p>
+          <div className="mt-2 flex gap-2">
+            <Badge variant="outline">Users: {users.length}</Badge>
+            <Badge variant="outline">Companies: {companies.length}</Badge>
+            <Badge variant="outline">Divisions: {divisions.length}</Badge>
+            <Badge variant="outline">Workspaces: {workspaces.length}</Badge>
+          </div>
         </div>
         <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
           <DialogTrigger asChild>
@@ -406,6 +521,54 @@ export default function UserManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Debug Information Panel */}
+      {debugLogs.length > 0 && (
+        <Card className="bg-muted/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>Debug Information</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setDebugLogs([])}
+                className="h-6 px-2 text-xs"
+              >
+                Clear Logs
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="status" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="status">Loading Status</TabsTrigger>
+                <TabsTrigger value="logs">Debug Logs</TabsTrigger>
+              </TabsList>
+              <TabsContent value="status" className="space-y-2 mt-4">
+                {Object.entries(loadingStatus).map(([table, status]) => (
+                  <div key={table} className="flex justify-between items-center p-2 rounded border">
+                    <span className="text-sm font-medium capitalize">{table.replace('_', ' ')}:</span>
+                    <Badge variant={
+                      status === 'success' ? 'default' : 
+                      status === 'error' ? 'destructive' : 
+                      status === 'loading' ? 'secondary' : 'outline'
+                    }>
+                      {status}
+                    </Badge>
+                  </div>
+                ))}
+              </TabsContent>
+              <TabsContent value="logs" className="mt-4">
+                <div className="text-xs font-mono space-y-1 max-h-64 overflow-y-auto p-3 bg-muted/10 rounded border">
+                  {debugLogs.map((log, index) => (
+                    <div key={index} className="text-muted-foreground break-all">{log}</div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Users Table */}
       <Card>
