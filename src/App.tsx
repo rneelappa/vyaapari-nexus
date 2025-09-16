@@ -6,6 +6,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { TallyProvider } from "@/contexts/TallyContext";
 
 // Pages
 import Index from "@/pages/Index";
@@ -21,33 +22,39 @@ import { WorkspaceChat } from "@/components/workspace/WorkspaceChat";
 import { WorkspaceDrive } from "@/components/workspace/WorkspaceDrive";
 import { WorkspaceTasks } from "@/components/workspace/WorkspaceTasks";
 
-// Tally pages
-import SalesVoucherCreate from "@/pages/tally/transactions/SalesVoucherCreate";
-import GroupsPage from "@/pages/tally/masters/GroupsPage";
-import LedgersPage from "@/pages/tally/masters/LedgersPage";
-import StockItemsPage from "@/pages/tally/masters/StockItemsPage";
-import GodownsPage from "@/pages/tally/masters/GodownsPage";
-import CostCentersPage from "@/pages/tally/masters/CostCentersPage";
-import VoucherTypesPage from "@/pages/tally/masters/VoucherTypesPage";
-import EmployeesPage from "@/pages/tally/masters/EmployeesPage";
-import UOMPage from "@/pages/tally/masters/UOMPage";
+// Enhanced Tally Components
+import SalesVoucherCreateEnhanced from "@/pages/tally/transactions/SalesVoucherCreateEnhanced";
+import GroupsPageEnhanced from "@/pages/tally/masters/GroupsPageEnhanced";
+import LedgersPage from "@/pages/tally/masters/LedgersPage"; // Already migrated
+import StockItemsPageEnhanced from "@/pages/tally/masters/StockItemsPageEnhanced";
+import GodownsPageEnhanced from "@/pages/tally/masters/GodownsPageEnhanced";
+import CostCentersPageEnhanced from "@/pages/tally/masters/CostCentersPageEnhanced";
+import VoucherTypesPageEnhanced from "@/pages/tally/masters/VoucherTypesPageEnhanced";
+import EmployeesPageEnhanced from "@/pages/tally/masters/EmployeesPageEnhanced";
+import UOMPageEnhanced from "@/pages/tally/masters/UOMPageEnhanced";
+import PayheadsPageEnhanced from "@/pages/tally/masters/PayheadsPageEnhanced";
+import AccountingPageEnhanced from "@/pages/tally/transactions/AccountingPageEnhanced";
+import InventoryPageEnhanced from "@/pages/tally/transactions/InventoryPageEnhanced";
+import StatisticsPageEnhanced from "@/pages/tally/display/StatisticsPageEnhanced";
+import FinancialReportsEnhanced from "@/pages/tally/reports/FinancialReportsEnhanced";
+import TallySyncPageEnhanced from "@/pages/tally/transactions/TallySyncPageEnhanced";
+import VoucherManagementEnhanced from "@/pages/tally/transactions/VoucherManagementEnhanced";
+
+// Enhanced Business Intelligence Components
+import { BusinessIntelligenceDashboard } from "@/components/tally/BusinessIntelligenceDashboard";
+import { MonthlyAnalysisDashboard } from "@/components/tally/MonthlyAnalysisDashboard";
+import { EntityRelationshipExplorer } from "@/components/tally/EntityRelationshipExplorer";
+
+// Legacy components for backward compatibility
 import CostCategoriesPage from "@/pages/tally/masters/CostCategoriesPage";
-import PayheadsPage from "@/pages/tally/masters/PayheadsPage";
-import AccountingPage from "@/pages/tally/transactions/AccountingPage";
 import NonAccountingPage from "@/pages/tally/transactions/NonAccountingPage";
-import InventoryPage from "@/pages/tally/transactions/InventoryPage";
 import DayBookPage from "@/pages/tally/display/DayBookPage";
-import StatisticsPage from "@/pages/tally/display/StatisticsPage";
-import FinancialStatementsPage from "@/pages/tally/display/FinancialStatementsPage";
 import ReportsPage from "@/pages/tally/display/ReportsPage";
 import ConfigurationPage from "@/pages/tally/utilities/ConfigurationPage";
 import TestApiPage from "@/pages/tally/TestApiPage";
 import DataManagementPage from "@/pages/tally/data/DataManagementPage";
-import AnalyticsDashboard from "@/pages/tally/analytics/AnalyticsDashboard";
-import TallySyncPage from "@/pages/tally/transactions/TallySyncPage";
 import TallySyncLogs from "@/pages/tally/utilities/TallySyncLogs";
 import SyncJobsManagement from "@/pages/tally/utilities/SyncJobsManagement";
-import VoucherManagement from "@/pages/tally/transactions/VoucherManagement";
 import { VoucherViewsPage } from "@/pages/tally/utilities/VoucherViewsPage";
 
 const queryClient = new QueryClient();
@@ -56,10 +63,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+        <TallyProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
             <Routes>
               {/* Public routes */}
               <Route path="/auth" element={<AuthPage />} />
@@ -142,7 +150,7 @@ function App() {
               <Route path="/tally/masters/groups" element={
                 <AuthGuard>
                   <MainLayout>
-                    <GroupsPage />
+                    <GroupsPageEnhanced />
                   </MainLayout>
                 </AuthGuard>
               } />
@@ -158,7 +166,7 @@ function App() {
               <Route path="/tally/masters/stock-items" element={
                 <AuthGuard>
                   <MainLayout>
-                    <StockItemsPage />
+                    <StockItemsPageEnhanced />
                   </MainLayout>
                 </AuthGuard>
               } />
@@ -295,7 +303,7 @@ function App() {
                 <Route path="/tally/utilities/sync" element={
                   <AuthGuard>
                     <MainLayout>
-                      <TallySyncPage />
+                      <TallySyncPageEnhanced />
                     </MainLayout>
                   </AuthGuard>
                 } />
@@ -312,7 +320,7 @@ function App() {
                <Route path="/company/:companyId/division/:divisionId/tally/masters/groups" element={
                  <AuthGuard>
                    <MainLayout>
-                     <GroupsPage />
+                     <GroupsPageEnhanced />
                    </MainLayout>
                  </AuthGuard>
                } />
@@ -328,7 +336,7 @@ function App() {
                <Route path="/company/:companyId/division/:divisionId/tally/masters/stock-items" element={
                  <AuthGuard>
                    <MainLayout>
-                     <StockItemsPage />
+                     <StockItemsPageEnhanced />
                    </MainLayout>
                  </AuthGuard>
                } />
@@ -392,7 +400,7 @@ function App() {
                 <Route path="/company/:companyId/division/:divisionId/tally/transactions/voucher-management" element={
                   <AuthGuard>
                     <MainLayout>
-                      <VoucherManagement />
+                      <VoucherManagementEnhanced />
                     </MainLayout>
                   </AuthGuard>
                 } />
@@ -473,7 +481,7 @@ function App() {
                 <Route path="/company/:companyId/division/:divisionId/tally/utilities/sync" element={
                   <AuthGuard>
                     <MainLayout>
-                      <TallySyncPage />
+                      <TallySyncPageEnhanced />
                     </MainLayout>
                   </AuthGuard>
                 } />
@@ -514,7 +522,7 @@ function App() {
                <Route path="/tally/analytics/dashboard" element={
                  <AuthGuard>
                    <MainLayout>
-                     <AnalyticsDashboard />
+                     <BusinessIntelligenceDashboard companyId="629f49fb-983e-4141-8c48-e1423b39e921" divisionId="37f3cc0c-58ad-4baf-b309-360116ffc3cd" />
                    </MainLayout>
                  </AuthGuard>
                } />
@@ -523,6 +531,7 @@ function App() {
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </TallyProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
