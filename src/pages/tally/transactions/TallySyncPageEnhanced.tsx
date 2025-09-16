@@ -616,12 +616,6 @@ export function TallySyncPageEnhanced({
       )}
     </div>
   );
-
-  function getSyncDuration(): number {
-    if (!syncProgress.startTime) return 0;
-    const endTime = syncProgress.endTime || new Date();
-    return Math.round((endTime.getTime() - syncProgress.startTime.getTime()) / 1000);
-  }
 }
 
 export default TallySyncPageEnhanced;
