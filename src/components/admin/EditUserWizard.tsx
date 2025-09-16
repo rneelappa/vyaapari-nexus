@@ -160,71 +160,18 @@ export function EditUserWizard({ user, companies, divisions, workspaces, onUpdat
     setLoading(true);
 
     try {
-      // Remove existing roles
-      const { error: deleteError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteError) throw deleteError;
-
-      // Add new roles
-      const newRoles = [];
-
-      // Add global role
-      newRoles.push({
-        user_id: user.id,
-        role: selectedRole
+      // Use the admin edge function to update user assignments
+      const { data, error } = await supabase.functions.invoke('admin-update-user', {
+        body: {
+          userId: user.id,
+          selectedRole,
+          selectedCompanies,
+          selectedDivisions,
+          selectedWorkspaces
+        }
       });
 
-      // Add company-specific roles
-      for (const companyId of selectedCompanies) {
-        newRoles.push({
-          user_id: user.id,
-          role: 'company_admin',
-          company_id: companyId
-        });
-      }
-
-      // Add division-specific roles
-      for (const divisionId of selectedDivisions) {
-        newRoles.push({
-          user_id: user.id,
-          role: 'division_admin',
-          division_id: divisionId
-        });
-      }
-
-      if (newRoles.length > 0) {
-        const { error: insertRoleError } = await supabase
-          .from('user_roles')
-          .insert(newRoles);
-
-        if (insertRoleError) throw insertRoleError;
-      }
-
-      // Remove existing workspace memberships
-      const { error: deleteWsError } = await supabase
-        .from('workspace_members')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteWsError) throw deleteWsError;
-
-      // Add new workspace memberships
-      if (selectedWorkspaces.length > 0) {
-        const workspaceMemberships = selectedWorkspaces.map(workspaceId => ({
-          user_id: user.id,
-          workspace_id: workspaceId,
-          role: 'admin'
-        }));
-
-        const { error: insertWsError } = await supabase
-          .from('workspace_members')
-          .insert(workspaceMemberships);
-
-        if (insertWsError) throw insertWsError;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
