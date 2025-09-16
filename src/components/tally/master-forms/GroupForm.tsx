@@ -113,7 +113,6 @@ export function GroupForm({
                 <SelectValue placeholder="Select parent group (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None (Root Level)</SelectItem>
                 {availableGroups.map((group) => (
                   <SelectItem key={group.guid} value={group.name}>
                     {group.name}
