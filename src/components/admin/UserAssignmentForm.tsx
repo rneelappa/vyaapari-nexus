@@ -41,10 +41,10 @@ interface UserAssignmentFormProps {
   companies: Company[];
   divisions: Division[];
   workspaces: Workspace[];
-  onSubmit: () => void;
+  onUpdate: () => void;
 }
 
-export function UserAssignmentForm({ user, companies, divisions, workspaces, onSubmit }: UserAssignmentFormProps) {
+export function UserAssignmentForm({ user, companies, divisions, workspaces, onUpdate }: UserAssignmentFormProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>('workspace_member');
@@ -176,7 +176,7 @@ export function UserAssignmentForm({ user, companies, divisions, workspaces, onS
         description: "User assignments updated successfully"
       });
 
-      onSubmit();
+      onUpdate();
     } catch (error) {
       console.error('Error updating user assignments:', error);
       toast({

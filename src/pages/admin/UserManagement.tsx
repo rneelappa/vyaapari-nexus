@@ -1,20 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, UserPlus, Building2, Shield, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { CreateUserForm } from '@/components/admin/CreateUserForm';
+import { CreateUserFormEnhanced } from '@/components/admin/CreateUserFormEnhanced';
 import { UserAssignmentForm } from '@/components/admin/UserAssignmentForm';
+import { Search, UserPlus, Users, Building2, Shield, Edit, Trash2 } from 'lucide-react';
 
+// User interface with role objects
 interface User {
   id: string;
   email: string;
@@ -22,7 +21,14 @@ interface User {
   created_at: string;
   last_sign_in_at?: string;
   email_confirmed_at?: string;
-  roles: { role: string; company_id?: string; division_id?: string }[];
+  roles: Array<{
+    id: string;
+    user_id: string;
+    role: string;
+    company_id?: string;
+    division_id?: string;
+    created_at: string;
+  }>;
   company_assignments: string[];
   division_assignments: string[];
   workspace_assignments: string[];
@@ -32,11 +38,13 @@ interface Company {
   id: string;
   name: string;
   description?: string;
+  company_id: string;
 }
 
 interface Division {
   id: string;
   name: string;
+  description?: string;
   company_id: string;
 }
 
@@ -60,25 +68,6 @@ export default function UserManagement() {
   const [createUserOpen, setCreateUserOpen] = useState(false);
   const [editUserOpen, setEditUserOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  
-  // Debug state for detailed loading feedback
-  const [loadingStatus, setLoadingStatus] = useState({
-    companies: 'pending',
-    divisions: 'pending',
-    workspaces: 'pending',
-    profiles: 'pending',
-    user_roles: 'pending',
-    workspace_members: 'pending'
-  });
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-
-  // Add debug log
-  const addDebugLog = (message: string) => {
-    const timestamp = new Date().toISOString();
-    const logMessage = `[${timestamp}] ${message}`;
-    console.log(logMessage);
-    setDebugLogs(prev => [...prev, logMessage]);
-  };
 
   // Load data
   useEffect(() => {
@@ -88,42 +77,16 @@ export default function UserManagement() {
   const loadData = async () => {
     try {
       setLoading(true);
-      addDebugLog('Starting data load process...');
-      
-      // Reset loading status
-      setLoadingStatus({
-        companies: 'loading',
-        divisions: 'loading',
-        workspaces: 'loading',
-        profiles: 'loading',
-        user_roles: 'loading',
-        workspace_members: 'loading'
-      });
-
-      // Call the admin-list-users edge function
-      addDebugLog('Calling admin-list-users function...');
       
       const { data: responseData, error: functionError } = await supabase.functions.invoke('admin-list-users');
       
       if (functionError) {
-        addDebugLog(`Function call failed: ${functionError.message}`);
-        setLoadingStatus({
-          companies: 'error',
-          divisions: 'error',
-          workspaces: 'error',
-          profiles: 'error',
-          user_roles: 'error',
-          workspace_members: 'error'
-        });
         throw new Error(`Failed to load user data: ${functionError.message}`);
       }
       
       if (!responseData) {
-        addDebugLog('Function returned no data');
         throw new Error('No data returned from admin function');
       }
-      
-      addDebugLog('Function call successful, processing data...');
       
       const {
         companies: companiesData,
@@ -133,21 +96,8 @@ export default function UserManagement() {
         userRoles: userRolesData,
         workspaceMembers: workspaceMembersData
       } = responseData;
-      
-      // Update loading status to success
-      setLoadingStatus({
-        companies: 'success',
-        divisions: 'success',
-        workspaces: 'success',
-        profiles: 'success',
-        user_roles: 'success',
-        workspace_members: 'success'
-      });
-      
-      addDebugLog(`Data received - Companies: ${companiesData?.length || 0}, Divisions: ${divisionsData?.length || 0}, Workspaces: ${workspacesData?.length || 0}, Profiles: ${profilesData?.length || 0}, User Roles: ${userRolesData?.length || 0}, Workspace Members: ${workspaceMembersData?.length || 0}`);
 
       // Structure user data
-      addDebugLog('Structuring user data...');
       const structuredUsers = profilesData?.map(profile => {
         const userRoles = userRolesData?.filter(role => role.user_id === profile.user_id) || [];
         const workspaceMembers = workspaceMembersData?.filter(member => member.user_id === profile.user_id) || [];
@@ -166,17 +116,13 @@ export default function UserManagement() {
         };
       }) || [];
 
-      addDebugLog(`Data structuring complete. ${structuredUsers.length} users structured.`);
-
       setUsers(structuredUsers);
       setCompanies(companiesData || []);
       setDivisions(divisionsData || []);
       setWorkspaces(workspacesData || []);
       
-      addDebugLog('All data loaded successfully!');
     } catch (error: any) {
       console.error('Error loading data:', error);
-      addDebugLog(`ERROR: ${error.message}`);
       toast({
         title: "Error",
         description: `Failed to load user management data: ${error.message}`,
@@ -187,39 +133,35 @@ export default function UserManagement() {
     }
   };
 
-  const handleCreateUser = async (userData: { email: string; password: string; fullName: string }) => {
+  const handleCreateUser = async (userData: { 
+    email: string; 
+    password: string; 
+    fullName: string;
+    companyId?: string;
+    divisionId?: string;
+    workspaceIds?: string[];
+  }) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('You must be logged in to create users');
-      }
-
-      const response = await fetch(`https://hycyhnjsldiokfkpqzoz.supabase.co/functions/v1/admin-create-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          email: userData.email,
-          password: userData.password,
-          fullName: userData.fullName
-        })
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: { 
+          email: userData.email, 
+          password: userData.password, 
+          fullName: userData.fullName,
+          companyId: userData.companyId,
+          divisionId: userData.divisionId,
+          workspaceIds: userData.workspaceIds
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || `Server returned ${response.status}`);
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: result.message || "User created successfully"
+        description: "User created successfully",
       });
 
       setCreateUserOpen(false);
-      loadData(); // Reload data
+      loadData(); // Reload the data
     } catch (error: any) {
       console.error('Error creating user:', error);
       toast({
@@ -231,39 +173,19 @@ export default function UserManagement() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      return;
-    }
-
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('You must be logged in to delete users');
-      }
-
-      const response = await fetch(`https://hycyhnjsldiokfkpqzoz.supabase.co/functions/v1/admin-delete-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          userId: userId
-        })
+      const { error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userId }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || `Server returned ${response.status}`);
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: result.message || "User deleted successfully"
+        description: "User deleted successfully",
       });
 
-      loadData(); // Reload data
+      loadData(); // Reload the data
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast({
@@ -274,79 +196,45 @@ export default function UserManagement() {
     }
   };
 
+  // Filter users based on search and filters
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+                         (user.full_name && user.full_name.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCompany = selectedCompany === 'all' || 
                           user.company_assignments.includes(selectedCompany);
     
     const matchesRole = selectedRole === 'all' || 
                        user.roles.some(role => role.role === selectedRole);
-
+    
     return matchesSearch && matchesCompany && matchesRole;
   });
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'super_admin': return 'bg-red-100 text-red-800 border-red-200';
-      case 'company_admin': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'division_admin': return 'bg-green-100 text-green-800 border-green-200';
-      case 'workspace_admin': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'super_admin': return 'destructive';
+      case 'company_admin': return 'default';
+      case 'division_admin': return 'secondary';
+      case 'workspace_admin': return 'outline';
+      default: return 'outline';
     }
   };
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="h-64 bg-muted rounded"></div>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading user management data...</p>
+          </div>
         </div>
-        
-        {/* Debug Panel */}
-        <Card className="bg-muted/10">
-          <CardHeader>
-            <CardTitle className="text-sm">Loading Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {Object.entries(loadingStatus).map(([table, status]) => (
-              <div key={table} className="flex justify-between items-center">
-                <span className="text-sm font-medium">{table}:</span>
-                <Badge variant={
-                  status === 'success' ? 'default' : 
-                  status === 'error' ? 'destructive' : 
-                  status === 'loading' ? 'secondary' : 'outline'
-                }>
-                  {status}
-                </Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Debug Logs */}
-        {debugLogs.length > 0 && (
-          <Card className="bg-muted/5">
-            <CardHeader>
-              <CardTitle className="text-sm">Debug Logs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xs font-mono space-y-1 max-h-48 overflow-y-auto">
-                {debugLogs.map((log, index) => (
-                  <div key={index} className="text-muted-foreground">{log}</div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -366,14 +254,19 @@ export default function UserManagement() {
               Create User
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
               <DialogDescription>
-                Create a new user account with email and password
+                Create a new user account with organizational assignments
               </DialogDescription>
             </DialogHeader>
-            <CreateUserForm onSubmit={handleCreateUser} />
+            <CreateUserFormEnhanced 
+              companies={companies}
+              divisions={divisions}
+              workspaces={workspaces}
+              onSubmit={handleCreateUser} 
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -443,7 +336,7 @@ export default function UserManagement() {
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by company" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border z-50">
                 <SelectItem value="all">All Companies</SelectItem>
                 {companies.map(company => (
                   <SelectItem key={company.id} value={company.id}>
@@ -457,7 +350,7 @@ export default function UserManagement() {
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border z-50">
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="super_admin">Super Admin</SelectItem>
                 <SelectItem value="company_admin">Company Admin</SelectItem>
@@ -470,61 +363,10 @@ export default function UserManagement() {
         </CardContent>
       </Card>
 
-      {/* Debug Information Panel */}
-      {debugLogs.length > 0 && (
-        <Card className="bg-muted/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span>Debug Information</span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setDebugLogs([])}
-                className="h-6 px-2 text-xs"
-              >
-                Clear Logs
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="status" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="status">Loading Status</TabsTrigger>
-                <TabsTrigger value="logs">Debug Logs</TabsTrigger>
-              </TabsList>
-              <TabsContent value="status" className="space-y-2 mt-4">
-                {Object.entries(loadingStatus).map(([table, status]) => (
-                  <div key={table} className="flex justify-between items-center p-2 rounded border">
-                    <span className="text-sm font-medium capitalize">{table.replace('_', ' ')}:</span>
-                    <Badge variant={
-                      status === 'success' ? 'default' : 
-                      status === 'error' ? 'destructive' : 
-                      status === 'loading' ? 'secondary' : 'outline'
-                    }>
-                      {status}
-                    </Badge>
-                  </div>
-                ))}
-              </TabsContent>
-              <TabsContent value="logs" className="mt-4">
-                <div className="text-xs font-mono space-y-1 max-h-64 overflow-y-auto p-3 bg-muted/10 rounded border">
-                  {debugLogs.map((log, index) => (
-                    <div key={index} className="text-muted-foreground break-all">{log}</div>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Users Table */}
       <Card>
         <CardHeader>
           <CardTitle>Users ({filteredUsers.length})</CardTitle>
-          <CardDescription>
-            Manage user accounts and their organizational assignments
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -532,11 +374,9 @@ export default function UserManagement() {
               <TableRow>
                 <TableHead>User</TableHead>
                 <TableHead>Roles</TableHead>
-                <TableHead>Companies</TableHead>
-                <TableHead>Divisions</TableHead>
-                <TableHead>Workspaces</TableHead>
+                <TableHead>Assignments</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -544,55 +384,38 @@ export default function UserManagement() {
                 <TableRow key={user.id}>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{user.full_name || 'Unnamed User'}</div>
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                      <div className="font-medium">{user.email}</div>
+                      {user.full_name && (
+                        <div className="text-sm text-muted-foreground">{user.full_name}</div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {user.roles.map((role, index) => (
-                        <Badge key={index} variant="outline" className={getRoleColor(role.role)}>
-                          {role.role.replace('_', ' ')}
+                        <Badge key={index} variant={getRoleColor(role.role)}>
+                          {role.role}
                         </Badge>
                       ))}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">
-                      {user.company_assignments.map(companyId => {
-                        const company = companies.find(c => c.id === companyId);
-                        return (
-                          <Badge key={companyId} variant="secondary" className="mr-1">
-                            {company?.name || 'Unknown'}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {user.division_assignments.map(divisionId => {
-                        const division = divisions.find(d => d.id === divisionId);
-                        return (
-                          <Badge key={divisionId} variant="secondary" className="mr-1">
-                            {division?.name || 'Unknown'}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {user.workspace_assignments.slice(0, 2).map(workspaceId => {
-                        const workspace = workspaces.find(w => w.id === workspaceId);
-                        return (
-                          <Badge key={workspaceId} variant="secondary" className="mr-1">
-                            {workspace?.name || 'Unknown'}
-                          </Badge>
-                        );
-                      })}
-                      {user.workspace_assignments.length > 2 && (
-                        <Badge variant="secondary">+{user.workspace_assignments.length - 2}</Badge>
+                    <div className="text-sm space-y-1">
+                      {user.company_assignments.length > 0 && (
+                        <div>
+                          <span className="font-medium">Companies:</span>{' '}
+                          {user.company_assignments.map(id => 
+                            companies.find(c => c.id === id)?.name
+                          ).filter(Boolean).join(', ')}
+                        </div>
+                      )}
+                      {user.workspace_assignments.length > 0 && (
+                        <div>
+                          <span className="font-medium">Workspaces:</span>{' '}
+                          {user.workspace_assignments.map(id => 
+                            workspaces.find(w => w.id === id)?.name
+                          ).filter(Boolean).join(', ')}
+                        </div>
                       )}
                     </div>
                   </TableCell>
@@ -601,8 +424,8 @@ export default function UserManagement() {
                       {new Date(user.created_at).toLocaleDateString()}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+                  <TableCell className="text-right">
+                    <div className="flex gap-2 justify-end">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -632,11 +455,11 @@ export default function UserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit User Assignments</DialogTitle>
             <DialogDescription>
-              Manage user roles and organizational assignments
+              Manage organizational assignments for {selectedUser?.email}
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
@@ -645,9 +468,9 @@ export default function UserManagement() {
               companies={companies}
               divisions={divisions}
               workspaces={workspaces}
-              onSubmit={() => {
-                setEditUserOpen(false);
+              onUpdate={() => {
                 loadData();
+                setEditUserOpen(false);
               }}
             />
           )}
