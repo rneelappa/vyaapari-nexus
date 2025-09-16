@@ -7,13 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, RefreshCw, ArrowLeft, ChevronRight, Users, FileText, Receipt, Calendar } from 'lucide-react';
-import { tallyApi, type Group, type Ledger as ApiLedger, type Voucher as ApiVoucher, type CompleteVoucher, type ApiResponse } from '@/services/tallyApiService';
+import { Search, RefreshCw, ArrowLeft, ChevronRight, Users, FileText, Receipt, Calendar, FolderOpen, Folder, BarChart3 } from 'lucide-react';
+import { tallyApi, type Group, type Ledger as ApiLedger, type Voucher as ApiVoucher, type CompleteVoucher, type ApiResponse, type HierarchyData } from '@/services/tallyApiService';
 import { toast } from '@/hooks/use-toast';
 
 // All interfaces are now imported from tallyApiService
 
 type ViewLevel = 'groups' | 'subgroups' | 'ledgers' | 'vouchers' | 'voucher_detail';
+
+interface HierarchyGroup extends Group {
+  children?: HierarchyGroup[];
+  depth?: number;
+  hasSubgroups?: boolean;
+  ledgerCount?: number;
+}
 
 export default function GroupsPage() {
   const { user } = useAuth();
@@ -30,45 +37,108 @@ export default function GroupsPage() {
   const [selectedVoucher, setSelectedVoucher] = useState<ApiVoucher | null>(null);
   
   // Data state
+  const [hierarchyData, setHierarchyData] = useState<HierarchyData | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [currentGroupHierarchy, setCurrentGroupHierarchy] = useState<HierarchyGroup[]>([]);
   const [ledgers, setLedgers] = useState<ApiLedger[]>([]);
   const [vouchers, setVouchers] = useState<ApiVoucher[]>([]);
   const [voucherDetail, setVoucherDetail] = useState<CompleteVoucher | null>(null);
   
   // Breadcrumb state
-  const [breadcrumb, setBreadcrumb] = useState<string[]>([]);
+  const [breadcrumb, setBreadcrumb] = useState<{ name: string; level: ViewLevel; data?: any }[]>([]);
 
   useEffect(() => {
     if (user && companyId && divisionId) {
-      fetchGroups();
+      fetchGroupsHierarchy();
     }
   }, [user, companyId, divisionId]);
 
-  const fetchGroups = async () => {
+  const fetchGroupsHierarchy = async () => {
     if (!companyId || !divisionId) return;
     
     try {
       setLoading(true);
       setError(null);
 
-      const response = await tallyApi.getGroups(companyId, divisionId);
+      const response = await tallyApi.getGroupsHierarchy(companyId, divisionId, 'tree');
 
       if (response.success) {
-        setGroups(response.data);
+        setHierarchyData(response.data);
+        
+        // Convert hierarchy to flat groups for compatibility
+        const flatGroups = flattenHierarchy(response.data.hierarchy);
+        setGroups(flatGroups);
+        
+        // Set root groups for initial display
+        const rootGroups = getRootGroups(response.data.hierarchy);
+        setCurrentGroupHierarchy(rootGroups);
       } else {
-        throw new Error(response.error || 'Failed to fetch groups');
+        throw new Error(response.error || 'Failed to fetch groups hierarchy');
       }
     } catch (err) {
-      console.error('Error fetching groups:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch groups');
+      console.error('Error fetching groups hierarchy:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch groups hierarchy');
       toast({
         title: "Error",
-        description: "Failed to fetch groups",
+        description: "Failed to fetch groups hierarchy",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const flattenHierarchy = (hierarchy: any[]): Group[] => {
+    const flattened: Group[] = [];
+    
+    const flatten = (items: any[], depth = 0) => {
+      items.forEach(item => {
+        flattened.push({
+          ...item,
+          depth
+        });
+        if (item.children && item.children.length > 0) {
+          flatten(item.children, depth + 1);
+        }
+      });
+    };
+    
+    flatten(hierarchy);
+    return flattened;
+  };
+
+  const getRootGroups = (hierarchy: any[]): HierarchyGroup[] => {
+    return hierarchy.map(item => ({
+      ...item,
+      depth: 0,
+      hasSubgroups: item.children && item.children.length > 0,
+      ledgerCount: item.ledgerCount || 0
+    }));
+  };
+
+  const getSubgroups = (parentName: string): HierarchyGroup[] => {
+    const findChildren = (items: any[], target: string): any[] => {
+      for (const item of items) {
+        if (item.name === target) {
+          return item.children || [];
+        }
+        if (item.children) {
+          const found = findChildren(item.children, target);
+          if (found.length > 0) return found;
+        }
+      }
+      return [];
+    };
+
+    if (!hierarchyData) return [];
+    
+    const children = findChildren(hierarchyData.hierarchy, parentName);
+    return children.map((child, index) => ({
+      ...child,
+      depth: 1,
+      hasSubgroups: child.children && child.children.length > 0,
+      ledgerCount: child.ledgerCount || 0
+    }));
   };
 
   const fetchLedgersForGroup = async (groupName: string) => {
@@ -147,59 +217,78 @@ export default function GroupsPage() {
   };
 
   // Navigation handlers
-  const handleGroupClick = async (group: Group) => {
-    // Check if group has children (subgroups)
-    const hasSubgroups = groups.some(g => g.parent === group.name);
-    
-    if (hasSubgroups) {
+  const handleGroupClick = async (group: HierarchyGroup) => {
+    if (group.hasSubgroups) {
       setSelectedGroup(group);
       setCurrentLevel('subgroups');
-      setBreadcrumb([group.name]);
+      const subgroups = getSubgroups(group.name);
+      setCurrentGroupHierarchy(subgroups);
+      setBreadcrumb([{ name: group.name, level: 'groups', data: group }]);
     } else {
       // No subgroups, go directly to ledgers
       setSelectedGroup(group);
       setCurrentLevel('ledgers');
-      setBreadcrumb([group.name]);
+      setBreadcrumb([{ name: group.name, level: 'groups', data: group }]);
       await fetchLedgersForGroup(group.name);
     }
   };
 
-  const handleSubgroupClick = async (subgroup: Group) => {
-    setCurrentLevel('ledgers');
-    setBreadcrumb([selectedGroup?.name || '', subgroup.name]);
-    await fetchLedgersForGroup(subgroup.name);
+  const handleSubgroupClick = async (subgroup: HierarchyGroup) => {
+    if (subgroup.hasSubgroups) {
+      // Navigate to deeper subgroups
+      const deeperSubgroups = getSubgroups(subgroup.name);
+      setCurrentGroupHierarchy(deeperSubgroups);
+      setBreadcrumb([...breadcrumb, { name: subgroup.name, level: 'subgroups', data: subgroup }]);
+    } else {
+      // Go to ledgers
+      setCurrentLevel('ledgers');
+      setBreadcrumb([...breadcrumb, { name: subgroup.name, level: 'subgroups', data: subgroup }]);
+      await fetchLedgersForGroup(subgroup.name);
+    }
   };
 
   const handleLedgerClick = async (ledger: ApiLedger) => {
     setSelectedLedger(ledger);
     setCurrentLevel('vouchers');
-    setBreadcrumb([...breadcrumb, ledger.name]);
+    setBreadcrumb([...breadcrumb, { name: ledger.name, level: 'ledgers', data: ledger }]);
     await fetchVouchersForLedger(ledger.name);
   };
 
   const handleVoucherClick = async (voucher: ApiVoucher) => {
     setSelectedVoucher(voucher);
     setCurrentLevel('voucher_detail');
-    setBreadcrumb([...breadcrumb, voucher.number]);
+    setBreadcrumb([...breadcrumb, { name: voucher.number, level: 'vouchers', data: voucher }]);
     await fetchVoucherDetail(voucher.id);
   };
 
   const handleBack = () => {
     const newBreadcrumb = [...breadcrumb];
-    newBreadcrumb.pop();
+    const lastItem = newBreadcrumb.pop();
     setBreadcrumb(newBreadcrumb);
 
     switch (currentLevel) {
       case 'subgroups':
-        setCurrentLevel('groups');
-        setSelectedGroup(null);
-        break;
-      case 'ledgers':
-        if (breadcrumb.length === 2) {
-          setCurrentLevel('subgroups');
-        } else {
+        if (newBreadcrumb.length === 0) {
           setCurrentLevel('groups');
           setSelectedGroup(null);
+          setCurrentGroupHierarchy(getRootGroups(hierarchyData?.hierarchy || []));
+        } else {
+          // Navigate back to parent subgroups
+          const parentItem = newBreadcrumb[newBreadcrumb.length - 1];
+          const parentSubgroups = getSubgroups(parentItem.name);
+          setCurrentGroupHierarchy(parentSubgroups);
+        }
+        break;
+      case 'ledgers':
+        if (newBreadcrumb.length === 0) {
+          setCurrentLevel('groups');
+          setSelectedGroup(null);
+          setCurrentGroupHierarchy(getRootGroups(hierarchyData?.hierarchy || []));
+        } else {
+          setCurrentLevel('subgroups');
+          const parentItem = newBreadcrumb[newBreadcrumb.length - 1];
+          const parentSubgroups = getSubgroups(parentItem.name);
+          setCurrentGroupHierarchy(parentSubgroups);
         }
         break;
       case 'vouchers':
@@ -234,14 +323,11 @@ export default function GroupsPage() {
   const getFilteredData = () => {
     switch (currentLevel) {
       case 'groups':
-        return groups.filter(group =>
-          group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          group.primary_group.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (group.parent && group.parent.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
       case 'subgroups':
-        return groups.filter(g => g.parent === selectedGroup?.name).filter(group =>
-          group.name.toLowerCase().includes(searchTerm.toLowerCase())
+        return currentGroupHierarchy.filter(group =>
+          group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (group.primary_group && group.primary_group.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (group.parent && group.parent.toLowerCase().includes(searchTerm.toLowerCase()))
         );
       case 'ledgers':
         return ledgers.filter(ledger =>
@@ -277,8 +363,8 @@ export default function GroupsPage() {
   const getTitle = () => {
     switch (currentLevel) {
       case 'groups': return 'Account Groups';
-      case 'subgroups': return `Subgroups of ${selectedGroup?.name}`;
-      case 'ledgers': return `Ledgers in ${breadcrumb[breadcrumb.length - 1]}`;
+      case 'subgroups': return `Subgroups of ${breadcrumb[breadcrumb.length - 1]?.name}`;
+      case 'ledgers': return `Ledgers in ${breadcrumb[breadcrumb.length - 1]?.name}`;
       case 'vouchers': return `Vouchers for ${selectedLedger?.name}`;
       case 'voucher_detail': return `Voucher Details: ${selectedVoucher?.number}`;
       default: return 'Account Groups';
@@ -299,12 +385,12 @@ export default function GroupsPage() {
             <h1 className="text-3xl font-bold">{getTitle()}</h1>
             {breadcrumb.length > 0 && (
               <p className="text-muted-foreground">
-                {breadcrumb.join(' → ')}
+                {breadcrumb.map(b => b.name).join(' → ')}
               </p>
             )}
           </div>
         </div>
-        <Button onClick={fetchGroups} disabled={loading}>
+        <Button onClick={fetchGroupsHierarchy} disabled={loading}>
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -460,8 +546,19 @@ export default function GroupsPage() {
               {getTitle()}
             </CardTitle>
             <CardDescription>
-              {currentLevel === 'groups' && 'Click on a group to view subgroups or ledgers'}
-              {currentLevel === 'subgroups' && 'Click on a subgroup to view its ledgers'}
+              {currentLevel === 'groups' && (
+                <div className="space-y-1">
+                  <p>Navigate through your account group hierarchy</p>
+                  {hierarchyData && (
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span>Total Groups: {hierarchyData.statistics.totalGroups}</span>
+                      <span>Max Depth: {hierarchyData.statistics.maxDepth}</span>
+                      <span>Root Groups: {hierarchyData.statistics.rootItems}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {currentLevel === 'subgroups' && 'Navigate deeper into subgroups or view ledgers'}
               {currentLevel === 'ledgers' && 'Click on a ledger to view its vouchers'}
               {currentLevel === 'vouchers' && 'Click on a voucher to view details'}
             </CardDescription>
@@ -491,20 +588,12 @@ export default function GroupsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        {currentLevel === 'groups' && (
+                        {(currentLevel === 'groups' || currentLevel === 'subgroups') && (
                           <>
                             <TableHead>Group Name</TableHead>
                             <TableHead>Primary Group</TableHead>
-                            <TableHead>Nature</TableHead>
-                            <TableHead>Revenue</TableHead>
-                            <TableHead>Action</TableHead>
-                          </>
-                        )}
-                        {currentLevel === 'subgroups' && (
-                          <>
-                            <TableHead>Subgroup Name</TableHead>
-                            <TableHead>Primary Group</TableHead>
-                            <TableHead>Nature</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Content</TableHead>
                             <TableHead>Action</TableHead>
                           </>
                         )}
@@ -541,50 +630,53 @@ export default function GroupsPage() {
                             else if (currentLevel === 'vouchers') handleVoucherClick(item);
                           }}
                         >
-                          {currentLevel === 'groups' && (
+                          {(currentLevel === 'groups' || currentLevel === 'subgroups') && (
                             <>
                               <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4 text-muted-foreground" />
-                                  {item.name}
+                                <div className="flex items-center gap-2" style={{ paddingLeft: `${(item.depth || 0) * 16}px` }}>
+                                  {item.hasSubgroups ? (
+                                    <FolderOpen className="h-4 w-4 text-primary" />
+                                  ) : (
+                                    <Folder className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                  <span className="font-medium">{item.name}</span>
+                                  {item.hasSubgroups && (
+                                    <Badge variant="secondary" className="ml-2 text-xs">
+                                      {item.children?.length || 0} subgroups
+                                    </Badge>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline">{item.primary_group}</Badge>
                               </TableCell>
                               <TableCell>
-                                <Badge variant={item.is_deemedpositive ? "default" : "secondary"}>
-                                  {item.is_deemedpositive ? "Debit" : "Credit"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={item.is_revenue ? "default" : "secondary"}>
-                                  {item.is_revenue ? "Yes" : "No"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <ChevronRight className="h-4 w-4" />
-                              </TableCell>
-                            </>
-                          )}
-                          {currentLevel === 'subgroups' && (
-                            <>
-                              <TableCell className="font-medium">
                                 <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4 text-muted-foreground" />
-                                  {item.name}
+                                  <Badge variant={item.is_deemedpositive ? "default" : "secondary"}>
+                                    {item.is_deemedpositive ? "Debit" : "Credit"}
+                                  </Badge>
+                                  {item.is_revenue && (
+                                    <Badge variant="outline" className="text-xs">Revenue</Badge>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline">{item.primary_group}</Badge>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  {item.hasSubgroups ? (
+                                    <span>Subgroups: {item.children?.length || 0}</span>
+                                  ) : (
+                                    <span>Ledgers: {item.ledgerCount || 0}</span>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>
-                                <Badge variant={item.is_deemedpositive ? "default" : "secondary"}>
-                                  {item.is_deemedpositive ? "Debit" : "Credit"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <ChevronRight className="h-4 w-4" />
+                                <div className="flex items-center gap-1">
+                                  {item.hasSubgroups ? (
+                                    <ChevronRight className="h-4 w-4 text-primary" />
+                                  ) : (
+                                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </div>
                               </TableCell>
                             </>
                           )}
