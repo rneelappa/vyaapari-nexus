@@ -17,6 +17,9 @@ import WorkspaceListPage from "@/pages/WorkspaceListPage";
 import WorkspacePage from "@/pages/WorkspacePage";
 import NotFound from "@/pages/NotFound";
 
+// Admin pages
+import UserManagement from "@/pages/admin/UserManagement";
+
 // Workspace modules
 import { WorkspaceChat } from "@/components/workspace/WorkspaceChat";
 import { WorkspaceDrive } from "@/components/workspace/WorkspaceDrive";
@@ -69,6 +72,18 @@ function App() {
                     <AuthGuard>
                       <MainLayout>
                         <DivisionPage />
+                      </MainLayout>
+                    </AuthGuard>
+                  }
+                />
+
+                {/* Admin Routes */}
+                <Route
+                  path="/admin/users"
+                  element={
+                    <AuthGuard>
+                      <MainLayout>
+                        <UserManagement />
                       </MainLayout>
                     </AuthGuard>
                   }
