@@ -154,7 +154,7 @@ export function CreateUserFormEnhanced({
   const selectedDivision = divisions.find(d => d.id === formData.divisionId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-0">
       {/* Progress Indicator */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -175,7 +175,7 @@ export function CreateUserFormEnhanced({
       </div>
 
       {/* Step Content */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 min-h-0">
         {step === 1 && (
           <Card>
             <CardHeader>
