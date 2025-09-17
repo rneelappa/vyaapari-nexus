@@ -260,26 +260,34 @@ export function EnhancedVoucherDetails({
         }
       }
 
-      // Fetch inventory entries (mock data - replace with actual table when available)
-      setInventoryEntries([
-        {
-          guid: 'inv-1',
-          item: 'Sample Product A',
-          quantity: 10,
-          rate: 100,
-          amount: 1000,
-          godown: 'Main Warehouse',
-          batch: 'BATCH001'
-        },
-        {
-          guid: 'inv-2', 
-          item: 'Sample Product B',
-          quantity: 5,
-          rate: 200,
-          amount: 1000,
-          godown: 'Secondary Warehouse'
+      // Fetch inventory entries from trn_inventory table
+      try {
+        const { data: inventoryData, error: inventoryError } = await supabase
+          .from('trn_inventory')
+          .select('*')
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
+
+        if (inventoryError) {
+          console.warn('Error fetching inventory entries:', inventoryError);
+          setInventoryEntries([]);
+        } else {
+          // Map the database data to our interface
+          const mappedInventory = (inventoryData || []).map(entry => ({
+            guid: entry.guid,
+            item: entry.item,
+            quantity: entry.quantity || 0,
+            rate: entry.rate || 0,
+            amount: entry.amount || 0,
+            godown: entry.godown || '',
+            batch: entry.tracking_number || ''
+          }));
+          setInventoryEntries(mappedInventory);
         }
-      ]);
+      } catch (error) {
+        console.warn('Error fetching inventory entries:', error);
+        setInventoryEntries([]);
+      }
 
       // Prepare master data types
       const masterTypes: MasterDataType[] = [
