@@ -79,16 +79,24 @@ export const useDatabaseDiagnosis = (companyId: string, divisionId: string) => {
 
   const getTableLastUpdated = async (tableName: string): Promise<string | null> => {
     try {
-      const { data, error } = await supabase
-        .from(tableName as any)
-        .select('created_at')
-        .eq('company_id', companyId)
-        .eq('division_id', divisionId)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Check multiple timestamp columns that might indicate sync activity
+      const timestampColumns = ['updated_at', 'created_at', 'ingested_at', 'synced_at'];
+      
+      for (const column of timestampColumns) {
+        const { data, error } = await supabase
+          .from(tableName as any)
+          .select(column)
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId)
+          .order(column, { ascending: false })
+          .limit(1);
 
-      if (error || !data || data.length === 0) return null;
-      return (data[0] as any).created_at;
+        if (!error && data && data.length > 0 && (data[0] as any)[column]) {
+          return (data[0] as any)[column];
+        }
+      }
+      
+      return null;
     } catch {
       return null;
     }

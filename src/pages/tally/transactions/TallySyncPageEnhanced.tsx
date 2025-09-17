@@ -281,6 +281,17 @@ export function TallySyncPageEnhanced({
           }
         });
 
+        // Check if API returned no records but local database has data
+        const totalFetched = railwaySyncResult.totalRecords || 0;
+        if (totalFetched === 0) {
+          addDebugLog('warn', 'API returned no records to sync - API source appears to be empty');
+          toast({
+            title: "Sync Notice",
+            description: "API source has no records. Your local database contains existing data but the remote API is empty.",
+            variant: "destructive"
+          });
+        }
+
         console.log('[DEBUG] Setting syncResults from Railway API:', railwaySyncResult);
         const newSyncResults = {
           lastSyncTime: new Date().toISOString(),
