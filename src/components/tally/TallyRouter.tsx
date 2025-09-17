@@ -17,6 +17,7 @@ import AccountingPage from "@/pages/tally/transactions/AccountingPage";
 import InventoryPage from "@/pages/tally/transactions/InventoryPage";
 import NonAccountingPage from "@/pages/tally/transactions/NonAccountingPage";
 import TallySyncPage from "@/pages/tally/transactions/TallySyncPage";
+import TallySyncPageEnhanced from "@/pages/tally/transactions/TallySyncPageEnhanced";
 import PaymentCreate from "@/pages/tally/transactions/PaymentCreate";
 import ContraVoucherCreate from "@/pages/tally/transactions/ContraVoucherCreate";
 import SalesVoucherCreate from "@/pages/tally/transactions/SalesVoucherCreate";
@@ -102,6 +103,7 @@ export function TallyRouter() {
           divisionId={divisionId!}
         />
       } />
+      <Route path="utilities/sync" element={<TallySyncPageEnhanced />} />
 
       {/* Data Management */}
       <Route path="data/*" element={<DataManagementPage />} />
