@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, Filter, Calendar, RefreshCw, FileText, Eye, Edit, Trash2 } from "lucide-react";
+import { Search, Download, Filter, Calendar, RefreshCw, FileText, Eye, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { EnhancedVoucherDetails } from "@/components/tally/EnhancedVoucherDetails";
 
 interface VoucherEntry {
   guid: string;
@@ -31,6 +32,7 @@ export default function DayBookVouchersPage() {
     companyId: string;
     divisionId: string;
   }>();
+  const navigate = useNavigate();
 
   const [vouchers, setVouchers] = useState<VoucherEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,10 @@ export default function DayBookVouchersPage() {
   const [dateTo, setDateTo] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  
+  // Voucher detail view state
+  const [selectedVoucherGuid, setSelectedVoucherGuid] = useState<string | null>(null);
+  const [showVoucherDetails, setShowVoucherDetails] = useState(false);
 
   useEffect(() => {
     fetchVouchers();
@@ -167,19 +173,60 @@ export default function DayBookVouchersPage() {
   };
 
   const handleVoucherClick = (voucher: VoucherEntry) => {
-    // TODO: Navigate to voucher detail view
-    console.log('Voucher clicked:', voucher);
+    if (voucher.guid && companyId && divisionId) {
+      setSelectedVoucherGuid(voucher.guid);
+      setShowVoucherDetails(true);
+    } else {
+      toast({
+        title: "Error",
+        description: "Unable to view voucher details. Missing required information.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBackToList = () => {
+    setShowVoucherDetails(false);
+    setSelectedVoucherGuid(null);
   };
 
   const handleEdit = (voucher: VoucherEntry) => {
-    // TODO: Navigate to voucher edit view
-    console.log('Edit voucher:', voucher);
+    // Navigate to voucher edit page
+    if (voucher.guid && companyId && divisionId) {
+      navigate(`/company/${companyId}/division/${divisionId}/tally/transactions/voucher-management`, {
+        state: { selectedVoucherId: voucher.guid }
+      });
+    }
   };
 
   const handleDelete = (voucher: VoucherEntry) => {
     // TODO: Implement voucher deletion
     console.log('Delete voucher:', voucher);
+    toast({
+      title: "Feature Coming Soon",
+      description: "Voucher deletion functionality will be available soon.",
+    });
   };
+
+  // If showing voucher details, render the detail view
+  if (showVoucherDetails && selectedVoucherGuid && companyId && divisionId) {
+    return (
+      <div className="h-full">
+        <div className="flex items-center justify-between p-4 border-b">
+          <Button variant="ghost" onClick={handleBackToList} className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Vouchers List
+          </Button>
+        </div>
+        <EnhancedVoucherDetails
+          voucherGuid={selectedVoucherGuid}
+          companyId={companyId}
+          divisionId={divisionId}
+          onClose={handleBackToList}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
