@@ -83,9 +83,13 @@ const tallyMenuStructure = {
       icon: BarChart3,
       path: "/tally/analytics/dashboard"
     }, {
-      name: "DayBook",
+      name: "Day Book",
       icon: BookOpen,
-      path: "/tally/display/daybook"
+      path: "/tally/display/day-book"
+    }, {
+      name: "Day Book Vouchers",
+      icon: FileText,
+      path: "/tally/display/day-book-vouchers"
     }, {
       name: "Statistics",
       icon: PieChart,
