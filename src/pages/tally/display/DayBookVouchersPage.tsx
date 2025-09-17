@@ -49,51 +49,122 @@ export default function DayBookVouchersPage() {
   const [selectedVoucherGuid, setSelectedVoucherGuid] = useState<string | null>(null);
   const [showVoucherDetails, setShowVoucherDetails] = useState(false);
 
+  // Pagination & totals
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(200);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [aggregatedAmount, setAggregatedAmount] = useState<number | null>(null);
+
   useEffect(() => {
     fetchVouchers();
-  }, [companyId, divisionId]);
+  // Re-fetch whenever filters, sorting, or pagination change
+  }, [companyId, divisionId, selectedVoucherType, selectedStatus, dateFrom, dateTo, searchTerm, sortBy, sortOrder, page, pageSize]);
+
+  useEffect(() => {
+    fetchTotals();
+  // Totals should update with filters, not with page navigation
+  }, [companyId, divisionId, selectedVoucherType, selectedStatus, dateFrom, dateTo, searchTerm]);
+
+  const applyCommonFilters = (query: any) => {
+    // Apply company and division filters if available
+    if (companyId && companyId !== 'undefined') {
+      query = query.eq('company_id', companyId);
+    }
+    if (divisionId && divisionId !== 'undefined') {
+      query = query.eq('division_id', divisionId);
+    }
+
+    // Voucher type filter
+    if (selectedVoucherType !== 'all') {
+      query = query.eq('voucher_type', selectedVoucherType);
+    }
+
+    // Status filter
+    if (selectedStatus !== 'all') {
+      if (selectedStatus === 'active') {
+        // Active: not cancelled
+        query = query.or('is_cancelled.eq.0,is_cancelled.is.null');
+      } else if (selectedStatus === 'cancelled') {
+        query = query.eq('is_cancelled', 1);
+      } else if (selectedStatus === 'optional') {
+        query = query.eq('is_optional', 1);
+      }
+    }
+
+    // Date range filter
+    if (dateFrom) query = query.gte('date', dateFrom);
+    if (dateTo) query = query.lte('date', dateTo);
+
+    // Search filter across key fields
+    if (searchTerm) {
+      const term = `%${searchTerm}%`;
+      query = query.or(
+        `voucher_number.ilike.${term},party_ledger_name.ilike.${term},narration.ilike.${term}`
+      );
+    }
+
+    return query;
+  };
 
   const fetchVouchers = async () => {
     try {
       setLoading(true);
       setError(null);
 
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
       let query = supabase
         .from('tally_trn_voucher')
-        .select('*')
-        .limit(10000); // Increased limit to display all vouchers
+        .select('*', { count: 'exact' });
 
-      // Apply company and division filters if available
-      if (companyId && companyId !== 'undefined') {
-        query = query.eq('company_id', companyId);
-      }
-      if (divisionId && divisionId !== 'undefined') {
-        query = query.eq('division_id', divisionId);
-      }
+      query = applyCommonFilters(query);
 
-      // Order by date (most recent first by default)
-      query = query.order('date', { ascending: false, nullsFirst: false });
+      // Sorting
+      const sortColumn = ['date', 'voucher_number', 'total_amount', 'voucher_type'].includes(sortBy)
+        ? sortBy
+        : 'date';
+      query = query.order(sortColumn, { ascending: sortOrder === 'asc', nullsFirst: false });
 
-      const { data, error: fetchError } = await query;
+      // Pagination (Supabase caps results at 1000 per request)
+      query = query.range(from, to);
 
-      if (fetchError) {
-        throw fetchError;
-      }
+      const { data, error: fetchError, count } = await query;
+      if (fetchError) throw fetchError;
 
       setVouchers(data || []);
+      setTotalCount(count || 0);
     } catch (err) {
       console.error('Error fetching vouchers:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch vouchers');
       toast({
-        title: "Error",
-        description: "Failed to fetch vouchers. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to fetch vouchers. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchTotals = async () => {
+    try {
+      let totalQuery = supabase
+        .from('tally_trn_voucher')
+        .select('total_amount.sum()');
+
+      totalQuery = applyCommonFilters(totalQuery);
+
+      const { data, error } = await totalQuery;
+      if (error) throw error;
+
+      const sum = (data && data[0] && (data[0] as any).sum) ? Number((data[0] as any).sum) : 0;
+      setAggregatedAmount(sum);
+    } catch (e) {
+      console.warn('Failed to fetch totals, falling back to page sum');
+      setAggregatedAmount(null);
+    }
+  };
   // Get unique voucher types for filter dropdown
   const voucherTypes = Array.from(new Set(vouchers.map(v => v.voucher_type).filter(Boolean)));
 
@@ -155,10 +226,11 @@ export default function DayBookVouchersPage() {
     });
 
   // Calculate summary statistics
-  const totalVouchers = filteredVouchers.length;
-  const totalAmount = filteredVouchers.reduce((sum, v) => sum + (v.total_amount || 0), 0);
+  const totalVouchers = totalCount;
+  const pageAmount = filteredVouchers.reduce((sum, v) => sum + (v.total_amount || 0), 0);
+  const totalAmount = aggregatedAmount ?? pageAmount;
   const cancelledCount = filteredVouchers.filter(v => v.is_cancelled).length;
-  const activeCount = totalVouchers - cancelledCount;
+  const activeCount = filteredVouchers.length - cancelledCount;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -395,7 +467,7 @@ export default function DayBookVouchersPage() {
       {/* Vouchers Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Voucher Entries ({filteredVouchers.length})</CardTitle>
+          <CardTitle>Voucher Entries ({filteredVouchers.length} / {totalCount})</CardTitle>
           <CardDescription>
             Complete list of vouchers with details
           </CardDescription>
@@ -517,9 +589,25 @@ export default function DayBookVouchersPage() {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-sm text-muted-foreground">
+                Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
+              </div>
+              <div className="flex items-center gap-3">
+                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                  <SelectTrigger className="w-[120px]"><SelectValue placeholder="Page size" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                    <SelectItem value="200">200</SelectItem>
+                    <SelectItem value="500">500</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" disabled={page === 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</Button>
+                  <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}</span>
+                  <Button variant="outline" disabled={page >= Math.ceil(totalCount / pageSize) || loading} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                </div>
+              </div>
+            </div>
 }
