@@ -31,10 +31,10 @@ const TABLE_MAPPINGS: TableMapping[] = [
   { apiTable: 'godowns', supabaseTable: 'mst_godown', endpoint: '/masters/godowns', keyField: 'guid' },
   { apiTable: 'employees', supabaseTable: 'mst_employee', endpoint: '/masters/employees', keyField: 'guid' },
   { apiTable: 'uoms', supabaseTable: 'mst_uom', endpoint: '/masters/uoms', keyField: 'guid' },
+  { apiTable: 'cost_categories', supabaseTable: 'mst_cost_category', endpoint: '/masters/cost-categories', keyField: 'guid' },
+  { apiTable: 'payheads', supabaseTable: 'mst_payhead', endpoint: '/masters/payheads', keyField: 'guid' },
   { apiTable: 'vouchers', supabaseTable: 'tally_trn_voucher', endpoint: '/vouchers', keyField: 'guid' },
-  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' },
-  { apiTable: 'inventory', supabaseTable: 'trn_inventory', endpoint: '/inventory', keyField: 'guid' },
-  { apiTable: 'batch', supabaseTable: 'trn_batch', endpoint: '/batch', keyField: 'guid' }
+  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' }
 ];
 
 async function validateUUID(uuid: string): Promise<boolean> {
@@ -51,7 +51,7 @@ async function queryNewAPI(
   limit = 1000
 ): Promise<any> {
   try {
-    const apiUrl = 'https://tally-sync-vyaapari360-production.up.railway.app';
+    const apiUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
     const queryUrl = `${apiUrl}/api/v1/query/${companyId}/${divisionId}`;
     
     console.log(`Querying API: ${queryUrl} for table: ${table}`);
@@ -365,7 +365,7 @@ serve(async (req) => {
         
       case 'health_check':
         // Check API health
-        const apiUrl = 'https://tally-sync-vyaapari360-production.up.railway.app';
+        const apiUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
         const healthResponse = await fetch(`${apiUrl}/api/v1/health`);
         const healthData = await healthResponse.json();
         
@@ -378,7 +378,7 @@ serve(async (req) => {
         
       case 'metadata':
         // Get metadata from API
-        const metadataUrl = 'https://tally-sync-vyaapari360-production.up.railway.app';
+        const metadataUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
         const metadataResponse = await fetch(`${metadataUrl}/api/v1/metadata/${companyId}/${divisionId}`);
         const metadataData = await metadataResponse.json();
         
