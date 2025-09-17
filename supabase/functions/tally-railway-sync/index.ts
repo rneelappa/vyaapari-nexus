@@ -33,14 +33,14 @@ const TABLE_MAPPINGS: TableMapping[] = [
     supabaseTable: 'mst_group', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
-    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'primary_group', 'is_revenue', 'affects_gross_profit', 'is_reserved', 'is_deemedpositive', 'sort_position', 'alterid', 'company_id', 'division_id', 'created_at', 'id']
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'primary_group', 'is_revenue', 'affects_gross_profit', 'is_reserved', 'is_deemedpositive', 'sort_position', 'alterid', 'company_id', 'division_id']
   },
   { 
     apiTable: 'ledgers', 
     supabaseTable: 'mst_ledger', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
-    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'alias', 'description', 'notes', 'mailing_name', 'mailing_address', 'mailing_state', 'mailing_country', 'mailing_pincode', 'email', 'it_pan', 'gstn', 'gst_registration_type', 'gst_supply_type', 'gst_duty_head', 'opening_balance', 'closing_balance', 'is_revenue', 'is_deemedpositive', 'tax_rate', 'credit_limit', 'credit_days', 'bill_credit_period', 'bill_credit_limit', 'bank_account_holder', 'bank_account_number', 'bank_ifsc', 'bank_swift', 'bank_name', 'bank_branch', 'income_tax_number', 'sales_tax_number', 'excise_registration_number', 'service_tax_number', 'buyer_type', 'buyer_category', 'ledger_contact', 'ledger_mobile', 'ledger_fax', 'ledger_website', 'company_id', 'division_id', 'id', 'alterid']
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'alias', 'description', 'notes', 'mailing_name', 'mailing_address', 'mailing_state', 'mailing_country', 'mailing_pincode', 'email', 'it_pan', 'gstn', 'gst_registration_type', 'gst_supply_type', 'gst_duty_head', 'opening_balance', 'closing_balance', 'is_revenue', 'is_deemedpositive', 'tax_rate', 'credit_limit', 'credit_days', 'bill_credit_period', 'bill_credit_limit', 'bank_account_holder', 'bank_account_number', 'bank_ifsc', 'bank_swift', 'bank_name', 'bank_branch', 'income_tax_number', 'sales_tax_number', 'excise_registration_number', 'service_tax_number', 'buyer_type', 'buyer_category', 'ledger_contact', 'ledger_mobile', 'ledger_fax', 'ledger_website', 'company_id', 'division_id', 'alterid']
   },
   { 
     apiTable: 'stock_items', 
@@ -54,7 +54,7 @@ const TABLE_MAPPINGS: TableMapping[] = [
     supabaseTable: 'mst_vouchertype', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
-    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'numbering_method', 'affects_stock', 'is_deemedpositive', 'company_id', 'division_id', 'id', 'created_at']
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'numbering_method', 'affects_stock', 'is_deemedpositive', 'company_id', 'division_id']
   },
   { 
     apiTable: 'cost_centers', 
@@ -68,7 +68,7 @@ const TABLE_MAPPINGS: TableMapping[] = [
     supabaseTable: 'mst_godown', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
-    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'address', 'storage_type', 'capacity', 'capacity_unit', 'godown_type', 'location_code', 'manager_name', 'contact_number', 'company_id', 'division_id', 'id', 'created_at']
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'address', 'storage_type', 'capacity', 'capacity_unit', 'godown_type', 'location_code', 'manager_name', 'contact_number', 'company_id', 'division_id']
   },
   { 
     apiTable: 'uoms', 
@@ -82,7 +82,7 @@ const TABLE_MAPPINGS: TableMapping[] = [
     supabaseTable: 'tally_trn_voucher', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
-    columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_number_prefix', 'voucher_number_suffix', 'date', 'due_date', 'narration', 'reference', 'party_ledger_name', 'basic_amount', 'discount_amount', 'tax_amount', 'net_amount', 'total_amount', 'final_amount', 'currency', 'exchange_rate', 'order_reference', 'receipt_reference', 'consignment_note', 'is_optional', 'is_cancelled', 'persistedview', 'altered_by', 'altered_on', 'alterid', 'company_id', 'division_id', 'created_at']
+    columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_number_prefix', 'voucher_number_suffix', 'date', 'due_date', 'narration', 'reference', 'party_ledger_name', 'basic_amount', 'discount_amount', 'tax_amount', 'net_amount', 'total_amount', 'final_amount', 'currency', 'exchange_rate', 'order_reference', 'receipt_reference', 'consignment_note', 'is_optional', 'is_cancelled', 'persistedview', 'altered_by', 'altered_on', 'alterid', 'company_id', 'division_id']
   },
   { 
     apiTable: 'accounting_entries', 
@@ -96,7 +96,7 @@ const TABLE_MAPPINGS: TableMapping[] = [
     supabaseTable: 'trn_inventory', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
-    columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_date', 'item_name', 'godown', 'quantity', 'rate', 'amount', 'company_id', 'division_id', 'created_at']
+    columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_date', 'item', '_item', 'godown', '_godown', 'quantity', 'rate', 'amount', 'actual_quantity', 'billed_quantity', 'tracking_number', 'order_reference', 'company_id', 'division_id']
   }
 ];
 
@@ -218,6 +218,43 @@ async function queryWithPagination(
   return allRecords;
 }
 
+function normalizeRecord(record: any, tableName: string): any {
+  const normalized = { ...record };
+
+  // General string field cleanup
+  Object.keys(normalized).forEach(key => {
+    if (typeof normalized[key] === 'string') {
+      // Trim whitespace and remove control characters
+      normalized[key] = normalized[key].trim().replace(/[\x00-\x1F\x7F]/g, '');
+    }
+  });
+
+  // Table-specific normalization
+  if (tableName === 'mst_uom') {
+    // Handle UOM-specific fields
+    normalized.base_units = normalized.base_units || normalized.name || 'Nos';
+    normalized.additional_units = normalized.additional_units || '';
+    normalized.formalname = normalized.formalname || normalized.name || '';
+    
+    // Ensure conversion is an integer
+    if (normalized.conversion !== undefined) {
+      const conversionNum = parseInt(String(normalized.conversion).replace(/[^\d]/g, ''), 10);
+      normalized.conversion = isNaN(conversionNum) ? 1 : conversionNum;
+    } else {
+      normalized.conversion = 1;
+    }
+    
+    // Ensure is_simple_unit is a smallint (0 or 1)
+    if (normalized.is_simple_unit !== undefined) {
+      normalized.is_simple_unit = normalized.is_simple_unit === true || normalized.is_simple_unit === 1 || normalized.is_simple_unit === '1' ? 1 : 0;
+    } else {
+      normalized.is_simple_unit = 1;
+    }
+  }
+
+  return normalized;
+}
+
 // Enhanced bulk sync with better conflict handling and column whitelisting
 async function bulkSyncToSupabase(
   supabase: any,
@@ -233,8 +270,11 @@ async function bulkSyncToSupabase(
   }
 
   try {
-    // Filter records to only include whitelisted columns
+    // Filter records to only include whitelisted columns and normalize
     const filteredRecords = records.map(record => {
+      // First normalize the record
+      const normalized = normalizeRecord(record, tableName);
+      
       let filteredRecord: any = {
         company_id: companyId,
         division_id: divisionId
@@ -243,14 +283,14 @@ async function bulkSyncToSupabase(
       if (columnWhitelist) {
         // Only include columns that are in the whitelist
         for (const column of columnWhitelist) {
-          if (record.hasOwnProperty(column)) {
-            filteredRecord[column] = record[column];
+          if (normalized.hasOwnProperty(column)) {
+            filteredRecord[column] = normalized[column];
           }
         }
       } else {
         // No whitelist - include all columns
         filteredRecord = {
-          ...record,
+          ...normalized,
           company_id: companyId,
           division_id: divisionId
         };
@@ -258,6 +298,8 @@ async function bulkSyncToSupabase(
 
       return filteredRecord;
     });
+
+    console.log(`[Bulk Sync] Sample prepared record for ${tableName}:`, JSON.stringify(filteredRecords[0], null, 2));
 
     // Use composite unique constraint for conflict resolution
     const { data, error } = await supabase
