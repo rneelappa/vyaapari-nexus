@@ -26,6 +26,7 @@ import VoucherManagement from "@/pages/tally/transactions/VoucherManagement";
 
 // Display & Reports
 import DayBookPage from "@/pages/tally/display/DayBookPage";
+import DayBookVouchersPage from "@/pages/tally/display/DayBookVouchersPage";
 import FinancialStatementsPage from "@/pages/tally/display/FinancialStatementsPage";
 import ReportsPage from "@/pages/tally/display/ReportsPage";
 import StatisticsPage from "@/pages/tally/display/StatisticsPage";
@@ -78,6 +79,7 @@ export function TallyRouter() {
 
       {/* Display & Reports */}
       <Route path="display/day-book" element={<DayBookPage />} />
+      <Route path="display/day-book-vouchers" element={<DayBookVouchersPage />} />
       <Route path="display/financial-statements" element={<FinancialStatementsPage />} />
       <Route path="display/reports" element={<ReportsPage />} />
       <Route path="display/statistics" element={<StatisticsPage />} />
