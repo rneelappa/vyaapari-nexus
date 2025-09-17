@@ -597,6 +597,7 @@ export type Database = {
           division_id: string | null
           godown_type: string | null
           guid: string
+          id: string | null
           location_code: string | null
           manager_name: string | null
           name: string
@@ -614,6 +615,7 @@ export type Database = {
           division_id?: string | null
           godown_type?: string | null
           guid: string
+          id?: string | null
           location_code?: string | null
           manager_name?: string | null
           name?: string
@@ -631,6 +633,7 @@ export type Database = {
           division_id?: string | null
           godown_type?: string | null
           guid?: string
+          id?: string | null
           location_code?: string | null
           manager_name?: string | null
           name?: string
@@ -658,6 +661,7 @@ export type Database = {
         Row: {
           _parent: string
           affects_gross_profit: number | null
+          alterid: number | null
           company_id: string | null
           created_at: string | null
           division_id: string | null
@@ -674,6 +678,7 @@ export type Database = {
         Insert: {
           _parent?: string
           affects_gross_profit?: number | null
+          alterid?: number | null
           company_id?: string | null
           created_at?: string | null
           division_id?: string | null
@@ -690,6 +695,7 @@ export type Database = {
         Update: {
           _parent?: string
           affects_gross_profit?: number | null
+          alterid?: number | null
           company_id?: string | null
           created_at?: string | null
           division_id?: string | null
@@ -808,6 +814,7 @@ export type Database = {
           bank_ifsc: string
           bank_name: string
           bank_swift: string
+          bill_credit_limit: number | null
           bill_credit_period: number
           buyer_category: string | null
           buyer_type: string | null
@@ -856,6 +863,7 @@ export type Database = {
           bank_ifsc?: string
           bank_name?: string
           bank_swift?: string
+          bill_credit_limit?: number | null
           bill_credit_period?: number
           buyer_category?: string | null
           buyer_type?: string | null
@@ -904,6 +912,7 @@ export type Database = {
           bank_ifsc?: string
           bank_name?: string
           bank_swift?: string
+          bill_credit_limit?: number | null
           bill_credit_period?: number
           buyer_category?: string | null
           buyer_type?: string | null
@@ -1205,6 +1214,7 @@ export type Database = {
           additional_units: string | null
           alias: string
           alternate_uom: string
+          base_units: string | null
           brand: string | null
           closing_balance: number | null
           closing_rate: number | null
@@ -1250,6 +1260,7 @@ export type Database = {
           additional_units?: string | null
           alias?: string
           alternate_uom?: string
+          base_units?: string | null
           brand?: string | null
           closing_balance?: number | null
           closing_rate?: number | null
@@ -1295,6 +1306,7 @@ export type Database = {
           additional_units?: string | null
           alias?: string
           alternate_uom?: string
+          base_units?: string | null
           brand?: string | null
           closing_balance?: number | null
           closing_rate?: number | null
@@ -1521,6 +1533,7 @@ export type Database = {
           created_at: string | null
           division_id: string | null
           guid: string
+          id: string | null
           is_deemedpositive: number | null
           name: string
           numbering_method: string
@@ -1533,6 +1546,7 @@ export type Database = {
           created_at?: string | null
           division_id?: string | null
           guid: string
+          id?: string | null
           is_deemedpositive?: number | null
           name?: string
           numbering_method?: string
@@ -1545,6 +1559,7 @@ export type Database = {
           created_at?: string | null
           division_id?: string | null
           guid?: string
+          id?: string | null
           is_deemedpositive?: number | null
           name?: string
           numbering_method?: string
@@ -1872,6 +1887,7 @@ export type Database = {
         Row: {
           altered_by: string | null
           altered_on: string | null
+          alterid: number | null
           basic_amount: number | null
           company_id: string | null
           consignment_note: string | null
@@ -1903,6 +1919,7 @@ export type Database = {
         Insert: {
           altered_by?: string | null
           altered_on?: string | null
+          alterid?: number | null
           basic_amount?: number | null
           company_id?: string | null
           consignment_note?: string | null
@@ -1934,6 +1951,7 @@ export type Database = {
         Update: {
           altered_by?: string | null
           altered_on?: string | null
+          alterid?: number | null
           basic_amount?: number | null
           company_id?: string | null
           consignment_note?: string | null
@@ -2038,6 +2056,7 @@ export type Database = {
       trn_accounting: {
         Row: {
           _ledger: string
+          alterid: number | null
           amount: number
           amount_cleared: number | null
           amount_forex: number
@@ -2058,6 +2077,7 @@ export type Database = {
         }
         Insert: {
           _ledger?: string
+          alterid?: number | null
           amount?: number
           amount_cleared?: number | null
           amount_forex?: number
@@ -2078,6 +2098,7 @@ export type Database = {
         }
         Update: {
           _ledger?: string
+          alterid?: number | null
           amount?: number
           amount_cleared?: number | null
           amount_forex?: number
