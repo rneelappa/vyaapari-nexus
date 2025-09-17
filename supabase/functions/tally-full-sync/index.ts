@@ -23,6 +23,7 @@ interface TableMapping {
 }
 
 const TABLE_MAPPINGS: TableMapping[] = [
+  // Master data tables (sync first for referential integrity)
   { apiTable: 'groups', supabaseTable: 'mst_group', endpoint: '/masters/groups', keyField: 'guid' },
   { apiTable: 'ledgers', supabaseTable: 'mst_ledger', endpoint: '/masters/ledgers', keyField: 'guid' },
   { apiTable: 'stock_items', supabaseTable: 'mst_stock_item', endpoint: '/masters/stock-items', keyField: 'guid' },
@@ -33,8 +34,11 @@ const TABLE_MAPPINGS: TableMapping[] = [
   { apiTable: 'uoms', supabaseTable: 'mst_uom', endpoint: '/masters/uoms', keyField: 'guid' },
   { apiTable: 'cost_categories', supabaseTable: 'mst_cost_category', endpoint: '/masters/cost-categories', keyField: 'guid' },
   { apiTable: 'payheads', supabaseTable: 'mst_payhead', endpoint: '/masters/payheads', keyField: 'guid' },
+  
+  // Transaction tables (sync after master data)
   { apiTable: 'vouchers', supabaseTable: 'tally_trn_voucher', endpoint: '/vouchers', keyField: 'guid' },
-  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' }
+  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' },
+  { apiTable: 'inventory', supabaseTable: 'trn_inventory', endpoint: '/inventory', keyField: 'guid' }
 ];
 
 async function validateUUID(uuid: string): Promise<boolean> {
