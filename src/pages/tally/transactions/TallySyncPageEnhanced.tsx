@@ -782,8 +782,9 @@ export function TallySyncPageEnhanced({
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="summary">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="summary">Summary</TabsTrigger>
+                <TabsTrigger value="tables">Tables</TabsTrigger>
                 <TabsTrigger value="entities">Entity Counts</TabsTrigger>
                 <TabsTrigger value="insights">Business Insights</TabsTrigger>
                 <TabsTrigger value="diagnosis">Database Diagnosis</TabsTrigger>
@@ -792,6 +793,27 @@ export function TallySyncPageEnhanced({
               </TabsList>
 
               <TabsContent value="summary" className="space-y-4">
+                {/* Partial success banner */}
+                {(lastRailwaySyncResult?.totalErrors || syncResults?.errors) ? (
+                  <div className="p-3 border rounded-lg bg-amber-50">
+                    <div className="flex items-center mb-1">
+                      <AlertCircle className="h-4 w-4 text-amber-600 mr-2" />
+                      <span className="font-semibold text-amber-700">Partial Success</span>
+                    </div>
+                    <div className="text-sm text-amber-700">
+                      {(() => {
+                        const results = lastRailwaySyncResult?.results || [];
+                        const succeeded = results.filter(r => r.status === 'success').length;
+                        const failed = results.filter(r => r.status === 'failed').length;
+                        if (results.length > 0) {
+                          return `Succeeded: ${succeeded} tables • Failed: ${failed} tables`;
+                        }
+                        return `Completed with ${syncResults?.errors ?? 0} errors`;
+                      })()}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
@@ -817,6 +839,51 @@ export function TallySyncPageEnhanced({
                     </div>
                     <div className="text-sm text-muted-foreground">Sync Method</div>
                   </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="tables" className="space-y-4">
+                <div className="overflow-x-auto border rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-3">Table</th>
+                        <th className="text-left p-3">API</th>
+                        <th className="text-left p-3">Status</th>
+                        <th className="text-right p-3">Fetched</th>
+                        <th className="text-right p-3">Inserted</th>
+                        <th className="text-right p-3">Updated</th>
+                        <th className="text-right p-3">Errors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(lastRailwaySyncResult?.results || Object.entries(syncResults?.byTable || {}).map(([table, stats]: any) => ({
+                        table,
+                        api_table: table,
+                        status: (stats.errors ?? 0) > 0 ? 'failed' : 'success',
+                        records_fetched: stats.fetched,
+                        records_inserted: stats.inserted,
+                        records_updated: stats.updated,
+                        errors: stats.errors,
+                      }))).map((r: any) => (
+                        <tr key={`${r.table}-${r.api_table}`} className="border-t">
+                          <td className="p-3 font-medium">{r.table}</td>
+                          <td className="p-3 text-muted-foreground">{r.api_table}</td>
+                          <td className="p-3">
+                            {r.status === 'success' ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700">Success</span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-red-100 text-red-700">Failed</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right">{r.records_fetched}</td>
+                          <td className="p-3 text-right">{r.records_inserted}</td>
+                          <td className="p-3 text-right">{r.records_updated}</td>
+                          <td className="p-3 text-right">{r.errors}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </TabsContent>
 
