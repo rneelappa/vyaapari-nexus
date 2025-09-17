@@ -75,29 +75,38 @@ export const useRailwayTallySync = () => {
         throw error;
       }
 
-      if (data.success) {
-        console.log('[Railway Sync] Completed successfully:', data);
+      // Handle both complete success and partial success scenarios
+      const hasSuccessfulTables = data.results?.some(r => r.status === 'success') || false;
+      const hasFailures = data.totalErrors > 0;
+      
+      if (data.success || hasSuccessfulTables) {
+        console.log('[Railway Sync] Completed:', data);
+        
+        const status = hasFailures ? 'completed' : 'completed';
+        const message = hasFailures 
+          ? `Railway sync completed with ${data.totalErrors} errors in some tables`
+          : 'Railway sync completed successfully';
         
         setSyncProgress({
           tablesProcessed: data.tablesProcessed,
           totalTables: data.tablesProcessed,
           recordsProcessed: data.totalRecords,
-          status: 'completed',
-          message: 'Railway sync completed successfully'
+          status: status,
+          message: message
         });
 
         setLastSyncResult(data);
 
         toast({
-          title: "Railway Sync Complete",
+          title: hasFailures ? "Railway Sync Partial Success" : "Railway Sync Complete",
           description: `Synced ${data.totalRecords} records: ${data.totalInserted} inserted, ${data.totalUpdated} updated, ${data.totalErrors} errors`,
-          variant: data.totalErrors > 0 ? "destructive" : "default"
+          variant: hasFailures ? "default" : "default"
         });
 
         return data;
       } else {
-        const errorMessage = data.error || 'Railway sync failed';
-        console.error('[Railway Sync] Failed:', errorMessage, data);
+        const errorMessage = data.error || 'Railway sync failed completely';
+        console.error('[Railway Sync] Failed completely:', errorMessage, data);
         throw new Error(errorMessage);
       }
     } catch (error: any) {
