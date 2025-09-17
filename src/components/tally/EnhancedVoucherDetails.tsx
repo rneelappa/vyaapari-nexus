@@ -260,32 +260,33 @@ export function EnhancedVoucherDetails({
         }
       }
 
-      // Fetch inventory entries from trn_inventory table
+      // Fetch inventory entries from mst_stock_item table
       try {
-        const { data: inventoryData, error: inventoryError } = await supabase
-          .from('trn_inventory')
+        const { data: stockItemsData, error: stockItemsError } = await supabase
+          .from('mst_stock_item')
           .select('*')
           .eq('company_id', companyId)
-          .eq('division_id', divisionId);
+          .eq('division_id', divisionId)
+          .limit(10); // Limit to first 10 items for performance
 
-        if (inventoryError) {
-          console.warn('Error fetching inventory entries:', inventoryError);
+        if (stockItemsError) {
+          console.warn('Error fetching stock items:', stockItemsError);
           setInventoryEntries([]);
         } else {
-          // Map the database data to our interface
-          const mappedInventory = (inventoryData || []).map(entry => ({
-            guid: entry.guid,
-            item: entry.item,
-            quantity: entry.quantity || 0,
-            rate: entry.rate || 0,
-            amount: entry.amount || 0,
-            godown: entry.godown || '',
-            batch: entry.tracking_number || ''
+          // Map the stock items data to our inventory interface
+          const mappedInventory = (stockItemsData || []).map(item => ({
+            guid: item.guid,
+            item: item.name,
+            quantity: item.closing_balance || 0,
+            rate: item.closing_rate || 0,
+            amount: item.closing_value || 0,
+            godown: '', // Stock items don't have godown info directly
+            batch: item.part_number || ''
           }));
           setInventoryEntries(mappedInventory);
         }
       } catch (error) {
-        console.warn('Error fetching inventory entries:', error);
+        console.warn('Error fetching stock items:', error);
         setInventoryEntries([]);
       }
 
