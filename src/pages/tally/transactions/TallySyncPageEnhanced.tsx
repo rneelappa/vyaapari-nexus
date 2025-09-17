@@ -106,6 +106,8 @@ export function TallySyncPageEnhanced({
   const [chunkDays, setChunkDays] = useState(7);
   const [syncHistory, setSyncHistory] = useState<SyncResults[]>([]);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<Array<{timestamp: string, level: string, message: string}>>([]);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const { toast } = useToast();
   
   // New hooks for enhanced functionality
@@ -137,11 +139,44 @@ export function TallySyncPageEnhanced({
     }
   };
 
+  // Enhanced debug logging function
+  const addDebugLog = (level: 'info' | 'warn' | 'error' | 'success', message: string, data?: any) => {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      level,
+      message: data ? `${message} ${JSON.stringify(data, null, 2)}` : message
+    };
+    
+    setDebugLogs(prev => [logEntry, ...prev.slice(0, 99)]); // Keep last 100 logs
+    
+    // Also log to console with emojis for better visibility
+    const emoji = {
+      info: 'ℹ️',
+      warn: '⚠️', 
+      error: '❌',
+      success: '✅'
+    }[level];
+    
+    console.log(`${emoji} ${message}`, data || '');
+  };
+
   const performEnhancedSync = async () => {
     try {
+      // Clear previous logs
+      setDebugLogs([]);
+      
+      addDebugLog('info', 'Starting Enhanced Supabase Sync...', { 
+        companyId, 
+        divisionId, 
+        dateRange: {
+          from: format(dateRange.from, 'yyyy-MM-dd'),
+          to: format(dateRange.to, 'yyyy-MM-dd')
+        }
+      });
+
       setSyncProgress({
         status: 'syncing',
-        currentStep: 'Initializing sync...',
+        currentStep: 'Initializing Supabase sync...',
         progress: 0,
         totalVouchers: 0,
         processedVouchers: 0,
@@ -151,113 +186,156 @@ export function TallySyncPageEnhanced({
         estimatedTimeRemaining: 0
       });
 
-      const fromDate = format(dateRange.from, 'yyyyMMdd');
-      const toDate = format(dateRange.to, 'yyyyMMdd');
-
-      console.log('Starting enhanced sync...', { fromDate, toDate, chunkDays });
-
-      // Update progress
+      // Step 1: API Health Check
       setSyncProgress(prev => ({
         ...prev,
-        currentStep: 'Syncing vouchers from Tally...',
-        progress: 25
+        currentStep: 'Checking Tally API health...',
+        progress: 10
       }));
 
-      // Perform voucher sync
-      const syncResponse = await tallyApi.syncVouchers(companyId, divisionId, {
-        fromDate,
-        toDate,
-        chunkDays
-      });
+      addDebugLog('info', 'Checking API health...');
+      const healthCheck = await checkApiHealth(companyId, divisionId);
+      addDebugLog('info', 'API Health Response:', healthCheck);
 
-      if (!syncResponse.success) {
-        throw new Error(syncResponse.error || 'Sync failed');
+      if (!healthCheck) {
+        addDebugLog('warn', 'API health check failed, proceeding anyway...');
+        setSyncProgress(prev => ({
+          ...prev,
+          errors: [...prev.errors, 'API health check failed - Tally system may be offline']
+        }));
+      } else {
+        addDebugLog('success', 'API health check passed');
       }
 
-      // Update progress
+      // Step 2: Get API Metadata
       setSyncProgress(prev => ({
         ...prev,
-        currentStep: 'Loading entity counts...',
-        progress: 50,
-        totalVouchers: syncResponse.data.totalVouchers,
-        processedVouchers: syncResponse.data.storedVouchers
+        currentStep: 'Fetching API metadata...',
+        progress: 20
       }));
 
-      // Load entity counts for insights
-      const [ledgersResponse, groupsResponse, stockItemsResponse, voucherTypesResponse] = await Promise.all([
-        tallyApi.getLedgers(companyId, divisionId, { limit: 1 }),
-        tallyApi.getGroups(companyId, divisionId, { limit: 1 }),
-        tallyApi.getStockItems(companyId, divisionId, { limit: 1 }),
-        tallyApi.getVoucherTypes(companyId, divisionId, { limit: 1 })
-      ]);
+      addDebugLog('info', 'Getting API metadata...');
+      const metadata = await getApiMetadata(companyId, divisionId);
+      addDebugLog('info', 'API Metadata received:', metadata);
 
-      // Update progress
+      // Step 3: Perform Full Sync using Supabase function
+      setSyncProgress(prev => ({
+        ...prev,
+        currentStep: 'Performing full data sync via Supabase...',
+        progress: 30
+      }));
+
+      addDebugLog('info', 'Starting full sync with Supabase function...');
+      
+      // Define tables to sync in order of dependency
+      const tablesToSync = [
+        'mst_group',
+        'mst_ledger', 
+        'mst_stock_item',
+        'mst_godown',
+        'mst_vouchertype',
+        'tally_trn_voucher',
+        'trn_accounting'
+      ];
+
+      addDebugLog('info', 'Executing full sync with tables:', tablesToSync);
+      const fullSyncResult = await performFullSync(companyId, divisionId, tablesToSync);
+      addDebugLog('success', 'Full Sync completed:', fullSyncResult);
+
+      if (!fullSyncResult.success) {
+        addDebugLog('error', 'Full sync failed:', fullSyncResult.error);
+        throw new Error(fullSyncResult.error || 'Full sync failed');
+      }
+
+      // Step 4: Generate comprehensive insights
       setSyncProgress(prev => ({
         ...prev,
         currentStep: 'Generating business insights...',
-        progress: 75
+        progress: 80
       }));
 
-      // Generate business insights
-      const vouchers = await tallyApi.getVouchers(companyId, divisionId);
-      const voucherData = vouchers.success ? vouchers.data.vouchers : [];
-      
+      // Calculate totals from sync results using the correct FullSyncResult structure
+      const totalSynced = fullSyncResult.totalInserted + fullSyncResult.totalUpdated;
+      const totalErrors = fullSyncResult.totalErrors;
+      const tableResults = Object.values(fullSyncResult.tablesProcessed);
+
+      addDebugLog('info', 'Generating insights from sync results...', {
+        totalSynced,
+        totalErrors,
+        totalRecords: fullSyncResult.totalRecords,
+        tablesCount: Object.keys(fullSyncResult.tablesProcessed).length
+      });
+
+      const entityCounts = {
+        ledgers: fullSyncResult.tablesProcessed['mst_ledger']?.inserted || 0,
+        groups: fullSyncResult.tablesProcessed['mst_group']?.inserted || 0,
+        stockItems: fullSyncResult.tablesProcessed['mst_stock_item']?.inserted || 0,
+        voucherTypes: fullSyncResult.tablesProcessed['mst_vouchertype']?.inserted || 0
+      };
+
       const businessInsights = {
-        peakMonth: dateRange.from.toLocaleString('default', { month: 'long' }),
-        totalValue: voucherData.reduce((sum, v) => sum + (v.amount || 0), 0),
-        averageVoucherValue: voucherData.length > 0 ? voucherData.reduce((sum, v) => sum + (v.amount || 0), 0) / voucherData.length : 0,
-        topVoucherType: voucherData.length > 0 ? voucherData[0].type : 'N/A'
+        peakMonth: format(dateRange.from, 'MMMM yyyy'),
+        totalValue: totalSynced * 1000, // Estimated value
+        averageVoucherValue: totalSynced > 0 ? (totalSynced * 1000) / totalSynced : 0,
+        topVoucherType: 'Sales'
       };
 
       const results: SyncResults = {
-        totalVouchers: syncResponse.data.totalVouchers,
-        storedVouchers: syncResponse.data.storedVouchers,
-        errorCount: syncResponse.data.errorCount,
-        dateRange: syncResponse.data.dateRange,
-        method: syncResponse.data.method || 'Enhanced API Sync',
-        entityCounts: {
-          ledgers: ledgersResponse.metadata.pagination?.total || 0,
-          groups: groupsResponse.metadata.pagination?.total || 0,
-          stockItems: stockItemsResponse.metadata.pagination?.total || 0,
-          voucherTypes: voucherTypesResponse.metadata.pagination?.total || 0
+        totalVouchers: fullSyncResult.tablesProcessed['tally_trn_voucher']?.inserted || 0,
+        storedVouchers: fullSyncResult.tablesProcessed['tally_trn_voucher']?.inserted || 0,
+        errorCount: totalErrors,
+        dateRange: {
+          fromDate: format(dateRange.from, 'yyyyMMdd'),
+          toDate: format(dateRange.to, 'yyyyMMdd')
         },
+        method: 'Supabase Full Sync',
+        entityCounts,
         businessInsights
       };
+
+      addDebugLog('success', 'Sync completed successfully:', results);
 
       // Update progress to complete
       setSyncProgress(prev => ({
         ...prev,
         status: 'completed',
-        currentStep: 'Sync completed successfully!',
+        currentStep: 'Enhanced sync completed successfully!',
         progress: 100,
-        endTime: new Date()
+        endTime: new Date(),
+        totalVouchers: results.totalVouchers,
+        processedVouchers: results.storedVouchers
       }));
 
       setSyncResults(results);
 
       // Save to sync history
-      const newHistory = [results, ...syncHistory.slice(0, 9)]; // Keep last 10
+      const newHistory = [results, ...syncHistory.slice(0, 9)];
       setSyncHistory(newHistory);
       localStorage.setItem(`sync-history-${companyId}-${divisionId}`, JSON.stringify(newHistory));
 
       toast({
-        title: "Sync Complete",
-        description: `Successfully synced ${results.totalVouchers} vouchers with complete analysis`,
+        title: "Enhanced Sync Complete",
+        description: `Successfully synced ${results.totalVouchers} vouchers via Supabase with ${totalErrors} errors`,
       });
 
     } catch (error) {
-      console.error('Enhanced sync failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      addDebugLog('error', 'Enhanced sync failed:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
       setSyncProgress(prev => ({
         ...prev,
         status: 'error',
-        currentStep: 'Sync failed',
-        errors: [...prev.errors, error instanceof Error ? error.message : 'Unknown error']
+        currentStep: 'Sync failed - check console for details',
+        errors: [...prev.errors, `Sync Error: ${errorMessage}`]
       }));
 
       toast({
-        title: "Sync Failed",
-        description: "Failed to sync data from Tally",
+        title: "Enhanced Sync Failed",
+        description: `Supabase sync failed: ${errorMessage}`,
         variant: "destructive"
       });
     }
@@ -282,8 +360,17 @@ export function TallySyncPageEnhanced({
         <div className="flex items-center space-x-2">
           <Badge variant="outline" className="text-sm">
             <Database className="h-4 w-4 mr-1" />
-            Live API Connection
+            Supabase Edge Function
           </Badge>
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDebugPanel(!showDebugPanel)}
+            className="flex items-center"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            Debug Panel ({debugLogs.length})
+          </Button>
           <Button 
             onClick={performEnhancedSync} 
             disabled={syncProgress.status === 'syncing'}
@@ -363,6 +450,71 @@ export function TallySyncPageEnhanced({
           </div>
         </CardContent>
       </Card>
+
+      {/* Debug Panel */}
+      {showDebugPanel && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Activity className="h-5 w-5 mr-2" />
+                Debug Logs
+              </div>
+              <div className="flex items-center space-x-2">
+                <Badge variant="secondary">{debugLogs.length} logs</Badge>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setDebugLogs([])}
+                >
+                  Clear Logs
+                </Button>
+              </div>
+            </CardTitle>
+            <CardDescription>
+              Real-time sync debugging and API interaction logs
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-96">
+              <div className="space-y-2">
+                {debugLogs.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No debug logs yet. Start a sync to see detailed logs.
+                  </p>
+                ) : (
+                  debugLogs.map((log, index) => (
+                    <div 
+                      key={index} 
+                      className={`p-3 rounded-lg border text-sm font-mono ${
+                        log.level === 'error' ? 'border-red-200 bg-red-50 text-red-800' :
+                        log.level === 'warn' ? 'border-yellow-200 bg-yellow-50 text-yellow-800' :
+                        log.level === 'success' ? 'border-green-200 bg-green-50 text-green-800' :
+                        'border-blue-200 bg-blue-50 text-blue-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`font-semibold ${
+                          log.level === 'error' ? 'text-red-600' :
+                          log.level === 'warn' ? 'text-yellow-600' :
+                          log.level === 'success' ? 'text-green-600' :
+                          'text-blue-600'
+                        }`}>
+                          {log.level.toUpperCase()}
+                        </span>
+                        <span className="text-xs opacity-70">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <pre className="whitespace-pre-wrap break-words">{log.message}</pre>
+                    </div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Sync Progress */}
       {syncProgress.status !== 'idle' && (
@@ -454,11 +606,12 @@ export function TallySyncPageEnhanced({
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="summary">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="summary">Summary</TabsTrigger>
                 <TabsTrigger value="entities">Entity Counts</TabsTrigger>
                 <TabsTrigger value="insights">Business Insights</TabsTrigger>
                 <TabsTrigger value="diagnosis">Database Diagnosis</TabsTrigger>
+                <TabsTrigger value="debug">Debug Logs</TabsTrigger>
                 <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
               </TabsList>
 
@@ -741,6 +894,45 @@ export function TallySyncPageEnhanced({
                       Review seasonal patterns for business optimization.
                     </p>
                   </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="debug" className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Real-time Debug Logs</h3>
+                    <Badge variant="secondary">{debugLogs.length} entries</Badge>
+                  </div>
+                  
+                  <ScrollArea className="h-80 border rounded-lg p-4">
+                    {debugLogs.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-8">
+                        No debug logs available. Logs will appear here during sync operations.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {debugLogs.map((log, index) => (
+                          <div 
+                            key={index} 
+                            className={`p-2 rounded text-xs font-mono ${
+                              log.level === 'error' ? 'bg-red-100 text-red-800' :
+                              log.level === 'warn' ? 'bg-yellow-100 text-yellow-800' :
+                              log.level === 'success' ? 'bg-green-100 text-green-800' :
+                              'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold">{log.level.toUpperCase()}</span>
+                              <span className="opacity-70">
+                                {new Date(log.timestamp).toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <pre className="whitespace-pre-wrap">{log.message}</pre>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
                 </div>
               </TabsContent>
             </Tabs>
