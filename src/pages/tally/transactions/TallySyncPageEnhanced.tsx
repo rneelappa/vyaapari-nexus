@@ -854,6 +854,7 @@ export function TallySyncPageEnhanced({
                         <th className="text-right p-3">Inserted</th>
                         <th className="text-right p-3">Updated</th>
                         <th className="text-right p-3">Errors</th>
+                        <th className="text-left p-3">Error Details</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -865,21 +866,39 @@ export function TallySyncPageEnhanced({
                         records_inserted: stats.inserted,
                         records_updated: stats.updated,
                         errors: stats.errors,
+                        error: stats.error || null
                       }))).map((r: any) => (
                         <tr key={`${r.table}-${r.api_table}`} className="border-t">
                           <td className="p-3 font-medium">{r.table}</td>
                           <td className="p-3 text-muted-foreground">{r.api_table}</td>
                           <td className="p-3">
                             {r.status === 'success' ? (
-                              <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700">Success</span>
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Success
+                              </span>
                             ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded bg-red-100 text-red-700">Failed</span>
+                              <span className="inline-flex items-center px-2 py-1 rounded bg-red-100 text-red-700">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Failed
+                              </span>
                             )}
                           </td>
                           <td className="p-3 text-right">{r.records_fetched}</td>
                           <td className="p-3 text-right">{r.records_inserted}</td>
                           <td className="p-3 text-right">{r.records_updated}</td>
                           <td className="p-3 text-right">{r.errors}</td>
+                          <td className="p-3">
+                            {r.status === 'failed' && r.error ? (
+                              <div className="max-w-xs">
+                                <div className="text-xs text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                                  {r.error}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
