@@ -31,6 +31,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'react-router-dom';
 import { format, subDays } from 'date-fns';
 import { tallyApi, type ApiResponse } from '@/services/tallyApiService';
+import { useFullTallySync } from '@/hooks/useFullTallySync';
+import { useDatabaseDiagnosis } from '@/hooks/useDatabaseDiagnosis';
 
 interface SyncProgress {
   status: 'idle' | 'syncing' | 'completed' | 'error';
@@ -105,6 +107,23 @@ export function TallySyncPageEnhanced({
   const [syncHistory, setSyncHistory] = useState<SyncResults[]>([]);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const { toast } = useToast();
+  
+  // New hooks for enhanced functionality
+  const { 
+    isProcessing: isFullSyncing, 
+    syncProgress: fullSyncProgress,
+    lastSyncResult,
+    performFullSync,
+    checkApiHealth,
+    getApiMetadata
+  } = useFullTallySync();
+  
+  const {
+    diagnosisData,
+    isLoading: isDiagnosisLoading,
+    error: diagnosisError,
+    runDiagnosis
+  } = useDatabaseDiagnosis(companyId, divisionId);
 
   useEffect(() => {
     loadSyncHistory();
@@ -435,10 +454,11 @@ export function TallySyncPageEnhanced({
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="summary">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="summary">Summary</TabsTrigger>
                 <TabsTrigger value="entities">Entity Counts</TabsTrigger>
                 <TabsTrigger value="insights">Business Insights</TabsTrigger>
+                <TabsTrigger value="diagnosis">Database Diagnosis</TabsTrigger>
                 <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
               </TabsList>
 
@@ -535,6 +555,156 @@ export function TallySyncPageEnhanced({
                     </p>
                   </div>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="diagnosis" className="space-y-4">
+                {isDiagnosisLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <RefreshCw className="h-8 w-8 animate-spin mr-2" />
+                    <span>Running comprehensive diagnosis...</span>
+                  </div>
+                ) : diagnosisData ? (
+                  <div className="space-y-6">
+                    {/* API Health Status */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Activity className="h-5 w-5 mr-2" />
+                          API Health Status
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {diagnosisData.apiHealth.map((health, index) => (
+                            <div key={index} className="text-center p-3 border rounded-lg">
+                              <div className={`text-lg font-bold ${
+                                health.status === 'healthy' ? 'text-green-600' :
+                                health.status === 'warning' ? 'text-yellow-600' : 'text-red-600'
+                              }`}>
+                                {health.status === 'healthy' ? '✓' : 
+                                 health.status === 'warning' ? '⚠' : '✗'}
+                              </div>
+                              <div className="text-sm font-medium">{health.endpoint}</div>
+                              <div className="text-xs text-muted-foreground">{health.responseTime}ms</div>
+                              {health.errorMessage && (
+                                <div className="text-xs text-red-600 mt-1">{health.errorMessage}</div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Table Overview */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Database className="h-5 w-5 mr-2" />
+                          Table Overview
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {diagnosisData.tableOverview.map((table, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center">
+                                <div className={`w-3 h-3 rounded-full mr-3 ${
+                                  table.hasData ? 'bg-green-500' : 'bg-gray-300'
+                                }`} />
+                                <span className="font-medium">{table.tableName}</span>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm font-medium">{table.recordCount.toLocaleString()} records</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {table.lastUpdated ? format(new Date(table.lastUpdated), 'MMM dd, yyyy') : 'Never synced'}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Migration Completeness */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <BarChart3 className="h-5 w-5 mr-2" />
+                          Migration Completeness
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {diagnosisData.migrationCompleteness.map((migration, index) => (
+                            <div key={index} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{migration.table}</span>
+                                <span className={`text-sm font-bold ${
+                                  migration.completeness >= 95 ? 'text-green-600' :
+                                  migration.completeness >= 80 ? 'text-yellow-600' : 'text-red-600'
+                                }`}>
+                                  {migration.completeness}%
+                                </span>
+                              </div>
+                              <Progress value={migration.completeness} className="w-full" />
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Local: {migration.localRecords}</span>
+                                <span>API: {migration.apiRecords}</span>
+                                {migration.gaps > 0 && <span className="text-red-600">Gap: {migration.gaps}</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Full Sync Button */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <Zap className="h-5 w-5 mr-2" />
+                          Full Sync Operations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <Button 
+                            onClick={() => performFullSync(companyId, divisionId)}
+                            disabled={isFullSyncing}
+                            className="w-full"
+                          >
+                            {isFullSyncing ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                Running Full Sync...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-2" />
+                                Perform Full Data Sync
+                              </>
+                            )}
+                          </Button>
+                          
+                          {lastSyncResult && (
+                            <div className="p-3 border rounded-lg bg-green-50">
+                              <div className="text-sm font-medium text-green-800">Last Full Sync Results</div>
+                              <div className="text-xs text-green-600 mt-1">
+                                {lastSyncResult.totalRecords} records processed across {Object.keys(lastSyncResult.tablesProcessed).length} tables
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <div className="text-center p-8">
+                    <Database className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground mb-4">No diagnosis data available</p>
+                    <Button onClick={runDiagnosis}>Run Diagnosis</Button>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="recommendations" className="space-y-4">

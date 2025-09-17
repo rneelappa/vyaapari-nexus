@@ -1,0 +1,417 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface SyncJobDetail {
+  table_name: string;
+  action: string;
+  record_guid: string;
+  record_details?: any;
+  error_message?: string;
+  voucher_number?: string;
+}
+
+interface TableMapping {
+  apiTable: string;
+  supabaseTable: string;
+  endpoint: string;
+  keyField: string;
+}
+
+const TABLE_MAPPINGS: TableMapping[] = [
+  { apiTable: 'groups', supabaseTable: 'mst_group', endpoint: '/masters/groups', keyField: 'guid' },
+  { apiTable: 'ledgers', supabaseTable: 'mst_ledger', endpoint: '/masters/ledgers', keyField: 'guid' },
+  { apiTable: 'stock_items', supabaseTable: 'mst_stock_item', endpoint: '/masters/stock-items', keyField: 'guid' },
+  { apiTable: 'voucher_types', supabaseTable: 'mst_vouchertype', endpoint: '/masters/voucher-types', keyField: 'guid' },
+  { apiTable: 'cost_centers', supabaseTable: 'mst_cost_centre', endpoint: '/masters/cost-centers', keyField: 'guid' },
+  { apiTable: 'godowns', supabaseTable: 'mst_godown', endpoint: '/masters/godowns', keyField: 'guid' },
+  { apiTable: 'employees', supabaseTable: 'mst_employee', endpoint: '/masters/employees', keyField: 'guid' },
+  { apiTable: 'uoms', supabaseTable: 'mst_uom', endpoint: '/masters/uoms', keyField: 'guid' },
+  { apiTable: 'vouchers', supabaseTable: 'tally_trn_voucher', endpoint: '/vouchers', keyField: 'guid' },
+  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' }
+];
+
+async function validateUUID(uuid: string): Promise<boolean> {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+async function queryNewAPI(
+  endpoint: string, 
+  companyId: string, 
+  divisionId: string, 
+  table: string, 
+  filters: any = {}, 
+  limit = 1000
+): Promise<any> {
+  try {
+    const apiUrl = 'https://tally-sync-vyaapari360-production.up.railway.app';
+    const queryUrl = `${apiUrl}/api/v1/query/${companyId}/${divisionId}`;
+    
+    console.log(`Querying API: ${queryUrl} for table: ${table}`);
+    
+    const response = await fetch(queryUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        table,
+        filters,
+        limit,
+        offset: 0
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    
+    if (!responseData.success) {
+      throw new Error(responseData.error || 'API request failed');
+    }
+
+    return responseData.data;
+  } catch (error) {
+    console.error(`Error querying API for ${table}:`, error);
+    throw error;
+  }
+}
+
+async function bulkSyncToSupabase(
+  supabase: any,
+  table: string,
+  data: any[],
+  companyId: string,
+  divisionId: string,
+  keyField: string
+): Promise<{ inserted: number; updated: number; errors: number }> {
+  let inserted = 0;
+  let updated = 0;
+  let errors = 0;
+
+  for (const record of data) {
+    try {
+      // Add company_id and division_id to each record
+      const recordWithIds = {
+        ...record,
+        company_id: companyId,
+        division_id: divisionId
+      };
+
+      // Try to upsert the record
+      const { error } = await supabase
+        .from(table)
+        .upsert(recordWithIds, { 
+          onConflict: keyField,
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        console.error(`Error upserting record in ${table}:`, error);
+        errors++;
+      } else {
+        // For simplicity, count all as updated (upsert doesn't differentiate)
+        updated++;
+      }
+    } catch (error) {
+      console.error(`Error processing record in ${table}:`, error);
+      errors++;
+    }
+  }
+
+  return { inserted, updated, errors };
+}
+
+async function performFullSync(
+  supabase: any,
+  companyId: string,
+  divisionId: string,
+  tablesFilter?: string[]
+): Promise<any> {
+  console.log(`Starting full sync for company: ${companyId}, division: ${divisionId}`);
+  
+  // Create sync job record
+  const { data: syncJob, error: jobError } = await supabase
+    .from('tally_sync_jobs')
+    .insert({
+      company_id: companyId,
+      division_id: divisionId,
+      status: 'running',
+      job_type: 'full_sync',
+      started_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (jobError) {
+    throw new Error(`Failed to create sync job: ${jobError.message}`);
+  }
+
+  const jobId = syncJob.id;
+  const syncResults: any = {
+    jobId,
+    tablesProcessed: {},
+    totalRecords: 0,
+    totalInserted: 0,
+    totalUpdated: 0,
+    totalErrors: 0,
+    startTime: new Date().toISOString()
+  };
+
+  try {
+    // Filter tables if specified
+    const tablesToSync = tablesFilter 
+      ? TABLE_MAPPINGS.filter(tm => tablesFilter.includes(tm.apiTable))
+      : TABLE_MAPPINGS;
+
+    console.log(`Syncing ${tablesToSync.length} tables`);
+
+    for (const tableMapping of tablesToSync) {
+      console.log(`Processing table: ${tableMapping.apiTable} -> ${tableMapping.supabaseTable}`);
+      
+      try {
+        // Query data from new API
+        const apiData = await queryNewAPI(
+          tableMapping.endpoint,
+          companyId,
+          divisionId,
+          tableMapping.apiTable
+        );
+
+        const records = apiData.records || [];
+        console.log(`Retrieved ${records.length} records for ${tableMapping.apiTable}`);
+
+        if (records.length > 0) {
+          // Bulk sync to Supabase
+          const syncStats = await bulkSyncToSupabase(
+            supabase,
+            tableMapping.supabaseTable,
+            records,
+            companyId,
+            divisionId,
+            tableMapping.keyField
+          );
+
+          syncResults.tablesProcessed[tableMapping.apiTable] = {
+            records: records.length,
+            inserted: syncStats.inserted,
+            updated: syncStats.updated,
+            errors: syncStats.errors
+          };
+
+          syncResults.totalRecords += records.length;
+          syncResults.totalInserted += syncStats.inserted;
+          syncResults.totalUpdated += syncStats.updated;
+          syncResults.totalErrors += syncStats.errors;
+
+          // Log sync job details
+          for (let i = 0; i < Math.min(records.length, 10); i++) {
+            const record = records[i];
+            await supabase
+              .from('tally_sync_job_details')
+              .insert({
+                job_id: jobId,
+                table_name: tableMapping.supabaseTable,
+                action: 'upserted',
+                record_guid: record[tableMapping.keyField] || `record_${i}`,
+                record_details: record,
+                voucher_number: record.voucher_number || null
+              });
+          }
+        }
+
+        console.log(`Completed processing ${tableMapping.apiTable}`);
+        
+      } catch (tableError) {
+        console.error(`Error processing table ${tableMapping.apiTable}:`, tableError);
+        
+        syncResults.tablesProcessed[tableMapping.apiTable] = {
+          records: 0,
+          inserted: 0,
+          updated: 0,
+          errors: 1,
+          error: tableError.message
+        };
+        
+        syncResults.totalErrors++;
+
+        // Log error details
+        await supabase
+          .from('tally_sync_job_details')
+          .insert({
+            job_id: jobId,
+            table_name: tableMapping.supabaseTable,
+            action: 'error',
+            record_guid: 'table_sync',
+            error_message: tableError.message
+          });
+      }
+    }
+
+    // Update sync job as completed
+    syncResults.endTime = new Date().toISOString();
+    
+    await supabase
+      .from('tally_sync_jobs')
+      .update({
+        status: 'completed',
+        records_processed: syncResults.totalRecords,
+        completed_at: syncResults.endTime
+      })
+      .eq('id', jobId);
+
+    console.log('Full sync completed successfully');
+    return syncResults;
+
+  } catch (error) {
+    console.error('Full sync failed:', error);
+    
+    // Update sync job as failed
+    await supabase
+      .from('tally_sync_jobs')
+      .update({
+        status: 'failed',
+        error_message: error.message,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', jobId);
+
+    throw error;
+  }
+}
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { 
+      companyId, 
+      divisionId, 
+      tables = null, // Optional array of specific tables to sync
+      action = 'full_sync' // 'full_sync' | 'health_check' | 'metadata'
+    } = await req.json();
+
+    console.log(`Processing ${action} request for company: ${companyId}, division: ${divisionId}`);
+
+    // Validate UUIDs
+    if (!companyId || !divisionId) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing required parameters: companyId and divisionId' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    if (!await validateUUID(companyId) || !await validateUUID(divisionId)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid UUID format for companyId or divisionId' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify company and division exist
+    const { data: division, error: divisionError } = await supabase
+      .from('divisions')
+      .select('id, name, company_id')
+      .eq('id', divisionId)
+      .eq('company_id', companyId)
+      .single();
+
+    if (divisionError || !division) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Company or division not found' 
+        }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    let result;
+
+    switch (action) {
+      case 'full_sync':
+        result = await performFullSync(supabase, companyId, divisionId, tables);
+        break;
+        
+      case 'health_check':
+        // Check API health
+        const apiUrl = 'https://tally-sync-vyaapari360-production.up.railway.app';
+        const healthResponse = await fetch(`${apiUrl}/api/v1/health`);
+        const healthData = await healthResponse.json();
+        
+        result = {
+          api_health: healthData,
+          supabase_connection: true,
+          division_found: true
+        };
+        break;
+        
+      case 'metadata':
+        // Get metadata from API
+        const metadataUrl = 'https://tally-sync-vyaapari360-production.up.railway.app';
+        const metadataResponse = await fetch(`${metadataUrl}/api/v1/metadata/${companyId}/${divisionId}`);
+        const metadataData = await metadataResponse.json();
+        
+        result = metadataData;
+        break;
+        
+      default:
+        throw new Error(`Unknown action: ${action}`);
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        data: result,
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+
+  } catch (error) {
+    console.error('Full sync function error:', error);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+});
