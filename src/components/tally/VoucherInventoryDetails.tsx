@@ -49,6 +49,8 @@ interface InventoryItem {
   manufacturer: string;
   size: string;
   color: string;
+  godown?: string;
+  tracking_number?: string;
 }
 
 interface GodownInfo {
@@ -101,66 +103,78 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
     setError(null);
     
     try {
-      // First, let's check if there are any inventory-related entries in accounting
-      // Look for stock item names in ledger names or check for inventory allocations
-      const { data: accountingData, error: accountingError } = await supabase
-        .from('trn_accounting')
-        .select('ledger, amount, cost_centre')
-        .eq('voucher_guid', voucherGuid)
+// Fetch actual inventory entries for this voucher by linking through the guid
+      const { data: inventoryData, error: inventoryError } = await supabase
+        .from('trn_inventory')
+        .select('guid, item, godown, quantity, rate, amount, tracking_number')
+        .eq('guid', voucherGuid)
         .eq('company_id', companyId)
         .eq('division_id', divisionId);
 
-      if (accountingError) {
-        console.error('Error fetching accounting entries:', accountingError);
-        setError('Failed to fetch voucher accounting data');
+      if (inventoryError) {
+        console.error('Error fetching inventory entries:', inventoryError);
+        setError('Failed to fetch voucher inventory data');
         return;
       }
 
-      // Extract potential stock item names from ledger names
-      const ledgerNames = (accountingData || []).map(entry => entry.ledger);
-      
-      // Fetch stock items that match the ledger names (assuming some ledgers might be stock items)
-      const { data: stockItemsData, error: stockItemsError } = await supabase
-        .from('mst_stock_item')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('division_id', divisionId)
-        .in('name', ledgerNames);
-
-      // Also try to find stock items that might be referenced in cost centres
-      const costCentres = (accountingData || [])
-        .map(entry => entry.cost_centre)
-        .filter(cc => cc && cc.trim() !== '');
-
-      let additionalStockItems: any[] = [];
-      if (costCentres.length > 0) {
-        const { data: additionalData } = await supabase
+      // If no inventory entries found, set empty data
+      if (!inventoryData || inventoryData.length === 0) {
+        setInventoryItems([]);
+        setTotals({ totalItems: 0, totalValue: 0, totalQuantity: 0 });
+      } else {
+        // Get unique item names from inventory entries
+        const itemNames = [...new Set(inventoryData.map(entry => entry.item))];
+        
+        // Fetch stock item details for these items
+        const { data: stockItemsData } = await supabase
           .from('mst_stock_item')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
-          .in('name', costCentres);
-        
-        additionalStockItems = additionalData || [];
-      }
+          .in('name', itemNames);
 
-      // Combine and deduplicate stock items
-      const allStockItems = [...(stockItemsData || []), ...additionalStockItems];
-      const uniqueStockItems = allStockItems.filter((item, index, self) => 
-        index === self.findIndex(i => i.guid === item.guid)
-      );
+        // Create inventory items combining trn_inventory data with mst_stock_item details
+        const inventoryItemsWithDetails = inventoryData.map(invEntry => {
+          const stockItemDetails = (stockItemsData || []).find(item => item.name === invEntry.item);
+          
+          return {
+            guid: invEntry.guid,
+            name: invEntry.item,
+            parent: stockItemDetails?.parent || '',
+            alias: stockItemDetails?.alias || '',
+            part_number: stockItemDetails?.part_number || '',
+            uom: stockItemDetails?.uom || '',
+            opening_balance: stockItemDetails?.opening_balance || 0,
+            closing_balance: invEntry.quantity || 0, // Use actual transaction quantity
+            opening_rate: stockItemDetails?.opening_rate || 0,
+            closing_rate: invEntry.rate || 0, // Use actual transaction rate
+            opening_value: stockItemDetails?.opening_value || 0,
+            closing_value: invEntry.amount || 0, // Use actual transaction amount
+            description: stockItemDetails?.description || '',
+            gst_rate: stockItemDetails?.gst_rate || 0,
+            gst_hsn_code: stockItemDetails?.gst_hsn_code || '',
+            minimum_level: stockItemDetails?.minimum_level || 0,
+            maximum_level: stockItemDetails?.maximum_level || 0,
+            reorder_level: stockItemDetails?.reorder_level || 0,
+            weight: stockItemDetails?.weight || 0,
+            volume: stockItemDetails?.volume || 0,
+            item_category: stockItemDetails?.item_category || '',
+            brand: stockItemDetails?.brand || '',
+            manufacturer: stockItemDetails?.manufacturer || '',
+            size: stockItemDetails?.size || '',
+            color: stockItemDetails?.color || '',
+            // Additional inventory-specific fields
+            godown: invEntry.godown || '',
+            tracking_number: invEntry.tracking_number || ''
+          };
+        });
 
-      // If no direct matches found, the voucher might not have inventory items
-      if (uniqueStockItems.length === 0) {
-        setInventoryItems([]);
-        setTotals({ totalItems: 0, totalValue: 0, totalQuantity: 0 });
-      } else {
-        setInventoryItems(uniqueStockItems);
+        setInventoryItems(inventoryItemsWithDetails);
         
-        // Calculate totals for voucher-specific items only
-        const totalItems = uniqueStockItems.length;
-        const totalValue = uniqueStockItems.reduce((sum, item) => sum + (item.closing_value || 0), 0);
-        const totalQuantity = uniqueStockItems.reduce((sum, item) => sum + (item.closing_balance || 0), 0);
+        // Calculate totals based on actual inventory transaction data
+        const totalItems = inventoryItemsWithDetails.length;
+        const totalValue = inventoryData.reduce((sum, entry) => sum + (entry.amount || 0), 0);
+        const totalQuantity = inventoryData.reduce((sum, entry) => sum + Math.abs(entry.quantity || 0), 0);
 
         setTotals({ totalItems, totalValue, totalQuantity });
       }
@@ -322,12 +336,12 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
                   <TableRow>
                     <TableHead>Item Name</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Godown</TableHead>
                     <TableHead>UOM</TableHead>
-                    <TableHead className="text-right">Stock Qty</TableHead>
+                    <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Rate</TableHead>
-                    <TableHead className="text-right">Value</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Details</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Tracking #</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -355,6 +369,11 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
                         </div>
                       </TableCell>
                       <TableCell>
+                        <Badge variant="secondary" className="text-xs">
+                          {item.godown || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         <Badge variant="outline" className="text-xs">
                           {item.uom || 'N/A'}
                         </Badge>
@@ -369,19 +388,8 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
                         {formatCurrency(item.closing_value || 0)}
                       </TableCell>
                       <TableCell>
-                        {getStockLevelBadge(item)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-xs space-y-1">
-                          {item.brand && (
-                            <div><span className="text-muted-foreground">Brand:</span> {item.brand}</div>
-                          )}
-                          {item.manufacturer && (
-                            <div><span className="text-muted-foreground">Mfg:</span> {item.manufacturer}</div>
-                          )}
-                          {item.gst_hsn_code && (
-                            <div><span className="text-muted-foreground">HSN:</span> {item.gst_hsn_code}</div>
-                          )}
+                        <div className="text-xs">
+                          {item.tracking_number || '-'}
                         </div>
                       </TableCell>
                     </TableRow>
