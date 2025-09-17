@@ -485,129 +485,137 @@ export default function DayBookVouchersPage() {
               </Button>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Voucher No.</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Party</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Narration</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredVouchers.length === 0 ? (
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        No vouchers found matching your criteria
-                      </TableCell>
+                      <TableHead>Voucher No.</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Party</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Narration</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredVouchers.map((voucher) => (
-                      <TableRow
-                        key={voucher.guid}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => handleVoucherClick(voucher)}
-                      >
-                        <TableCell className="font-medium">
-                          {voucher.voucher_number || '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {voucher.voucher_type || 'Unknown'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">
-                              {formatDate(voucher.date)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {voucher.party_ledger_name || '-'}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {voucher.total_amount ? formatCurrency(voucher.total_amount) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {voucher.is_cancelled ? (
-                            <Badge variant="destructive">Cancelled</Badge>
-                          ) : voucher.is_optional ? (
-                            <Badge variant="secondary">Optional</Badge>
-                          ) : (
-                            <Badge variant="default">Active</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="max-w-md">
-                          <span className="text-sm text-muted-foreground line-clamp-1">
-                            {voucher.narration || 'No narration'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleVoucherClick(voucher);
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(voucher);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(voucher);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVouchers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          No vouchers found matching your criteria
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
+                    ) : (
+                      filteredVouchers.map((voucher) => (
+                        <TableRow
+                          key={voucher.guid}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => handleVoucherClick(voucher)}
+                        >
+                          <TableCell className="font-medium">
+                            {voucher.voucher_number || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {voucher.voucher_type || 'Unknown'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {formatDate(voucher.date)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {voucher.party_ledger_name || '-'}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {voucher.total_amount ? formatCurrency(voucher.total_amount) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {voucher.is_cancelled ? (
+                              <Badge variant="destructive">Cancelled</Badge>
+                            ) : voucher.is_optional ? (
+                              <Badge variant="secondary">Optional</Badge>
+                            ) : (
+                              <Badge variant="default">Active</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-md">
+                            <span className="text-sm text-muted-foreground line-clamp-1">
+                              {voucher.narration || 'No narration'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleVoucherClick(voucher);
+                                }}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(voucher);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDelete(voucher);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="flex items-center gap-3">
-                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
-                  <SelectTrigger className="w-[120px]"><SelectValue placeholder="Page size" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                    <SelectItem value="200">200</SelectItem>
-                    <SelectItem value="500">500</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" disabled={page === 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</Button>
-                  <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}</span>
-                  <Button variant="outline" disabled={page >= Math.ceil(totalCount / pageSize) || loading} onClick={() => setPage((p) => p + 1)}>Next</Button>
+              
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalCount)} of {totalCount}
+                </div>
+                <div className="flex items-center gap-3">
+                  <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+                    <SelectTrigger className="w-[120px]"><SelectValue placeholder="Page size" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="200">200</SelectItem>
+                      <SelectItem value="500">500</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" disabled={page === 1 || loading} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</Button>
+                    <span className="text-sm">Page {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}</span>
+                    <Button variant="outline" disabled={page >= Math.ceil(totalCount / pageSize) || loading} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
+            )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
