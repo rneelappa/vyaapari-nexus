@@ -227,24 +227,35 @@ export function TallySyncPageEnhanced({
 
       addDebugLog('info', 'Starting full sync with Supabase function...');
       
-      // Define tables to sync in order of dependency
-      const tablesToSync = [
-        'mst_group',
-        'mst_ledger', 
-        'mst_stock_item',
-        'mst_godown',
-        'mst_vouchertype',
-        'tally_trn_voucher',
-        'trn_accounting'
-      ];
+      // Send no explicit table filter so the Edge Function uses its default mapping (avoids mismatches)
+      const invokePayload = {
+        companyId,
+        divisionId,
+        action: 'full_sync',
+        tables: undefined as string[] | undefined,
+      };
+      addDebugLog('info', 'Supabase invoke payload:', invokePayload);
 
-      addDebugLog('info', 'Executing full sync with tables:', tablesToSync);
-      const fullSyncResult = await performFullSync(companyId, divisionId, tablesToSync);
-      addDebugLog('success', 'Full Sync completed:', fullSyncResult);
+      const fullSyncResult = await performFullSync(companyId, divisionId, undefined);
+      addDebugLog('success', 'Full Sync completed:', {
+        jobId: fullSyncResult.jobId,
+        totals: {
+          totalRecords: fullSyncResult.totalRecords,
+          totalInserted: fullSyncResult.totalInserted,
+          totalUpdated: fullSyncResult.totalUpdated,
+          totalErrors: fullSyncResult.totalErrors,
+        },
+        tablesProcessedCount: Object.keys(fullSyncResult.tablesProcessed || {}).length,
+      });
 
-      if (!fullSyncResult.success) {
-        addDebugLog('error', 'Full sync failed:', fullSyncResult.error);
+      // Treat the call as success if it returned without throwing; surface any reported error
+      if (fullSyncResult.error) {
+        addDebugLog('error', 'Full sync reported error:', fullSyncResult.error);
         throw new Error(fullSyncResult.error || 'Full sync failed');
+      }
+
+      if (!fullSyncResult.tablesProcessed || Object.keys(fullSyncResult.tablesProcessed).length === 0) {
+        addDebugLog('warn', 'No tables were processed by the sync. This may indicate a table filter mismatch or empty source data.');
       }
 
       // Step 4: Generate comprehensive insights
