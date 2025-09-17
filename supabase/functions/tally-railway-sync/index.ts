@@ -252,6 +252,62 @@ function normalizeRecord(record: any, tableName: string): any {
     }
   }
 
+  if (tableName === 'mst_group') {
+    // Handle group-specific null constraints
+    normalized.parent = normalized.parent || '';
+    normalized._parent = normalized._parent || '';
+    normalized.primary_group = normalized.primary_group || '';
+  }
+
+  if (tableName === 'mst_ledger') {
+    // Handle ledger-specific null constraints
+    normalized.alias = normalized.alias || '';
+    normalized.description = normalized.description || '';
+    normalized.notes = normalized.notes || '';
+    normalized.mailing_name = normalized.mailing_name || normalized.name || '';
+    normalized.mailing_address = normalized.mailing_address || '';
+    normalized.mailing_state = normalized.mailing_state || '';
+    normalized.mailing_country = normalized.mailing_country || '';
+    normalized.mailing_pincode = normalized.mailing_pincode || '';
+    normalized.email = normalized.email || '';
+    normalized.it_pan = normalized.it_pan || '';
+    normalized.gstn = normalized.gstn || '';
+    normalized.gst_registration_type = normalized.gst_registration_type || '';
+    normalized.gst_supply_type = normalized.gst_supply_type || '';
+    normalized.gst_duty_head = normalized.gst_duty_head || '';
+    normalized.bank_account_holder = normalized.bank_account_holder || '';
+    normalized.bank_account_number = normalized.bank_account_number || '';
+    normalized.bank_ifsc = normalized.bank_ifsc || '';
+    normalized.bank_swift = normalized.bank_swift || '';
+    normalized.bank_name = normalized.bank_name || '';
+    normalized.bank_branch = normalized.bank_branch || '';
+    normalized.income_tax_number = normalized.income_tax_number || '';
+    normalized.sales_tax_number = normalized.sales_tax_number || '';
+    normalized.excise_registration_number = normalized.excise_registration_number || '';
+    normalized.service_tax_number = normalized.service_tax_number || '';
+    normalized.buyer_type = normalized.buyer_type || '';
+    normalized.buyer_category = normalized.buyer_category || '';
+    normalized.ledger_contact = normalized.ledger_contact || '';
+    normalized.ledger_mobile = normalized.ledger_mobile || '';
+    normalized.ledger_fax = normalized.ledger_fax || '';
+    normalized.ledger_website = normalized.ledger_website || '';
+    normalized.parent = normalized.parent || '';
+    normalized._parent = normalized._parent || '';
+  }
+
+  if (tableName === 'mst_godown') {
+    // Handle godown-specific null constraints
+    normalized.address = normalized.address || '';
+    normalized.parent = normalized.parent || '';
+    normalized._parent = normalized._parent || '';
+    normalized.storage_type = normalized.storage_type || '';
+    normalized.capacity_unit = normalized.capacity_unit || '';
+    normalized.godown_type = normalized.godown_type || '';
+    normalized.location_code = normalized.location_code || '';
+    normalized.manager_name = normalized.manager_name || '';
+    normalized.contact_number = normalized.contact_number || '';
+  }
+
   return normalized;
 }
 
