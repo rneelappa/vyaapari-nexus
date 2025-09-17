@@ -96,7 +96,7 @@ const TABLE_MAPPINGS: TableMapping[] = [
     supabaseTable: 'trn_inventory', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
-    columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_date', 'item', '_item', 'godown', '_godown', 'quantity', 'rate', 'amount', 'actual_quantity', 'billed_quantity', 'tracking_number', 'order_reference', 'company_id', 'division_id']
+    columnWhitelist: ['guid', 'voucher_guid', 'voucher_type', 'voucher_number', 'voucher_date', 'item', '_item', 'godown', '_godown', 'quantity', 'rate', 'amount', 'actual_quantity', 'billed_quantity', 'tracking_number', 'order_reference', 'company_id', 'division_id']
   }
 ];
 
