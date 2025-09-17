@@ -60,7 +60,8 @@ export default function DayBookVouchersPage() {
 
       let query = supabase
         .from('tally_trn_voucher')
-        .select('*');
+        .select('*')
+        .limit(10000); // Increased limit to display all vouchers
 
       // Apply company and division filters if available
       if (companyId && companyId !== 'undefined') {
