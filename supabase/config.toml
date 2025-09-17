@@ -61,3 +61,6 @@ verify_jwt = true
 
 [functions.tally-api-diagnostics]
 verify_jwt = false
+
+[functions.tally-full-sync]
+verify_jwt = true

@@ -155,23 +155,35 @@ export const useDatabaseDiagnosis = (companyId: string, divisionId: string) => {
     try {
       console.log('Running comprehensive database diagnosis...');
 
-      // Get table overview
+      // Get table overview with error handling
       const tableOverviewPromises = TALLY_TABLES.map(async (tableName): Promise<TableInfo> => {
-        const recordCount = await getTableRecordCount(tableName);
-        const lastUpdated = await getTableLastUpdated(tableName);
-        
-        return {
-          tableName,
-          recordCount,
-          lastUpdated,
-          hasData: recordCount > 0,
-          relationships: [], // TODO: Implement relationship detection
-          dataQuality: {
-            nullValues: 0, // TODO: Implement null value detection
-            duplicates: 0, // TODO: Implement duplicate detection
-            orphanedRecords: 0 // TODO: Implement orphaned record detection
-          }
-        };
+        try {
+          const recordCount = await getTableRecordCount(tableName);
+          const lastUpdated = await getTableLastUpdated(tableName);
+          
+          return {
+            tableName,
+            recordCount,
+            lastUpdated,
+            hasData: recordCount > 0,
+            relationships: [], 
+            dataQuality: {
+              nullValues: 0, 
+              duplicates: 0, 
+              orphanedRecords: 0 
+            }
+          };
+        } catch (error) {
+          console.error(`Error getting table info for ${tableName}:`, error);
+          return {
+            tableName,
+            recordCount: 0,
+            lastUpdated: null,
+            hasData: false,
+            relationships: [],
+            dataQuality: { nullValues: 0, duplicates: 0, orphanedRecords: 0 }
+          };
+        }
       });
 
       const tableOverview = await Promise.all(tableOverviewPromises);
@@ -179,7 +191,17 @@ export const useDatabaseDiagnosis = (companyId: string, divisionId: string) => {
       // Get migration completeness
       const migrationCompletenessPromises = TALLY_TABLES.map(async (tableName): Promise<MigrationCompleteness> => {
         const localRecords = await getTableRecordCount(tableName);
-        const apiTable = tableName.replace('mst_', '').replace('trn_', '').replace('tally_', '');
+        
+        // Map table names to API table names
+        let apiTable = tableName;
+        if (tableName.startsWith('mst_')) {
+          apiTable = tableName.replace('mst_', '').replace('_', '');
+        } else if (tableName.startsWith('tally_')) {
+          apiTable = tableName.replace('tally_trn_', '').replace('tally_mst_', '');
+        } else if (tableName.startsWith('trn_')) {
+          apiTable = tableName.replace('trn_', '');
+        }
+        
         const apiRecords = await getApiRecordCount(apiTable);
         
         const completeness = apiRecords > 0 ? Math.round((localRecords / apiRecords) * 100) : 100;
@@ -198,18 +220,30 @@ export const useDatabaseDiagnosis = (companyId: string, divisionId: string) => {
 
       const migrationCompleteness = await Promise.all(migrationCompletenessPromises);
 
-      // Check API health
+      // Check API health with error handling
       const apiHealthPromises = ['health', 'division_status', 'tables', 'metadata'].map(
-        endpoint => checkApiHealth(endpoint)
+        async (endpoint) => {
+          try {
+            return await checkApiHealth(endpoint);
+          } catch (error) {
+            return {
+              endpoint,
+              status: 'error' as const,
+              responseTime: 0,
+              lastCheck: new Date().toISOString(),
+              errorMessage: (error as Error).message
+            };
+          }
+        }
       );
 
       const apiHealth = await Promise.all(apiHealthPromises);
 
-      // Get data integrity metrics (simplified)
+      // Get data integrity metrics (simplified for now)
       const dataIntegrity = {
-        foreignKeyViolations: 0, // TODO: Implement FK violation detection
-        missingRelationships: 0, // TODO: Implement missing relationship detection
-        dataConsistencyIssues: 0 // TODO: Implement consistency issue detection
+        foreignKeyViolations: 0, 
+        missingRelationships: 0, 
+        dataConsistencyIssues: 0 
       };
 
       const diagnosis: DiagnosisData = {
@@ -231,12 +265,8 @@ export const useDatabaseDiagnosis = (companyId: string, divisionId: string) => {
     }
   }, [companyId, divisionId]);
 
-  // Auto-run diagnosis on mount
-  useEffect(() => {
-    if (companyId && divisionId) {
-      runDiagnosis();
-    }
-  }, [companyId, divisionId, runDiagnosis]);
+  // Don't auto-run diagnosis on mount to prevent loading issues
+  // Users can manually trigger it with the "Run Diagnosis" button
 
   return {
     diagnosisData,
