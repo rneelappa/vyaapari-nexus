@@ -197,8 +197,13 @@ export function EnhancedVoucherDetails({
       if (accountingData && accountingData.length > 0) {
         setAccountingEntries(accountingData);
       } else {
-        const generatedEntries = await generateAccountingEntries(voucherData);
-        setAccountingEntries(generatedEntries);
+        try {
+          const generatedEntries = await generateAccountingEntries(voucherData);
+          setAccountingEntries(Array.isArray(generatedEntries) ? generatedEntries : []);
+        } catch (error) {
+          console.error('Error generating accounting entries:', error);
+          setAccountingEntries([]);
+        }
       }
 
       // Fetch address details
@@ -806,7 +811,7 @@ export function EnhancedVoucherDetails({
                       </tr>
                     </thead>
                     <tbody>
-                      {accountingEntries.map((entry, index) => {
+                      {accountingEntries && Array.isArray(accountingEntries) && accountingEntries.map((entry, index) => {
                         const isPartyLedger = entry.is_party_ledger === 1;
                         return (
                           <tr key={entry.guid} className={`border-b ${isPartyLedger ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-green-50 dark:bg-green-950/30'}`}>
