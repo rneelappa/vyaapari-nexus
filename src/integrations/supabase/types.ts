@@ -3003,6 +3003,7 @@ export type Database = {
           quantity: number
           rate: number
           tracking_number: string | null
+          updated_at: string | null
         }
         Insert: {
           _godown?: string
@@ -3020,6 +3021,7 @@ export type Database = {
           quantity?: number
           rate?: number
           tracking_number?: string | null
+          updated_at?: string | null
         }
         Update: {
           _godown?: string
@@ -3037,6 +3039,7 @@ export type Database = {
           quantity?: number
           rate?: number
           tracking_number?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
