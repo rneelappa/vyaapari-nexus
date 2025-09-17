@@ -281,7 +281,8 @@ export function TallySyncPageEnhanced({
           }
         });
 
-        setSyncResults({
+        console.log('[DEBUG] Setting syncResults from Railway API:', railwaySyncResult);
+        const newSyncResults = {
           lastSyncTime: new Date().toISOString(),
           totalRecords: railwaySyncResult.totalRecords,
           recordsInserted: railwaySyncResult.totalInserted,
@@ -297,7 +298,15 @@ export function TallySyncPageEnhanced({
             };
             return acc;
           }, {})
-        });
+        };
+        setSyncResults(newSyncResults);
+        console.log('[DEBUG] syncResults set successfully');
+        
+        // Use local variable for immediate access
+        console.log('[DEBUG] About to save to history with newSyncResults:', newSyncResults);
+        const newHistory = [newSyncResults, ...syncHistory.slice(0, 9)];
+        setSyncHistory(newHistory);
+        localStorage.setItem(`sync-history-${companyId}-${divisionId}`, JSON.stringify(newHistory));
       } else {
         addDebugLog('info', 'Starting full sync with Supabase function...');
         addDebugLog('info', `Supabase invoke payload (${isFullDatabaseSync ? 'Full Database' : 'Selective'} sync):`, { companyId, divisionId, tables: tableFilter });
@@ -313,7 +322,7 @@ export function TallySyncPageEnhanced({
           }
         });
 
-        setSyncResults({
+        const newSyncResults = {
           lastSyncTime: new Date().toISOString(),
           totalRecords: fullSyncResult.totalRecords,
           recordsInserted: fullSyncResult.totalInserted,
@@ -321,7 +330,8 @@ export function TallySyncPageEnhanced({
           errors: fullSyncResult.totalErrors,
           duration: 0,
           byTable: {}
-        });
+        };
+        setSyncResults(newSyncResults);
 
         addDebugLog('success', 'Full Sync completed:', {
           jobId: fullSyncResult.jobId,
@@ -332,6 +342,11 @@ export function TallySyncPageEnhanced({
             totalErrors: fullSyncResult.totalErrors,
           }
         });
+        
+        // Use local variable for immediate access
+        const newHistory = [newSyncResults, ...syncHistory.slice(0, 9)];
+        setSyncHistory(newHistory);
+        localStorage.setItem(`sync-history-${companyId}-${divisionId}`, JSON.stringify(newHistory));
       }
 
       // Step 4: Generate comprehensive insights
@@ -352,14 +367,13 @@ export function TallySyncPageEnhanced({
         endTime: new Date()
       }));
 
-      // Save to sync history
-      const newHistory = [syncResults, ...syncHistory.slice(0, 9)];
-      setSyncHistory(newHistory);
-      localStorage.setItem(`sync-history-${companyId}-${divisionId}`, JSON.stringify(newHistory));
+      // Save to sync history only if syncResults exists
+      console.log('[DEBUG] Before accessing syncResults:', syncResults);
 
+      console.log('[DEBUG] About to show toast');
       toast({
         title: "Enhanced Sync Complete",
-        description: `Successfully synced ${syncResults.totalRecords} records`,
+        description: "Sync completed successfully!",
       });
 
     } catch (error) {
