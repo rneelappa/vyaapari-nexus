@@ -194,8 +194,12 @@ export function EnhancedVoucherDetails({
       }
 
       // Generate accounting entries if none exist
-      const finalAccountingData = accountingData && accountingData.length > 0 ? accountingData : generateAccountingEntries(voucherData);
-      setAccountingEntries(finalAccountingData);
+      if (accountingData && accountingData.length > 0) {
+        setAccountingEntries(accountingData);
+      } else {
+        const generatedEntries = await generateAccountingEntries(voucherData);
+        setAccountingEntries(generatedEntries);
+      }
 
       // Fetch address details
       const { data: addressData, error: addressError } = await supabase
@@ -375,34 +379,79 @@ export function EnhancedVoucherDetails({
     }
   };
 
-  // Generate accounting entries based on voucher data
-  const generateAccountingEntries = (voucherData: VoucherDetails): AccountingEntry[] => {
+  // Generate accounting entries based on voucher data using real ledger names
+  const generateAccountingEntries = async (voucherData: VoucherDetails): Promise<AccountingEntry[]> => {
     const entries: AccountingEntry[] = [];
     const amount = voucherData.total_amount || 1000; // Use total_amount or fallback
 
-    // Determine main account name based on voucher type
-    const getMainAccountName = (voucherType: string) => {
-      switch (voucherType.toLowerCase()) {
-        case 'sales':
-        case 'sales invoice':
-          return 'Sales Account';
-        case 'purchase':
-        case 'purchase invoice':
-          return 'Purchase Account';
-        case 'payment':
-          return 'Cash/Bank Account';
-        case 'receipt':
-          return 'Cash/Bank Account';
-        case 'contra':
-          return 'Bank Transfer Account';
-        case 'journal':
-          return 'General Account';
-        default:
-          return 'Main Account';
+    // Try to get actual ledger names from the database based on voucher type
+    const getMainAccountName = async (voucherType: string): Promise<string> => {
+      try {
+        let ledgerQuery = supabase
+          .from('mst_ledger')
+          .select('name, parent')
+          .or(`company_id.eq.${companyId},company_id.is.null`)
+          .or(`division_id.eq.${divisionId},division_id.is.null`);
+
+        // Try to find appropriate ledgers based on voucher type and parent groups
+        switch (voucherType.toLowerCase()) {
+          case 'sales':
+          case 'sales invoice':
+            // Look for Sales ledgers or Revenue group ledgers
+            ledgerQuery = ledgerQuery.or('parent.ilike.%sales%,parent.ilike.%revenue%,name.ilike.%sales%');
+            break;
+          case 'purchase':
+          case 'purchase invoice':
+            // Look for Purchase ledgers
+            ledgerQuery = ledgerQuery.or('parent.ilike.%purchase%,parent.ilike.%expense%,name.ilike.%purchase%');
+            break;
+          case 'payment':
+            // Look for Cash/Bank ledgers
+            ledgerQuery = ledgerQuery.or('parent.ilike.%cash%,parent.ilike.%bank%,name.ilike.%cash%,name.ilike.%bank%');
+            break;
+          case 'receipt':
+            // Look for Cash/Bank ledgers
+            ledgerQuery = ledgerQuery.or('parent.ilike.%cash%,parent.ilike.%bank%,name.ilike.%cash%,name.ilike.%bank%');
+            break;
+          case 'contra':
+            // Look for Bank ledgers
+            ledgerQuery = ledgerQuery.or('parent.ilike.%bank%,name.ilike.%bank%');
+            break;
+          default:
+            // For other types, look for common account types
+            ledgerQuery = ledgerQuery.or('name.ilike.%account%,parent.ilike.%general%');
+        }
+
+        const { data: ledgers } = await ledgerQuery.limit(1);
+        
+        if (ledgers && ledgers.length > 0) {
+          return ledgers[0].name;
+        }
+
+        // Fallback to generic names if no matching ledgers found
+        switch (voucherType.toLowerCase()) {
+          case 'sales':
+          case 'sales invoice':
+            return 'Sales Account';
+          case 'purchase':
+          case 'purchase invoice':
+            return 'Purchase Account';
+          case 'payment':
+            return 'Cash Account';
+          case 'receipt':
+            return 'Cash Account';
+          case 'contra':
+            return 'Bank Account';
+          default:
+            return 'Main Account';
+        }
+      } catch (error) {
+        console.warn('Error fetching ledger for voucher type:', error);
+        return 'Main Account';
       }
     };
 
-    const mainAccountName = getMainAccountName(voucherData.voucher_type);
+    const mainAccountName = await getMainAccountName(voucherData.voucher_type);
     const partyName = voucherData.party_ledger_name || 'Customer/Supplier';
 
     // For Sales: Debit Customer, Credit Sales
