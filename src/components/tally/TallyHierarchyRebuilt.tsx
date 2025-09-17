@@ -41,6 +41,7 @@ const tallyMenuStructure = {
     items: [
       { name: "Statistics", path: "/tally/display/statistics", icon: TrendingUp },
       { name: "Day Book", path: "/tally/display/day-book", icon: FileText },
+      { name: "Day Book Vouchers", path: "/tally/display/day-book-vouchers", icon: FileText },
       { name: "Reports", path: "/tally/display/reports", icon: FileText },
       { name: "Financial Statements", path: "/tally/display/financial-statements", icon: TrendingUp }
     ]
