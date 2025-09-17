@@ -25,7 +25,8 @@ import {
   BarChart3,
   Network,
   Target,
-  Award
+  Award,
+  Copy
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'react-router-dom';
@@ -476,6 +477,19 @@ export function TallySyncPageEnhanced({
                 <Button 
                   variant="outline" 
                   size="sm"
+                  onClick={() => {
+                    const logText = debugLogs.map(log => 
+                      `[${log.level.toUpperCase()}] ${new Date(log.timestamp).toLocaleTimeString()}\n${log.message}\n`
+                    ).join('\n');
+                    navigator.clipboard.writeText(logText);
+                    toast({ title: "Debug logs copied to clipboard" });
+                  }}
+                >
+                  Copy All
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
                   onClick={() => setDebugLogs([])}
                 >
                   Clear Logs
@@ -495,9 +509,9 @@ export function TallySyncPageEnhanced({
                   </p>
                 ) : (
                   debugLogs.map((log, index) => (
-                    <div 
+                     <div 
                       key={index} 
-                      className={`p-3 rounded-lg border text-sm font-mono ${
+                      className={`p-3 rounded-lg border text-sm font-mono relative group ${
                         log.level === 'error' ? 'border-red-200 bg-red-50 text-red-800' :
                         log.level === 'warn' ? 'border-yellow-200 bg-yellow-50 text-yellow-800' :
                         log.level === 'success' ? 'border-green-200 bg-green-50 text-green-800' :
@@ -513,9 +527,23 @@ export function TallySyncPageEnhanced({
                         }`}>
                           {log.level.toUpperCase()}
                         </span>
-                        <span className="text-xs opacity-70">
-                          {new Date(log.timestamp).toLocaleTimeString()}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs opacity-70">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              const logText = `[${log.level.toUpperCase()}] ${new Date(log.timestamp).toLocaleTimeString()}\n${log.message}`;
+                              navigator.clipboard.writeText(logText);
+                              toast({ title: "Log entry copied to clipboard" });
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                       <pre className="whitespace-pre-wrap break-words">{log.message}</pre>
                     </div>
