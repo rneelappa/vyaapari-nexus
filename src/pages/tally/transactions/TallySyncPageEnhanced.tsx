@@ -769,22 +769,22 @@ export function TallySyncPageEnhanced({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 border rounded-lg">
                     <FileText className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                    <div className="text-xl font-bold">{syncResults.entityCounts.ledgers}</div>
+                    <div className="text-xl font-bold">{syncResults?.entityCounts?.ledgers ?? 0}</div>
                     <div className="text-sm text-muted-foreground">Ledgers Available</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <Database className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                    <div className="text-xl font-bold">{syncResults.entityCounts.groups}</div>
+                    <div className="text-xl font-bold">{syncResults?.entityCounts?.groups ?? 0}</div>
                     <div className="text-sm text-muted-foreground">Groups Available</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <Package className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                    <div className="text-xl font-bold">{syncResults.entityCounts.stockItems}</div>
+                    <div className="text-xl font-bold">{syncResults?.entityCounts?.stockItems ?? 0}</div>
                     <div className="text-sm text-muted-foreground">Stock Items</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <FileText className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                    <div className="text-xl font-bold">{syncResults.entityCounts.voucherTypes}</div>
+                    <div className="text-xl font-bold">{syncResults?.entityCounts?.voucherTypes ?? 0}</div>
                     <div className="text-sm text-muted-foreground">Voucher Types</div>
                   </div>
                 </div>
@@ -798,7 +798,7 @@ export function TallySyncPageEnhanced({
                       <span className="font-semibold">Peak Performance</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {syncResults.businessInsights.peakMonth} shows highest activity with {syncResults.totalVouchers} vouchers
+                      {syncResults?.businessInsights?.peakMonth ?? 'N/A'} shows highest activity with {syncResults?.totalVouchers ?? 0} vouchers
                     </p>
                   </div>
                   <div className="p-4 border rounded-lg">
@@ -807,7 +807,7 @@ export function TallySyncPageEnhanced({
                       <span className="font-semibold">Transaction Value</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Total value: ₹{syncResults.businessInsights.totalValue.toLocaleString('en-IN')}
+                      Total value: ₹{(syncResults?.businessInsights?.totalValue ?? 0).toLocaleString('en-IN')}
                     </p>
                   </div>
                   <div className="p-4 border rounded-lg">
@@ -816,7 +816,7 @@ export function TallySyncPageEnhanced({
                       <span className="font-semibold">Average Value</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      ₹{syncResults.businessInsights.averageVoucherValue.toLocaleString('en-IN')} per voucher
+                      ₹{(syncResults?.businessInsights?.averageVoucherValue ?? 0).toLocaleString('en-IN')} per voucher
                     </p>
                   </div>
                   <div className="p-4 border rounded-lg">
@@ -825,7 +825,7 @@ export function TallySyncPageEnhanced({
                       <span className="font-semibold">Top Voucher Type</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {syncResults.businessInsights.topVoucherType} is most frequent
+                      {syncResults?.businessInsights?.topVoucherType ?? 'N/A'} is most frequent
                     </p>
                   </div>
                 </div>
