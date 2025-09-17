@@ -571,10 +571,29 @@ export function EnhancedVoucherDetails({
     return entries;
   };
 
+  // Map currency symbols to ISO codes
+  const getCurrencyCode = (currency: string): string => {
+    const currencyMap: { [key: string]: string } = {
+      '₹': 'INR',      // Indian Rupee
+      '$': 'USD',      // US Dollar
+      '€': 'EUR',      // Euro
+      '£': 'GBP',      // British Pound
+      '¥': 'JPY',      // Japanese Yen
+      'INR': 'INR',    // Already ISO code
+      'USD': 'USD',    // Already ISO code
+      'EUR': 'EUR',    // Already ISO code
+      'GBP': 'GBP',    // Already ISO code
+      'JPY': 'JPY'     // Already ISO code
+    };
+    
+    return currencyMap[currency] || 'INR'; // Default to INR if unknown
+  };
+
   const formatCurrency = (amount: number, currency: string = 'INR') => {
+    const currencyCode = getCurrencyCode(currency);
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: currency,
+      currency: currencyCode,
       minimumFractionDigits: 2
     }).format(amount);
   };
