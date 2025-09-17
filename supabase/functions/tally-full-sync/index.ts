@@ -32,7 +32,9 @@ const TABLE_MAPPINGS: TableMapping[] = [
   { apiTable: 'employees', supabaseTable: 'mst_employee', endpoint: '/masters/employees', keyField: 'guid' },
   { apiTable: 'uoms', supabaseTable: 'mst_uom', endpoint: '/masters/uoms', keyField: 'guid' },
   { apiTable: 'vouchers', supabaseTable: 'tally_trn_voucher', endpoint: '/vouchers', keyField: 'guid' },
-  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' }
+  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' },
+  { apiTable: 'inventory', supabaseTable: 'trn_inventory', endpoint: '/inventory', keyField: 'guid' },
+  { apiTable: 'batch', supabaseTable: 'trn_batch', endpoint: '/batch', keyField: 'guid' }
 ];
 
 async function validateUUID(uuid: string): Promise<boolean> {
