@@ -103,6 +103,10 @@ async function queryRailwayAPI(
 
     console.log(`[Railway API] ${table}: Got ${records.length} records`);
     return records;
+  } catch (error) {
+    console.error(`[Railway API] Error fetching ${table} from ${url}:`, error);
+    throw error;
+  }
 }
 
 async function bulkSyncToSupabase(
