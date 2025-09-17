@@ -740,25 +740,25 @@ export function TallySyncPageEnhanced({
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-blue-600">
-                      {syncResults.totalVouchers}
+                      {syncResults?.totalVouchers ?? syncResults?.totalRecords ?? 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Total Vouchers</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-green-600">
-                      {syncResults.storedVouchers}
+                      {syncResults?.storedVouchers ?? syncResults?.recordsInserted ?? 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Successfully Stored</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-2xl font-bold text-red-600">
-                      {syncResults.errorCount}
+                      {syncResults?.errorCount ?? syncResults?.errors ?? 0}
                     </div>
                     <div className="text-sm text-muted-foreground">Errors</div>
                   </div>
                   <div className="text-center p-4 border rounded-lg">
                     <div className="text-lg font-bold text-purple-600">
-                      {syncResults.method}
+                      {syncResults?.method ?? 'Railway API'}
                     </div>
                     <div className="text-sm text-muted-foreground">Sync Method</div>
                   </div>
@@ -989,8 +989,8 @@ export function TallySyncPageEnhanced({
                       <span className="font-semibold">Data Quality</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Sync completed with {syncResults.errorCount === 0 ? 'no errors' : `${syncResults.errorCount} errors`}. 
-                      Data integrity is {syncResults.errorCount === 0 ? 'excellent' : 'good'}.
+                      Sync completed with {(syncResults?.errorCount ?? syncResults?.errors ?? 0) === 0 ? 'no errors' : `${syncResults?.errorCount ?? syncResults?.errors ?? 0} errors`}. 
+                      Data integrity is {(syncResults?.errorCount ?? syncResults?.errors ?? 0) === 0 ? 'excellent' : 'good'}.
                     </p>
                   </div>
                   
@@ -1000,7 +1000,7 @@ export function TallySyncPageEnhanced({
                       <span className="font-semibold">Relationship Mapping</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Complete relationship mapping available across all {syncResults.totalVouchers} vouchers.
+                      Complete relationship mapping available across all {syncResults?.totalVouchers ?? syncResults?.totalRecords ?? 0} vouchers.
                       Explore entity connections for business insights.
                     </p>
                   </div>
@@ -1073,21 +1073,21 @@ export function TallySyncPageEnhanced({
           <CardContent>
             <ScrollArea className="h-48">
               <div className="space-y-2">
-                {syncHistory.map((result, index) => (
+                {syncHistory.filter(result => result !== null && result !== undefined).map((result, index) => (
                   <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <div>
-                        <div className="font-semibold">{result.totalVouchers} vouchers</div>
+                        <div className="font-semibold">{result?.totalVouchers ?? result?.totalRecords ?? 0} vouchers</div>
                         <div className="text-sm text-muted-foreground">
-                          {result.dateRange.fromDate} to {result.dateRange.toDate}
+                          {result?.dateRange?.fromDate ?? 'N/A'} to {result?.dateRange?.toDate ?? 'N/A'}
                         </div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-semibold">{result.method}</div>
+                      <div className="text-sm font-semibold">{result?.method ?? 'Railway API'}</div>
                       <div className="text-xs text-muted-foreground">
-                        {result.errorCount} errors
+                        {result?.errorCount ?? result?.errors ?? 0} errors
                       </div>
                     </div>
                   </div>
