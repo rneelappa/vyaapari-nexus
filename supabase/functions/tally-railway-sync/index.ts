@@ -227,7 +227,7 @@ async function bulkSyncToSupabase(
   divisionId: string,
   keyField: string = 'guid',
   columnWhitelist?: string[]
-): Promise<{ inserted: number; updated: number; errors: number }> {
+): Promise<{ inserted: number; updated: number; errors: number; errorMessage?: string }> {
   if (!records || records.length === 0) {
     return { inserted: 0, updated: 0, errors: 0 };
   }
@@ -269,7 +269,8 @@ async function bulkSyncToSupabase(
 
     if (error) {
       console.error(`[Bulk Sync] Error syncing to ${tableName}:`, error);
-      return { inserted: 0, updated: 0, errors: records.length };
+      const errorMessage = `${error.code}: ${error.message}${error.hint ? ` (Hint: ${error.hint})` : ''}`;
+      return { inserted: 0, updated: 0, errors: records.length, errorMessage };
     }
 
     // For upsert, we assume all records were processed successfully
@@ -277,7 +278,8 @@ async function bulkSyncToSupabase(
     
   } catch (error) {
     console.error(`[Bulk Sync] Exception syncing to ${tableName}:`, error);
-    return { inserted: 0, updated: 0, errors: records.length };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return { inserted: 0, updated: 0, errors: records.length, errorMessage };
   }
 }
 
@@ -401,7 +403,8 @@ async function performRailwaySync(
           records_inserted: syncResult.inserted,
           records_updated: syncResult.updated,
           errors: syncResult.errors,
-          status: syncResult.errors > 0 ? 'failed' : 'success'
+          status: syncResult.errors > 0 ? 'failed' : 'success',
+          ...(syncResult.errorMessage && { error: syncResult.errorMessage })
         };
 
         results.push(tableResult);

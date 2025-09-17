@@ -275,7 +275,8 @@ export function TallySyncPageEnhanced({
         // Log detailed results for each table
         railwaySyncResult.results.forEach(result => {
           if (result.status === 'failed') {
-            addDebugLog('error', `${result.table} (${result.api_table}): ${result.error}`, result);
+            const errorDetails = result.error || 'Unknown error occurred';
+            addDebugLog('error', `${result.table} (${result.api_table}): ${errorDetails}`, result);
           } else {
             addDebugLog('info', `${result.table} (${result.api_table}): ${result.records_fetched} fetched, ${result.records_inserted} inserted, ${result.errors} errors`, result);
           }
