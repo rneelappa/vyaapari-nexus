@@ -33,6 +33,7 @@ import { useParams } from 'react-router-dom';
 import { format, subDays } from 'date-fns';
 import { tallyApi, type ApiResponse } from '@/services/tallyApiService';
 import { useFullTallySync } from '@/hooks/useFullTallySync';
+import { useRailwayTallySync } from '@/hooks/useRailwayTallySync';
 import { useDatabaseDiagnosis } from '@/hooks/useDatabaseDiagnosis';
 
 interface SyncProgress {
@@ -48,21 +49,28 @@ interface SyncProgress {
 }
 
 interface SyncResults {
-  totalVouchers: number;
-  storedVouchers: number;
-  errorCount: number;
-  dateRange: {
+  lastSyncTime?: string;
+  totalRecords: number;
+  recordsInserted: number;
+  recordsUpdated: number;
+  errors: number;
+  duration: number;
+  byTable: Record<string, any>;
+  totalVouchers?: number;
+  storedVouchers?: number;
+  errorCount?: number;
+  dateRange?: {
     fromDate: string;
     toDate: string;
   };
-  method: string;
-  entityCounts: {
+  method?: string;
+  entityCounts?: {
     ledgers: number;
     groups: number;
     stockItems: number;
     voucherTypes: number;
   };
-  businessInsights: {
+  businessInsights?: {
     peakMonth: string;
     totalValue: number;
     averageVoucherValue: number;
@@ -110,6 +118,7 @@ export function TallySyncPageEnhanced({
   const [debugLogs, setDebugLogs] = useState<Array<{timestamp: string, level: string, message: string}>>([]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isFullDatabaseSync, setIsFullDatabaseSync] = useState(false);
+  const [useRailwayApi, setUseRailwayApi] = useState(true);
   const { toast } = useToast();
   
   // New hooks for enhanced functionality
@@ -121,6 +130,15 @@ export function TallySyncPageEnhanced({
     checkApiHealth,
     getApiMetadata
   } = useFullTallySync();
+  
+  const { 
+    isProcessing: isRailwayProcessing, 
+    syncProgress: railwaySyncProgress,
+    lastSyncResult: lastRailwaySyncResult,
+    performRailwaySync,
+    checkRailwayApiHealth,
+    getRailwayApiMetadata
+  } = useRailwayTallySync();
   
   const {
     diagnosisData,
@@ -227,8 +245,6 @@ export function TallySyncPageEnhanced({
         progress: 30
       }));
 
-      addDebugLog('info', 'Starting full sync with Supabase function...');
-      
       // Use table filter based on sync type selection
       const tableFilter = isFullDatabaseSync ? undefined : [
         'mst_group',
@@ -240,34 +256,82 @@ export function TallySyncPageEnhanced({
         'trn_accounting'
       ];
       
-      const invokePayload = {
-        companyId,
-        divisionId,
-        action: 'full_sync',
-        tables: tableFilter,
-      };
-      addDebugLog('info', `Supabase invoke payload (${isFullDatabaseSync ? 'Full Database' : 'Selective'} sync):`, invokePayload);
+      if (useRailwayApi) {
+        addDebugLog('info', 'Starting Railway API sync...');
+        addDebugLog('info', `Railway sync payload (${isFullDatabaseSync ? 'Full Database' : 'Selective'} sync):`, { companyId, divisionId, tables: tableFilter });
 
-      const fullSyncResult = await performFullSync(companyId, divisionId, tableFilter);
-      addDebugLog('success', 'Full Sync completed:', {
-        jobId: fullSyncResult.jobId,
-        totals: {
+        const railwaySyncResult = await performRailwaySync(companyId, divisionId, tableFilter);
+        addDebugLog('success', 'Railway API Sync completed:', {
+          jobId: railwaySyncResult.jobId,
+          totals: {
+            records: railwaySyncResult.totalRecords,
+            inserted: railwaySyncResult.totalInserted,
+            updated: railwaySyncResult.totalUpdated,
+            errors: railwaySyncResult.totalErrors
+          },
+          results: railwaySyncResult.results
+        });
+
+        // Log detailed results for each table
+        railwaySyncResult.results.forEach(result => {
+          if (result.status === 'failed') {
+            addDebugLog('error', `${result.table} (${result.api_table}): ${result.error}`, result);
+          } else {
+            addDebugLog('info', `${result.table} (${result.api_table}): ${result.records_fetched} fetched, ${result.records_inserted} inserted, ${result.errors} errors`, result);
+          }
+        });
+
+        setSyncResults({
+          lastSyncTime: new Date().toISOString(),
+          totalRecords: railwaySyncResult.totalRecords,
+          recordsInserted: railwaySyncResult.totalInserted,
+          recordsUpdated: railwaySyncResult.totalUpdated,
+          errors: railwaySyncResult.totalErrors,
+          duration: railwaySyncResult.duration,
+          byTable: railwaySyncResult.results.reduce((acc: any, result) => {
+            acc[result.table] = {
+              fetched: result.records_fetched,
+              inserted: result.records_inserted,
+              updated: result.records_updated,
+              errors: result.errors
+            };
+            return acc;
+          }, {})
+        });
+      } else {
+        addDebugLog('info', 'Starting full sync with Supabase function...');
+        addDebugLog('info', `Supabase invoke payload (${isFullDatabaseSync ? 'Full Database' : 'Selective'} sync):`, { companyId, divisionId, tables: tableFilter });
+
+        const fullSyncResult = await performFullSync(companyId, divisionId, tableFilter);
+        addDebugLog('success', 'Full Sync completed:', {
+          jobId: fullSyncResult.jobId,
+          totals: {
+            records: fullSyncResult.totalRecords,
+            inserted: fullSyncResult.totalInserted,
+            updated: fullSyncResult.totalUpdated,
+            errors: fullSyncResult.totalErrors
+          }
+        });
+
+        setSyncResults({
+          lastSyncTime: new Date().toISOString(),
           totalRecords: fullSyncResult.totalRecords,
-          totalInserted: fullSyncResult.totalInserted,
-          totalUpdated: fullSyncResult.totalUpdated,
-          totalErrors: fullSyncResult.totalErrors,
-        },
-        tablesProcessedCount: Object.keys(fullSyncResult.tablesProcessed || {}).length,
-      });
+          recordsInserted: fullSyncResult.totalInserted,
+          recordsUpdated: fullSyncResult.totalUpdated,
+          errors: fullSyncResult.totalErrors,
+          duration: 0,
+          byTable: {}
+        });
 
-      // Treat the call as success if it returned without throwing; surface any reported error
-      if (fullSyncResult.error) {
-        addDebugLog('error', 'Full sync reported error:', fullSyncResult.error);
-        throw new Error(fullSyncResult.error || 'Full sync failed');
-      }
-
-      if (!fullSyncResult.tablesProcessed || Object.keys(fullSyncResult.tablesProcessed).length === 0) {
-        addDebugLog('warn', 'No tables were processed by the sync. This may indicate a table filter mismatch or empty source data.');
+        addDebugLog('success', 'Full Sync completed:', {
+          jobId: fullSyncResult.jobId,
+          totals: {
+            totalRecords: fullSyncResult.totalRecords,
+            totalInserted: fullSyncResult.totalInserted,
+            totalUpdated: fullSyncResult.totalUpdated,
+            totalErrors: fullSyncResult.totalErrors,
+          }
+        });
       }
 
       // Step 4: Generate comprehensive insights
@@ -277,46 +341,7 @@ export function TallySyncPageEnhanced({
         progress: 80
       }));
 
-      // Calculate totals from sync results using the correct FullSyncResult structure
-      const totalSynced = fullSyncResult.totalInserted + fullSyncResult.totalUpdated;
-      const totalErrors = fullSyncResult.totalErrors;
-      const tableResults = Object.values(fullSyncResult.tablesProcessed);
-
-      addDebugLog('info', 'Generating insights from sync results...', {
-        totalSynced,
-        totalErrors,
-        totalRecords: fullSyncResult.totalRecords,
-        tablesCount: Object.keys(fullSyncResult.tablesProcessed).length
-      });
-
-      const entityCounts = {
-        ledgers: fullSyncResult.tablesProcessed['mst_ledger']?.inserted || 0,
-        groups: fullSyncResult.tablesProcessed['mst_group']?.inserted || 0,
-        stockItems: fullSyncResult.tablesProcessed['mst_stock_item']?.inserted || 0,
-        voucherTypes: fullSyncResult.tablesProcessed['mst_vouchertype']?.inserted || 0
-      };
-
-      const businessInsights = {
-        peakMonth: format(dateRange.from, 'MMMM yyyy'),
-        totalValue: totalSynced * 1000, // Estimated value
-        averageVoucherValue: totalSynced > 0 ? (totalSynced * 1000) / totalSynced : 0,
-        topVoucherType: 'Sales'
-      };
-
-      const results: SyncResults = {
-        totalVouchers: fullSyncResult.tablesProcessed['tally_trn_voucher']?.inserted || 0,
-        storedVouchers: fullSyncResult.tablesProcessed['tally_trn_voucher']?.inserted || 0,
-        errorCount: totalErrors,
-        dateRange: {
-          fromDate: format(dateRange.from, 'yyyyMMdd'),
-          toDate: format(dateRange.to, 'yyyyMMdd')
-        },
-        method: 'Supabase Full Sync',
-        entityCounts,
-        businessInsights
-      };
-
-      addDebugLog('success', 'Sync completed successfully:', results);
+      addDebugLog('success', 'Enhanced sync completed successfully!');
 
       // Update progress to complete
       setSyncProgress(prev => ({
@@ -324,21 +349,17 @@ export function TallySyncPageEnhanced({
         status: 'completed',
         currentStep: 'Enhanced sync completed successfully!',
         progress: 100,
-        endTime: new Date(),
-        totalVouchers: results.totalVouchers,
-        processedVouchers: results.storedVouchers
+        endTime: new Date()
       }));
 
-      setSyncResults(results);
-
       // Save to sync history
-      const newHistory = [results, ...syncHistory.slice(0, 9)];
+      const newHistory = [syncResults, ...syncHistory.slice(0, 9)];
       setSyncHistory(newHistory);
       localStorage.setItem(`sync-history-${companyId}-${divisionId}`, JSON.stringify(newHistory));
 
       toast({
         title: "Enhanced Sync Complete",
-        description: `Successfully synced ${results.totalVouchers} vouchers via Supabase with ${totalErrors} errors`,
+        description: `Successfully synced ${syncResults.totalRecords} records`,
       });
 
     } catch (error) {
@@ -457,6 +478,33 @@ export function TallySyncPageEnhanced({
                 <option value={15}>15 Days</option>
                 <option value={30}>30 Days</option>
               </select>
+            </div>
+
+            {/* API Source */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">API Source</label>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="apiSource"
+                    checked={useRailwayApi}
+                    onChange={() => setUseRailwayApi(true)}
+                    className="form-radio"
+                  />
+                  <span className="text-sm">Railway API (Recommended)</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="apiSource"
+                    checked={!useRailwayApi}
+                    onChange={() => setUseRailwayApi(false)}
+                    className="form-radio"
+                  />
+                  <span className="text-sm">Supabase API</span>
+                </label>
+              </div>
             </div>
 
             {/* Sync Type */}

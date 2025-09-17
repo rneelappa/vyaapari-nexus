@@ -64,3 +64,6 @@ verify_jwt = false
 
 [functions.tally-full-sync]
 verify_jwt = true
+
+[functions.tally-railway-sync]
+verify_jwt = true
