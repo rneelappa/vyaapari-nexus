@@ -109,6 +109,7 @@ export function TallySyncPageEnhanced({
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [debugLogs, setDebugLogs] = useState<Array<{timestamp: string, level: string, message: string}>>([]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [isFullDatabaseSync, setIsFullDatabaseSync] = useState(false);
   const { toast } = useToast();
   
   // New hooks for enhanced functionality
@@ -228,16 +229,26 @@ export function TallySyncPageEnhanced({
 
       addDebugLog('info', 'Starting full sync with Supabase function...');
       
-      // Send no explicit table filter so the Edge Function uses its default mapping (avoids mismatches)
+      // Use table filter based on sync type selection
+      const tableFilter = isFullDatabaseSync ? undefined : [
+        'mst_group',
+        'mst_ledger', 
+        'mst_stock_item',
+        'mst_godown',
+        'mst_vouchertype',
+        'tally_trn_voucher',
+        'trn_accounting'
+      ];
+      
       const invokePayload = {
         companyId,
         divisionId,
         action: 'full_sync',
-        tables: undefined as string[] | undefined,
+        tables: tableFilter,
       };
-      addDebugLog('info', 'Supabase invoke payload:', invokePayload);
+      addDebugLog('info', `Supabase invoke payload (${isFullDatabaseSync ? 'Full Database' : 'Selective'} sync):`, invokePayload);
 
-      const fullSyncResult = await performFullSync(companyId, divisionId, undefined);
+      const fullSyncResult = await performFullSync(companyId, divisionId, tableFilter);
       addDebugLog('success', 'Full Sync completed:', {
         jobId: fullSyncResult.jobId,
         totals: {
@@ -448,16 +459,39 @@ export function TallySyncPageEnhanced({
               </select>
             </div>
 
-            {/* Advanced Options */}
+            {/* Sync Type */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Options</label>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-              >
-                Advanced Options
-              </Button>
+              <label className="text-sm font-medium mb-2 block">Sync Type</label>
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="syncType"
+                    checked={!isFullDatabaseSync}
+                    onChange={() => setIsFullDatabaseSync(false)}
+                    className="form-radio"
+                  />
+                  <span className="text-sm">Selective Sync</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="syncType"
+                    checked={isFullDatabaseSync}
+                    onChange={() => setIsFullDatabaseSync(true)}
+                    className="form-radio"
+                  />
+                  <span className="text-sm">Full Database Sync</span>
+                </label>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="w-full mt-2"
+                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                >
+                  Advanced Options
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
