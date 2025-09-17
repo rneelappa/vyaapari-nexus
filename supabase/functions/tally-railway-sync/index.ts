@@ -357,6 +357,27 @@ async function bulkSyncToSupabase(
 
     console.log(`[Bulk Sync] Sample prepared record for ${tableName}:`, JSON.stringify(filteredRecords[0], null, 2));
 
+    // Check existing records to determine inserts vs updates
+    let existingCount = 0;
+    let newCount = 0;
+    
+    if (filteredRecords.length > 0) {
+      const guids = filteredRecords.map(r => r[keyField]).filter(Boolean);
+      if (guids.length > 0) {
+        const { count: existingRecords } = await supabase
+          .from(tableName)
+          .select('*', { count: 'exact', head: true })
+          .in(keyField, guids)
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
+        
+        existingCount = existingRecords || 0;
+        newCount = filteredRecords.length - existingCount;
+        
+        console.log(`[Bulk Sync] ${tableName}: ${existingCount} existing, ${newCount} new records to process`);
+      }
+    }
+
     // Use composite unique constraint for conflict resolution
     const { data, error } = await supabase
       .from(tableName)
@@ -371,8 +392,12 @@ async function bulkSyncToSupabase(
       return { inserted: 0, updated: 0, errors: records.length, errorMessage };
     }
 
-    // For upsert, we assume all records were processed successfully
-    return { inserted: records.length, updated: 0, errors: 0 };
+    // Return accurate counts based on existing vs new records
+    return { 
+      inserted: newCount, 
+      updated: existingCount, 
+      errors: 0 
+    };
     
   } catch (error) {
     console.error(`[Bulk Sync] Exception syncing to ${tableName}:`, error);
