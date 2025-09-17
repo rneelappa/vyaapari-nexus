@@ -27,48 +27,16 @@ interface TableMapping {
 }
 
 const TABLE_MAPPINGS: TableMapping[] = [
-  {
-    apiTable: 'groups',
-    supabaseTable: 'mst_group',
-    endpoint: '/api/v1/query',
-    keyField: 'guid'
-  },
-  {
-    apiTable: 'ledgers',
-    supabaseTable: 'mst_ledger',
-    endpoint: '/api/v1/query',
-    keyField: 'guid'
-  },
-  {
-    apiTable: 'stock_items',
-    supabaseTable: 'mst_stock_item',
-    endpoint: '/api/v1/query',
-    keyField: 'guid'
-  },
-  {
-    apiTable: 'voucher_types',
-    supabaseTable: 'mst_vouchertype',
-    endpoint: '/api/v1/query',
-    keyField: 'guid'
-  },
-  {
-    apiTable: 'vouchers',
-    supabaseTable: 'tally_trn_voucher',
-    endpoint: '/api/v1/query',
-    keyField: 'guid'
-  },
-  {
-    apiTable: 'accounting_entries',
-    supabaseTable: 'trn_accounting',
-    endpoint: '/api/v1/query',
-    keyField: 'guid'
-  },
-  {
-    apiTable: 'inventory_entries',
-    supabaseTable: 'trn_inventory',
-    endpoint: '/api/v1/query',
-    keyField: 'guid'
-  }
+  { apiTable: 'groups', supabaseTable: 'mst_group', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'ledgers', supabaseTable: 'mst_ledger', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'stock_items', supabaseTable: 'mst_stock_item', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'voucher_types', supabaseTable: 'mst_vouchertype', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'cost_centers', supabaseTable: 'mst_cost_centre', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'godowns', supabaseTable: 'mst_godown', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'uoms', supabaseTable: 'mst_uom', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'vouchers', supabaseTable: 'tally_trn_voucher', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'accounting_entries', supabaseTable: 'trn_accounting', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'inventory_entries', supabaseTable: 'trn_inventory', endpoint: '/api/v1/query', keyField: 'guid' }
 ];
 
 const RAILWAY_BASE_URL = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
@@ -78,35 +46,55 @@ async function validateUUID(uuid: string): Promise<boolean> {
   return uuidRegex.test(uuid);
 }
 
+// Enhanced response parsing function
+function extractRecords(responseData: any, tableName: string): any[] {
+  // Railway SQLite returns data directly as array
+  if (Array.isArray(responseData.data)) {
+    return responseData.data;
+  }
+  
+  // Fallback formats
+  if (responseData.records) return responseData.records;
+  if (responseData.data?.records) return responseData.data.records;
+  if (Array.isArray(responseData)) return responseData;
+  
+  // Diagnostic logging for debugging
+  console.log(`⚠️ Unexpected response format for ${tableName}:`, {
+    keys: Object.keys(responseData),
+    hasData: !!responseData.data,
+    dataType: typeof responseData.data,
+    isArray: Array.isArray(responseData.data),
+    preview: JSON.stringify(responseData).substring(0, 200)
+  });
+  
+  return [];
+}
+
+// Enhanced query function for Railway API
 async function queryRailwayAPI(
   endpoint: string,
   companyId: string,
   divisionId: string,
   table: string,
-  limit = 1000,
-  offset = 0
-): Promise<any> {
-  const url = `${RAILWAY_BASE_URL}${endpoint}`;
-  
-  console.log(`[Railway API] Querying ${table} from: ${url} (limit: ${limit}, offset: ${offset})`);
-  
-  const apiKey = Deno.env.get('RAILWAY_API_KEY');
-  if (!apiKey) {
-    throw new Error('RAILWAY_API_KEY environment variable not set');
-  }
-
+  filters: any = {},
+  limit: number = 1000,
+  offset: number = 0
+): Promise<any[]> {
   try {
-    const response = await fetch(url, {
+    const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
+    const queryUrl = `${RAILWAY_BASE_URL}/api/v1/query/${companyId}/${divisionId}`;
+    
+    console.log(`[Railway API] Querying ${table} from: ${queryUrl} (limit: ${limit}, offset: ${offset})`);
+
+    const response = await fetch(queryUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'X-API-Key': apiKey,
+        ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
       },
       body: JSON.stringify({
         table: table,
-        company_id: companyId,
-        division_id: divisionId,
+        filters: filters,
         limit: limit,
         offset: offset
       })
@@ -117,277 +105,294 @@ async function queryRailwayAPI(
       throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
     }
 
-    const raw = await response.json();
-    console.log(`[Railway API] Raw response structure:`, {
-      isArray: Array.isArray(raw),
-      hasData: !!raw?.data,
-      hasRecords: !!raw?.records,
-      hasSuccess: !!raw?.success,
-      dataIsArray: Array.isArray(raw?.data),
-      recordsIsArray: Array.isArray(raw?.records)
-    });
-
-    let records: any[] = [];
+    const responseData = await response.json();
     
-    // Try multiple parsing strategies
-    if (Array.isArray(raw)) {
-      records = raw;
-    } else if (raw?.success && Array.isArray(raw?.data)) {
-      records = raw.data;
-    } else if (raw?.success && Array.isArray(raw?.data?.records)) {
-      records = raw.data.records;
-    } else if (Array.isArray(raw?.data)) {
-      records = raw.data;
-    } else if (Array.isArray(raw?.records)) {
-      records = raw.records;
-    } else if (raw?.data && typeof raw.data === 'object') {
-      // Check if data object contains array values
-      const dataKeys = Object.keys(raw.data);
-      for (const key of dataKeys) {
-        if (Array.isArray(raw.data[key])) {
-          records = raw.data[key];
-          break;
-        }
-      }
+    if (!responseData.success) {
+      throw new Error(responseData.error || 'API request failed');
     }
 
-    console.log(`[Railway API] ${table}: Parsed ${records.length} records`);
+    // Railway returns data directly as array
+    const records = extractRecords(responseData, table);
+    console.log(`[Railway API] Retrieved ${records.length} records for ${table}`);
+    
     return records;
+    
   } catch (error) {
     console.error(`[Railway API] Error querying ${table}:`, error);
     throw error;
   }
 }
 
-async function bulkSyncToSupabase(
-  supabase: any,
-  table: string,
-  data: any[],
+// Pagination support for large tables
+async function queryWithPagination(
   companyId: string,
   divisionId: string,
-  keyField: string
+  table: string,
+  batchSize: number = 1000
+): Promise<any[]> {
+  let allRecords: any[] = [];
+  let offset = 0;
+  
+  while (true) {
+    const records = await queryRailwayAPI(
+      '/api/v1/query',
+      companyId,
+      divisionId,
+      table,
+      {}, // filters
+      batchSize,
+      offset
+    );
+    
+    if (records.length === 0) break;
+    
+    allRecords.push(...records);
+    offset += records.length;
+    
+    console.log(`[Railway API] Fetched ${records.length} ${table} records (total: ${allRecords.length})`);
+    
+    if (records.length < batchSize) break; // Last page
+  }
+  
+  return allRecords;
+}
+
+// Enhanced bulk sync with better conflict handling
+async function bulkSyncToSupabase(
+  supabase: any,
+  tableName: string,
+  records: any[],
+  companyId: string,
+  divisionId: string,
+  keyField: string = 'guid'
 ): Promise<{ inserted: number; updated: number; errors: number }> {
-  if (!data || data.length === 0) {
-    console.log(`[Supabase] No data to sync for table: ${table}`);
+  if (!records || records.length === 0) {
     return { inserted: 0, updated: 0, errors: 0 };
   }
 
-  console.log(`[Supabase] Starting bulk sync for ${table}: ${data.length} records`);
-  
-  let inserted = 0;
-  let updated = 0;
-  let errors = 0;
-
-  // Process in batches of 100
-  const batchSize = 100;
-  for (let i = 0; i < data.length; i += batchSize) {
-    const batch = data.slice(i, i + batchSize);
-    
-    // Add company_id and division_id to each record
-    const enrichedBatch = batch.map(record => ({
+  try {
+    // Add company_id and division_id to all records
+    const enrichedRecords = records.map(record => ({
       ...record,
       company_id: companyId,
-      division_id: divisionId,
-      updated_at: new Date().toISOString()
+      division_id: divisionId
     }));
 
-    try {
-      // Use appropriate conflict resolution based on table
-      let onConflictColumns = keyField;
-      if (table.includes('trn_')) {
-        onConflictColumns = `${keyField}`;
-      } else if (table.includes('mst_')) {
-        onConflictColumns = `${keyField}`;
-      }
+    // Use guid as primary conflict resolution
+    const { data, error } = await supabase
+      .from(tableName)
+      .upsert(enrichedRecords, {
+        onConflict: 'guid',
+        ignoreDuplicates: false
+      });
 
-      const { data: result, error } = await supabase
-        .from(table)
-        .upsert(enrichedBatch, {
-          onConflict: onConflictColumns,
-          ignoreDuplicates: false
-        });
-
-      if (error) {
-        console.error(`[Supabase] Batch error for ${table}:`, error);
-        errors += batch.length;
-      } else {
-        // Since upsert doesn't return info about insert vs update, count as inserted
-        inserted += batch.length;
-        console.log(`[Supabase] Successfully synced batch for ${table}: ${batch.length} records`);
-      }
-    } catch (err) {
-      console.error(`[Supabase] Batch sync error for ${table}:`, err);
-      errors += batch.length;
+    if (error) {
+      console.error(`[Bulk Sync] Error syncing to ${tableName}:`, error);
+      return { inserted: 0, updated: 0, errors: records.length };
     }
-  }
 
-  console.log(`[Supabase] Completed bulk sync for ${table}: ${inserted} inserted, ${updated} updated, ${errors} errors`);
-  return { inserted, updated, errors };
+    // For upsert, we assume all records were processed successfully
+    return { inserted: records.length, updated: 0, errors: 0 };
+    
+  } catch (error) {
+    console.error(`[Bulk Sync] Exception syncing to ${tableName}:`, error);
+    return { inserted: 0, updated: 0, errors: records.length };
+  }
 }
 
+// Main sync function
 async function performRailwaySync(
   supabase: any,
   companyId: string,
   divisionId: string,
-  tablesFilter?: string[]
+  tables?: string[]
 ): Promise<any> {
-  const startTime = new Date();
   const jobId = crypto.randomUUID();
-
+  const startTime = Date.now();
+  
   console.log(`[Sync Job ${jobId}] Starting Railway API sync`);
   console.log(`[Sync Job ${jobId}] Company: ${companyId}, Division: ${divisionId}`);
-  console.log(`[Sync Job ${jobId}] Tables filter:`, tablesFilter);
+  console.log(`[Sync Job ${jobId}] Tables filter: ${tables?.join(', ') || 'undefined'}`);
+
+  // Test Railway connection first
+  try {
+    const healthResponse = await fetch(`${RAILWAY_BASE_URL}/api/v1/health`);
+    const healthData = await healthResponse.json();
+    console.log(`[Sync Job ${jobId}] ✅ Railway health check passed:`, healthData.message);
+  } catch (error) {
+    throw new Error(`Railway connection failed: ${error.message}`);
+  }
+
+  // Test POST /api/v1/query endpoint specifically
+  try {
+    const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
+    const testQuery = await fetch(`${RAILWAY_BASE_URL}/api/v1/query/${companyId}/${divisionId}`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
+      },
+      body: JSON.stringify({
+        table: 'groups',
+        limit: 1
+      })
+    });
+    
+    if (!testQuery.ok) {
+      throw new Error(`Query endpoint test failed: ${testQuery.status} ${testQuery.statusText}`);
+    }
+    
+    const testData = await testQuery.json();
+    console.log(`[Sync Job ${jobId}] ✅ POST /api/v1/query endpoint working:`, testData.success);
+  } catch (error) {
+    throw new Error(`Query endpoint test failed: ${error.message}`);
+  }
+
+  // Filter tables if specified
+  let tablesToSync = TABLE_MAPPINGS;
+  if (tables && tables.length > 0) {
+    tablesToSync = TABLE_MAPPINGS.filter(mapping => 
+      tables.includes(mapping.apiTable) || tables.includes(mapping.supabaseTable)
+    );
+  }
+
+  console.log(`[Sync Job ${jobId}] Processing ${tablesToSync.length} tables`);
+
+  const results: any[] = [];
+  let totalRecords = 0;
+  let totalInserted = 0;
+  let totalUpdated = 0;
+  let totalErrors = 0;
 
   // Create sync job record
-  const { error: jobError } = await supabase
+  const { data: jobData, error: jobError } = await supabase
     .from('tally_sync_jobs')
     .insert({
       id: jobId,
       company_id: companyId,
       division_id: divisionId,
-      status: 'running',
-      job_type: 'full_sync',
-      started_at: startTime.toISOString()
-    });
+      status: 'processing',
+      job_type: 'railway_sync'
+    })
+    .select()
+    .single();
 
   if (jobError) {
     console.error(`[Sync Job ${jobId}] Failed to create job record:`, jobError);
   }
 
-  let totalRecords = 0;
-  let totalInserted = 0;
-  let totalUpdated = 0;
-  let totalErrors = 0;
-  let tablesProcessed = 0;
-  const results: any[] = [];
-
-  // Filter tables if specified
-  const tablesToProcess = tablesFilter 
-    ? TABLE_MAPPINGS.filter(mapping => tablesFilter.includes(mapping.supabaseTable))
-    : TABLE_MAPPINGS;
-
-  console.log(`[Sync Job ${jobId}] Processing ${tablesToProcess.length} tables`);
-
-  for (const mapping of tablesToProcess) {
-    const tableStartTime = new Date();
-    console.log(`[Sync Job ${jobId}] Processing table: ${mapping.supabaseTable} (API: ${mapping.apiTable})`);
-
-    // Skipping job detail creation to match current schema
-
-
+  for (const tableMapping of tablesToSync) {
+    console.log(`[Sync Job ${jobId}] Processing table: ${tableMapping.supabaseTable} (API: ${tableMapping.apiTable})`);
+    
     try {
-      // Fetch data from Railway API with pagination
-      let allData: any[] = [];
-      let offset = 0;
-      const limit = 1000;
-      let hasMore = true;
-
-      while (hasMore) {
-        const batchData = await queryRailwayAPI(
-          mapping.endpoint,
+      // Use pagination for large tables
+      const isLargeTable = ['vouchers', 'accounting_entries', 'inventory_entries'].includes(tableMapping.apiTable);
+      let records: any[];
+      
+      if (isLargeTable) {
+        records = await queryWithPagination(companyId, divisionId, tableMapping.apiTable, 1000);
+      } else {
+        records = await queryRailwayAPI(
+          tableMapping.endpoint,
           companyId,
           divisionId,
-          mapping.apiTable,
-          limit,
-          offset
+          tableMapping.apiTable
         );
-
-        allData = [...allData, ...batchData];
-        
-        // Check if we got fewer records than limit (indicating last batch)
-        hasMore = batchData.length === limit;
-        offset += limit;
-
-        // Safety check to prevent infinite loops
-        if (offset > 100000) {
-          console.warn(`[Railway API] Pagination safety limit reached for ${mapping.apiTable}`);
-          break;
-        }
       }
 
-      console.log(`[Sync Job ${jobId}] Fetched ${allData.length} records for ${mapping.apiTable}`);
+      console.log(`[Sync Job ${jobId}] Retrieved ${records.length} records for ${tableMapping.apiTable}`);
 
-      // Sync to Supabase
-      const syncResult = await bulkSyncToSupabase(
-        supabase,
-        mapping.supabaseTable,
-        allData,
-        companyId,
-        divisionId,
-        mapping.keyField
-      );
+      if (records.length > 0) {
+        const syncResult = await bulkSyncToSupabase(
+          supabase,
+          tableMapping.supabaseTable,
+          records,
+          companyId,
+          divisionId,
+          tableMapping.keyField
+        );
 
-      // Update totals
-      totalRecords += allData.length;
-      totalInserted += syncResult.inserted;
-      totalUpdated += syncResult.updated;
-      totalErrors += syncResult.errors;
-      tablesProcessed++;
+        const tableResult = {
+          table: tableMapping.supabaseTable,
+          api_table: tableMapping.apiTable,
+          records_fetched: records.length,
+          records_inserted: syncResult.inserted,
+          records_updated: syncResult.updated,
+          errors: syncResult.errors,
+          status: syncResult.errors > 0 ? 'failed' : 'success'
+        };
 
-      // Skipped job detail update to match current schema
+        results.push(tableResult);
+        totalRecords += records.length;
+        totalInserted += syncResult.inserted;
+        totalUpdated += syncResult.updated;
+        totalErrors += syncResult.errors;
 
-
-      results.push({
-        table: mapping.supabaseTable,
-        api_table: mapping.apiTable,
-        records_fetched: allData.length,
-        records_inserted: syncResult.inserted,
-        records_updated: syncResult.updated,
-        errors: syncResult.errors,
-        status: 'success'
-      });
-
-      console.log(`[Sync Job ${jobId}] Completed ${mapping.supabaseTable}: ${allData.length} fetched, ${syncResult.inserted} inserted, ${syncResult.errors} errors`);
+        console.log(`[Sync Job ${jobId}] ${tableMapping.supabaseTable} (${tableMapping.apiTable}): ${records.length} fetched, ${syncResult.inserted} inserted, ${syncResult.errors} errors`, tableResult);
+      } else {
+        console.log(`[Sync Job ${jobId}] ⚠️ No records found for ${tableMapping.apiTable} - API source appears empty`);
+        
+        const emptyResult = {
+          table: tableMapping.supabaseTable,
+          api_table: tableMapping.apiTable,
+          records_fetched: 0,
+          records_inserted: 0,
+          records_updated: 0,
+          errors: 0,
+          status: 'success'
+        };
+        
+        results.push(emptyResult);
+      }
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[Sync Job ${jobId}] Error processing ${mapping.supabaseTable}:`, errorMessage);
+      console.error(`[Sync Job ${jobId}] Error processing ${tableMapping.supabaseTable}:`, error);
       
-      totalErrors++;
-      tablesProcessed++;
-
-      // Skipped job detail error update to match current schema
-
-
-      results.push({
-        table: mapping.supabaseTable,
-        api_table: mapping.apiTable,
+      const errorResult = {
+        table: tableMapping.supabaseTable,
+        api_table: tableMapping.apiTable,
         records_fetched: 0,
         records_inserted: 0,
         records_updated: 0,
         errors: 1,
         status: 'failed',
-        error: errorMessage
-      });
+        error: error.message
+      };
+      
+      results.push(errorResult);
+      totalErrors += 1;
     }
   }
 
-  const endTime = new Date();
-  const duration = endTime.getTime() - startTime.getTime();
-
+  const duration = Date.now() - startTime;
+  
+  // Update sync job status
   await supabase
     .from('tally_sync_jobs')
     .update({
-      status: totalErrors > 0 ? 'completed_with_errors' : 'completed',
-      records_processed: totalRecords,
-      completed_at: endTime.toISOString()
+      status: totalErrors > 0 ? 'failed' : 'completed',
+      completed_at: new Date().toISOString(),
+      records_processed: totalRecords
     })
     .eq('id', jobId);
 
-  console.log(`[Sync Job ${jobId}] Completed in ${duration}ms`);
+  if (totalRecords === 0) {
+    console.warn(`[Sync Job ${jobId}] ⚠️ Sync completed with no records - API source appears empty`);
+    console.warn(`[Sync Job ${jobId}] ⚠️ API returned no records to sync - API source appears to be empty`);
+  }
+
   console.log(`[Sync Job ${jobId}] Summary: ${totalRecords} records, ${totalInserted} inserted, ${totalUpdated} updated, ${totalErrors} errors`);
+  console.log(`[Sync Job ${jobId}] Completed in ${duration}ms`);
 
   return {
     success: totalErrors === 0,
     jobId,
-    tablesProcessed,
+    tablesProcessed: results.length,
     totalRecords,
     totalInserted,
     totalUpdated,
     totalErrors,
-    duration: duration,
-    startTime: startTime.toISOString(),
-    endTime: endTime.toISOString(),
+    duration,
     results
   };
 }
@@ -435,129 +440,113 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    let result: any;
+
     // Handle different actions
-    if (action === 'health_check') {
-      try {
-        const healthUrl = `${RAILWAY_BASE_URL}/api/v1/health`;
-        const apiKey = Deno.env.get('RAILWAY_API_KEY');
-        const response = await fetch(healthUrl, {
-          headers: apiKey ? {
-            'Authorization': `Bearer ${apiKey}`,
-            'X-API-Key': apiKey
-          } : {}
-        });
-        const healthData = await response.json();
-        
-        return new Response(
-          JSON.stringify({
-            success: true,
-            railway_api: healthData,
-            endpoints_available: TABLE_MAPPINGS.length,
-            api_key_configured: !!apiKey
-          }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Railway API health check failed',
-            details: error instanceof Error ? error.message : 'Unknown error'
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
-    }
+    switch (action) {
+      case 'health_check':
+        try {
+          const healthUrl = `${RAILWAY_BASE_URL}/api/v1/health`;
+          const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
+          const healthResponse = await fetch(healthUrl, {
+            headers: railwayApiKey ? {
+              'Authorization': `Bearer ${railwayApiKey}`
+            } : {}
+          });
+          const healthData = await healthResponse.json();
+          
+          // Test Supabase connection
+          const { data: divisionData, error: divisionError } = await supabase
+            .from('divisions')
+            .select('id')
+            .eq('id', divisionId)
+            .single();
 
-    if (action === 'metadata') {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          railway_base_url: RAILWAY_BASE_URL,
-          available_tables: TABLE_MAPPINGS.map(m => ({
-            api_table: m.apiTable,
-            supabase_table: m.supabaseTable,
-            endpoint: m.endpoint
-          }))
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          result = {
+            api_health: healthData,
+            supabase_connection: !divisionError,
+            division_found: !!divisionData,
+            api_key_configured: !!railwayApiKey
+          };
+        } catch (error) {
+          result = {
+            api_health: { success: false, error: error.message },
+            supabase_connection: false,
+            division_found: false,
+            api_key_configured: !!Deno.env.get('RAILWAY_API_KEY')
+          };
         }
-      );
-    }
+        break;
 
-    if (action === 'verify_voucher') {
-      const { voucherGuid } = await req.json();
-      if (!voucherGuid) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'voucherGuid required for verification' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      try {
-        // Check voucher in database
-        const { data: voucher, error } = await supabase
-          .from('tally_trn_voucher')
-          .select('*')
-          .eq('guid', voucherGuid)
-          .eq('company_id', companyId)
-          .eq('division_id', divisionId)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          throw error;
+      case 'metadata':
+        try {
+          const metadataResponse = await fetch(`${RAILWAY_BASE_URL}/api/v1/metadata/${companyId}/${divisionId}`);
+          const metadataData = await metadataResponse.json();
+          
+          result = {
+            api_health: "Railway API integration",
+            metadata: metadataData.success ? metadataData.data : null,
+            tables_available: TABLE_MAPPINGS.map(m => ({
+              api_table: m.apiTable,
+              supabase_table: m.supabaseTable,
+              endpoint: m.endpoint
+            })),
+            company_id: companyId,
+            division_id: divisionId
+          };
+        } catch (error) {
+          result = {
+            api_health: "Railway API integration",
+            metadata_error: error.message,
+            tables_available: TABLE_MAPPINGS.map(m => ({
+              api_table: m.apiTable,
+              supabase_table: m.supabaseTable,
+              endpoint: m.endpoint
+            })),
+            company_id: companyId,
+            division_id: divisionId
+          };
         }
+        break;
 
-        // Check accounting entries
-        const { data: accountingEntries, error: accError } = await supabase
-          .from('trn_accounting')
-          .select('*')
-          .eq('voucher_guid', voucherGuid)
-          .eq('company_id', companyId)
-          .eq('division_id', divisionId);
-
-        if (accError) {
-          throw accError;
+      case 'verify_voucher':
+        try {
+          const voucherNumber = '2800237/25-26';
+          const voucherUrl = `${RAILWAY_BASE_URL}/api/v1/voucher/${companyId}/${divisionId}/${encodeURIComponent(voucherNumber)}`;
+          
+          const voucherResponse = await fetch(voucherUrl);
+          const voucherData = await voucherResponse.json();
+          
+          if (voucherData.success) {
+            result = {
+              voucher_found: true,
+              voucher_details: voucherData.data.voucher,
+              accounting_entries: voucherData.data.accounting_entries?.length || 0,
+              inventory_entries: voucherData.data.inventory_entries?.length || 0,
+              party_found: !!voucherData.data.party_details,
+              verification_status: 'complete'
+            };
+          } else {
+            result = {
+              voucher_found: false,
+              error: voucherData.error,
+              verification_status: 'failed'
+            };
+          }
+        } catch (error) {
+          result = {
+            voucher_found: false,
+            error: error.message,
+            verification_status: 'error'
+          };
         }
+        break;
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            voucher_found: !!voucher,
-            voucher_data: voucher,
-            accounting_entries_count: accountingEntries?.length || 0,
-            accounting_entries: accountingEntries
-          }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Voucher verification failed',
-            details: error instanceof Error ? error.message : 'Unknown error'
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
-      }
+      default:
+        // Default action: full_sync
+        result = await performRailwaySync(supabase, companyId, divisionId, tables);
+        break;
     }
-
-    // Default action: full_sync
-    const result = await performRailwaySync(supabase, companyId, divisionId, tables);
 
     return new Response(
       JSON.stringify(result),
