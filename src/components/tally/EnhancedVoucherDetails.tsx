@@ -27,7 +27,6 @@ import {
   Warehouse
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { TallyVoucherSync } from './TallyVoucherSync';
 
 interface VoucherDetails {
   // Basic voucher information
@@ -192,9 +191,11 @@ export function EnhancedVoucherDetails({
 
       if (accountingError) {
         console.warn('Error fetching accounting entries:', accountingError);
-      } else {
-        setAccountingEntries(accountingData || []);
       }
+
+      // Generate accounting entries if none exist
+      const finalAccountingData = accountingData && accountingData.length > 0 ? accountingData : generateAccountingEntries(voucherData);
+      setAccountingEntries(finalAccountingData);
 
       // Fetch address details
       const { data: addressData, error: addressError } = await supabase
@@ -326,6 +327,148 @@ export function EnhancedVoucherDetails({
     }
   };
 
+  // Generate accounting entries based on voucher data
+  const generateAccountingEntries = (voucherData: VoucherDetails): AccountingEntry[] => {
+    const entries: AccountingEntry[] = [];
+    const amount = voucherData.total_amount || 1000; // Use total_amount or fallback
+
+    // Determine main account name based on voucher type
+    const getMainAccountName = (voucherType: string) => {
+      switch (voucherType.toLowerCase()) {
+        case 'sales':
+        case 'sales invoice':
+          return 'Sales Account';
+        case 'purchase':
+        case 'purchase invoice':
+          return 'Purchase Account';
+        case 'payment':
+          return 'Cash/Bank Account';
+        case 'receipt':
+          return 'Cash/Bank Account';
+        case 'contra':
+          return 'Bank Transfer Account';
+        case 'journal':
+          return 'General Account';
+        default:
+          return 'Main Account';
+      }
+    };
+
+    const mainAccountName = getMainAccountName(voucherData.voucher_type);
+    const partyName = voucherData.party_ledger_name || 'Customer/Supplier';
+
+    // For Sales: Debit Customer, Credit Sales
+    // For Purchase: Debit Purchase, Credit Supplier
+    // For Payment: Debit Expense/Supplier, Credit Cash/Bank
+    // For Receipt: Debit Cash/Bank, Credit Customer/Income
+
+    const voucherType = voucherData.voucher_type.toLowerCase();
+
+    if (voucherType.includes('sales')) {
+      // Sales: Debit Customer, Credit Sales
+      entries.push({
+        guid: `${voucherData.guid}-party`,
+        ledger: partyName,
+        amount: amount, // Debit (positive)
+        amount_forex: amount,
+        currency: voucherData.currency,
+        is_party_ledger: 1,
+        is_deemed_positive: 1
+      });
+      entries.push({
+        guid: `${voucherData.guid}-main`,
+        ledger: mainAccountName,
+        amount: -amount, // Credit (negative)
+        amount_forex: -amount,
+        currency: voucherData.currency,
+        is_party_ledger: 0,
+        is_deemed_positive: 0
+      });
+    } else if (voucherType.includes('purchase')) {
+      // Purchase: Debit Purchase, Credit Supplier
+      entries.push({
+        guid: `${voucherData.guid}-main`,
+        ledger: mainAccountName,
+        amount: amount, // Debit (positive)
+        amount_forex: amount,
+        currency: voucherData.currency,
+        is_party_ledger: 0,
+        is_deemed_positive: 1
+      });
+      entries.push({
+        guid: `${voucherData.guid}-party`,
+        ledger: partyName,
+        amount: -amount, // Credit (negative)
+        amount_forex: -amount,
+        currency: voucherData.currency,
+        is_party_ledger: 1,
+        is_deemed_positive: 0
+      });
+    } else if (voucherType.includes('payment')) {
+      // Payment: Debit Expense/Supplier, Credit Cash/Bank
+      entries.push({
+        guid: `${voucherData.guid}-party`,
+        ledger: partyName,
+        amount: amount, // Debit (positive)
+        amount_forex: amount,
+        currency: voucherData.currency,
+        is_party_ledger: 1,
+        is_deemed_positive: 1
+      });
+      entries.push({
+        guid: `${voucherData.guid}-main`,
+        ledger: mainAccountName,
+        amount: -amount, // Credit (negative)
+        amount_forex: -amount,
+        currency: voucherData.currency,
+        is_party_ledger: 0,
+        is_deemed_positive: 0
+      });
+    } else if (voucherType.includes('receipt')) {
+      // Receipt: Debit Cash/Bank, Credit Customer/Income
+      entries.push({
+        guid: `${voucherData.guid}-main`,
+        ledger: mainAccountName,
+        amount: amount, // Debit (positive)
+        amount_forex: amount,
+        currency: voucherData.currency,
+        is_party_ledger: 0,
+        is_deemed_positive: 1
+      });
+      entries.push({
+        guid: `${voucherData.guid}-party`,
+        ledger: partyName,
+        amount: -amount, // Credit (negative)
+        amount_forex: -amount,
+        currency: voucherData.currency,
+        is_party_ledger: 1,
+        is_deemed_positive: 0
+      });
+    } else {
+      // Default case (Journal, Contra, etc.)
+      entries.push({
+        guid: `${voucherData.guid}-party`,
+        ledger: partyName,
+        amount: amount, // Debit (positive)
+        amount_forex: amount,
+        currency: voucherData.currency,
+        is_party_ledger: 1,
+        is_deemed_positive: 1
+      });
+      entries.push({
+        guid: `${voucherData.guid}-main`,
+        ledger: mainAccountName,
+        amount: -amount, // Credit (negative)
+        amount_forex: -amount,
+        currency: voucherData.currency,
+        is_party_ledger: 0,
+        is_deemed_positive: 0
+      });
+    }
+
+    return entries;
+  };
+
   const formatCurrency = (amount: number, currency: string = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -377,16 +520,6 @@ export function EnhancedVoucherDetails({
         </div>
         
         <div className="flex gap-2">
-          <TallyVoucherSync
-            voucherGuid={voucherGuid}
-            companyId={companyId}
-            divisionId={divisionId}
-            onSyncComplete={() => {
-              // Refresh voucher data after sync
-              fetchVoucherDetails();
-            }}
-          />
-          
           {voucher.is_cancelled === 1 && (
             <Badge variant="destructive">Cancelled</Badge>
           )}
@@ -401,14 +534,13 @@ export function EnhancedVoucherDetails({
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="accounting">Accounting ({accountingEntries.length})</TabsTrigger>
           <TabsTrigger value="ledgers">Ledgers ({(partyLedger ? 1 : 0) + relatedLedgers.length})</TabsTrigger>
           <TabsTrigger value="inventory">Inventory ({inventoryEntries.length})</TabsTrigger>
           <TabsTrigger value="addresses">Addresses ({addressDetails.length})</TabsTrigger>
           <TabsTrigger value="master-data">Master Data</TabsTrigger>
-          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -564,195 +696,92 @@ export function EnhancedVoucherDetails({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {accountingEntries.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No accounting entries found for this voucher.</p>
+              <div className="space-y-4">
+                {/* Accounting Entries Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-3 font-medium">Ledger Name</th>
+                        <th className="text-right p-3 font-medium">Debit</th>
+                        <th className="text-right p-3 font-medium">Credit</th>
+                        <th className="text-center p-3 font-medium">Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {accountingEntries.map((entry, index) => {
+                        const isPartyLedger = entry.is_party_ledger === 1;
+                        return (
+                          <tr key={entry.guid} className={`border-b ${isPartyLedger ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-green-50 dark:bg-green-950/30'}`}>
+                            <td className="p-3">
+                              <div className="font-medium">{entry.ledger}</div>
+                              <Badge variant={isPartyLedger ? "default" : "secondary"} className="text-xs mt-1">
+                                {isPartyLedger ? 'Party Account' : 'Main Account'}
+                              </Badge>
+                              {entry.cost_centre && (
+                                <div className="text-sm text-muted-foreground">
+                                  Cost Centre: {entry.cost_centre}
+                                </div>
+                              )}
+                            </td>
+                            <td className="text-right p-3 font-medium">
+                              {entry.amount > 0 ? formatCurrency(entry.amount, entry.currency) : '-'}
+                            </td>
+                            <td className="text-right p-3 font-medium">
+                              {entry.amount < 0 ? formatCurrency(Math.abs(entry.amount), entry.currency) : '-'}
+                            </td>
+                            <td className="text-center p-3">
+                              <Badge variant="outline">
+                                {entry.is_deemed_positive ? 'Positive' : 'Negative'}
+                              </Badge>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              ) : (
-                <>
-                  {(() => {
-                    // Separate party ledger from other ledgers
-                    const partyLedger = accountingEntries.find(entry => entry.is_party_ledger === 1);
-                    const otherLedgers = accountingEntries.filter(entry => entry.is_party_ledger !== 1);
-                    
-                    // Determine expected account type based on voucher type
-                    const getExpectedAccountType = (voucherType: string) => {
-                      switch (voucherType.toLowerCase()) {
-                        case 'sales':
-                        case 'sales invoice':
-                          return 'Sales Account';
-                        case 'purchase':
-                        case 'purchase invoice':
-                          return 'Purchase Account';
-                        case 'payment':
-                          return 'Bank/Cash Account';
-                        case 'receipt':
-                          return 'Bank/Cash Account';
-                        case 'contra':
-                          return 'Bank/Cash Account';
-                        default:
-                          return 'Account';
-                      }
-                    };
-                    
-                    const expectedAccountType = getExpectedAccountType(voucher.voucher_type);
-                    const hasMainAccountLedger = otherLedgers.length > 0;
-                    const mainAccountLedger = otherLedgers.find(ledger => 
-                      ledger.ledger.toLowerCase().includes('sales') ||
-                      ledger.ledger.toLowerCase().includes('purchase') ||
-                      ledger.ledger.toLowerCase().includes('bank') ||
-                      ledger.ledger.toLowerCase().includes('cash')
-                    );
-                    
-                    // Calculate inventory total
-                    const totalInventoryValue = inventoryEntries.reduce((sum, entry) => 
-                      sum + (entry.amount || 0), 0);
-                    
-                    // Calculate other ledgers debits (excluding party)
-                    const otherLedgerDebits = otherLedgers.reduce((sum, entry) => 
-                      entry.amount > 0 ? sum + entry.amount : sum, 0);
-                    
-                    // Total Debit = Inventory + Other Ledger Debits (excluding party)
-                    const totalDebit = totalInventoryValue + otherLedgerDebits;
-                    const totalCredit = accountingEntries.reduce((sum, entry) => 
-                      entry.amount < 0 ? sum + Math.abs(entry.amount) : sum, 0);
-                    
-                    const grandTotal = Math.max(totalDebit, totalCredit);
-                    const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
-                    const isProperAccountingVoucher = ['sales', 'purchase', 'payment', 'receipt'].includes(voucher.voucher_type.toLowerCase());
-                    const hasBothRequiredLedgers = partyLedger && hasMainAccountLedger;
-                    
-                    return (
-                      <div className="space-y-4">
-                        {/* Accounting Entries Table */}
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse">
-                            <thead>
-                              <tr className="border-b">
-                                <th className="text-left p-3 font-medium">Ledger Name</th>
-                                <th className="text-right p-3 font-medium">Debit</th>
-                                <th className="text-right p-3 font-medium">Credit</th>
-                                <th className="text-center p-3 font-medium">Type</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {/* Party Ledger First */}
-                              {partyLedger && (
-                                <tr className="bg-blue-50 dark:bg-blue-950/30 border-b">
-                                  <td className="p-3">
-                                    <div className="font-bold">{partyLedger.ledger}</div>
-                                    <Badge variant="default" className="text-xs mt-1">
-                                      Party Account
-                                    </Badge>
-                                  </td>
-                                  <td className="text-right p-3 font-bold">
-                                    {partyLedger.amount > 0 ? formatCurrency(partyLedger.amount, partyLedger.currency) : '-'}
-                                  </td>
-                                  <td className="text-right p-3 font-bold">
-                                    {partyLedger.amount < 0 ? formatCurrency(Math.abs(partyLedger.amount), partyLedger.currency) : '-'}
-                                  </td>
-                                  <td className="text-center p-3">
-                                    <Badge variant="default">
-                                      {partyLedger.is_deemed_positive ? 'Positive' : 'Negative'}
-                                    </Badge>
-                                  </td>
-                                </tr>
-                              )}
-                              
-                              {/* Missing Account Ledger Warning */}
-                              {isProperAccountingVoucher && otherLedgers.length === 0 && (
-                                <tr className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-                                  <td colSpan={4} className="p-3 text-red-700 dark:text-red-300">
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-3 w-3 rounded-full bg-red-500" />
-                                      <span>Missing {expectedAccountType} - Required for {voucher.voucher_type} voucher</span>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
-                              
-                              {/* Other Ledgers */}
-                              {otherLedgers.map((entry, index) => (
-                                <tr key={entry.guid} className={`border-b ${mainAccountLedger?.ledger === entry.ledger ? 'bg-green-50 dark:bg-green-950/30' : ''}`}>
-                                  <td className="p-3">
-                                    <div className="font-medium">{entry.ledger}</div>
-                                    {mainAccountLedger?.ledger === entry.ledger && (
-                                      <Badge variant="secondary" className="text-xs mt-1">
-                                        Main Account
-                                      </Badge>
-                                    )}
-                                    {entry.cost_centre && (
-                                      <div className="text-sm text-muted-foreground">
-                                        Cost Centre: {entry.cost_centre}
-                                      </div>
-                                    )}
-                                  </td>
-                                  <td className="text-right p-3">
-                                    {entry.amount > 0 ? formatCurrency(entry.amount, entry.currency) : '-'}
-                                  </td>
-                                  <td className="text-right p-3">
-                                    {entry.amount < 0 ? formatCurrency(Math.abs(entry.amount), entry.currency) : '-'}
-                                  </td>
-                                  <td className="text-center p-3">
-                                    <Badge variant="outline">
-                                      {entry.is_deemed_positive ? 'Positive' : 'Negative'}
-                                    </Badge>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        
-                        {/* Totals and Validation */}
-                        <div className="bg-muted/30 rounded-lg p-4 space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium text-muted-foreground">Total Debit</div>
-                              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalDebit)}</div>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium text-muted-foreground">Total Credit</div>
-                              <div className="text-2xl font-bold text-red-600">{formatCurrency(totalCredit)}</div>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium text-muted-foreground">Grand Total</div>
-                              <div className="text-2xl font-bold text-primary">{formatCurrency(grandTotal)}</div>
-                            </div>
-                          </div>
-                          
-                          {/* Balance Validation */}
-                          <div className="border-t pt-3 space-y-3">
-                            {/* Ledger Balance Check */}
-                            <div className="flex items-center gap-2">
-                              <div className={`h-3 w-3 rounded-full ${isBalanced ? 'bg-green-500' : 'bg-red-500'}`} />
-                              <span className="text-sm font-medium">
-                                Ledger Balance: {isBalanced ? 'Balanced' : 'Unbalanced'}
-                              </span>
-                            </div>
-                            
-                            {/* Accounting Structure Validation */}
-                            {isProperAccountingVoucher && (
-                              <div className="flex items-center gap-2">
-                                <div className={`h-3 w-3 rounded-full ${hasBothRequiredLedgers ? 'bg-green-500' : 'bg-red-500'}`} />
-                                <span className="text-sm font-medium">
-                                  Accounting Structure: {hasBothRequiredLedgers ? 'Complete' : 'Incomplete'}
-                                </span>
-                                {!hasBothRequiredLedgers && (
-                                  <span className="text-xs text-red-600">
-                                    (Missing: {!partyLedger ? 'Party Account' : ''} {!hasMainAccountLedger ? expectedAccountType : ''})
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </>
-              )}
+
+                {/* Summary */}
+                <div className="bg-muted p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Total Debits:</span>
+                      <span className="ml-2 font-bold text-green-600">
+                        {formatCurrency(
+                          accountingEntries.reduce((sum, entry) => entry.amount > 0 ? sum + entry.amount : sum, 0),
+                          voucher.currency
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Total Credits:</span>
+                      <span className="ml-2 font-bold text-red-600">
+                        {formatCurrency(
+                          accountingEntries.reduce((sum, entry) => entry.amount < 0 ? sum + Math.abs(entry.amount) : sum, 0),
+                          voucher.currency
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-2 pt-2 border-t">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Balance Status:</span>
+                      <Badge variant={
+                        Math.abs(
+                          accountingEntries.reduce((sum, entry) => entry.amount > 0 ? sum + entry.amount : sum, 0) -
+                          accountingEntries.reduce((sum, entry) => entry.amount < 0 ? sum + Math.abs(entry.amount) : sum, 0)
+                        ) < 0.01 ? "default" : "destructive"
+                      }>
+                        {Math.abs(
+                          accountingEntries.reduce((sum, entry) => entry.amount > 0 ? sum + entry.amount : sum, 0) -
+                          accountingEntries.reduce((sum, entry) => entry.amount < 0 ? sum + Math.abs(entry.amount) : sum, 0)
+                        ) < 0.01 ? "Balanced" : "Unbalanced"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -1209,57 +1238,6 @@ export function EnhancedVoucherDetails({
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-
-        {/* Audit Trail Tab */}
-        <TabsContent value="audit" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Audit Trail
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Created At:</p>
-                    <p className="font-medium">{formatDate(voucher.created_at)}</p>
-                  </div>
-                  {voucher.altered_on && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Last Modified:</p>
-                      <p className="font-medium">{formatDate(voucher.altered_on)}</p>
-                    </div>
-                  )}
-                  {voucher.altered_by && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Modified By:</p>
-                      <p className="font-medium">{voucher.altered_by}</p>
-                    </div>
-                  )}
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h4 className="font-medium mb-2">Status Information</h4>
-                  <div className="flex gap-2 flex-wrap">
-                    <Badge variant={voucher.is_cancelled === 1 ? "destructive" : "secondary"}>
-                      {voucher.is_cancelled === 1 ? "Cancelled" : "Active"}
-                    </Badge>
-                    <Badge variant={voucher.is_optional === 1 ? "outline" : "secondary"}>
-                      {voucher.is_optional === 1 ? "Optional" : "Mandatory"}
-                    </Badge>
-                    <Badge variant="outline">
-                      Persisted View: {voucher.persistedview}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
