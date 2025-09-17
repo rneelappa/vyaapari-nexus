@@ -94,14 +94,15 @@ async function queryRailwayAPI(
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    console.log(`[Railway API] ${table}: Got ${Array.isArray(data) ? data.length : 0} records`);
-    
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error(`[Railway API] Error fetching ${table} from ${url}:`, error);
-    throw error;
-  }
+    const raw = await response.json();
+    let records: any[] = [];
+    if (Array.isArray(raw)) records = raw;
+    else if (Array.isArray(raw?.data)) records = raw.data;
+    else if (Array.isArray(raw?.records)) records = raw.records;
+    else if (raw?.success && Array.isArray(raw?.data?.records)) records = raw.data.records;
+
+    console.log(`[Railway API] ${table}: Got ${records.length} records`);
+    return records;
 }
 
 async function bulkSyncToSupabase(
@@ -182,15 +183,9 @@ async function performRailwaySync(
       id: jobId,
       company_id: companyId,
       division_id: divisionId,
-      sync_type: 'railway_api_sync',
-      status: 'processing',
-      started_at: startTime.toISOString(),
-      total_tables: TABLE_MAPPINGS.length,
-      tables_processed: 0,
-      total_records: 0,
-      total_inserted: 0,
-      total_updated: 0,
-      total_errors: 0
+      status: 'running',
+      job_type: 'full_sync',
+      started_at: startTime.toISOString()
     });
 
   if (jobError) {
@@ -215,21 +210,8 @@ async function performRailwaySync(
     const tableStartTime = new Date();
     console.log(`[Sync Job ${jobId}] Processing table: ${mapping.supabaseTable} (API: ${mapping.apiTable})`);
 
-    // Create job detail record
-    const detailId = crypto.randomUUID();
-    await supabase
-      .from('tally_sync_job_details')
-      .insert({
-        id: detailId,
-        job_id: jobId,
-        table_name: mapping.supabaseTable,
-        operation: 'railway_api_fetch_and_sync',
-        status: 'processing',
-        records_processed: 0,
-        records_inserted: 0,
-        records_updated: 0,
-        started_at: tableStartTime.toISOString()
-      });
+    // Skipping job detail creation to match current schema
+
 
     try {
       // Fetch data from Railway API
@@ -259,17 +241,8 @@ async function performRailwaySync(
       totalErrors += syncResult.errors;
       tablesProcessed++;
 
-      // Update job detail
-      await supabase
-        .from('tally_sync_job_details')
-        .update({
-          status: 'completed',
-          records_processed: apiData.length,
-          records_inserted: syncResult.inserted,
-          records_updated: syncResult.updated,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', detailId);
+      // Skipped job detail update to match current schema
+
 
       results.push({
         table: mapping.supabaseTable,
@@ -290,15 +263,8 @@ async function performRailwaySync(
       totalErrors++;
       tablesProcessed++;
 
-      // Update job detail with error
-      await supabase
-        .from('tally_sync_job_details')
-        .update({
-          status: 'failed',
-          error_message: errorMessage,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', detailId);
+      // Skipped job detail error update to match current schema
+
 
       results.push({
         table: mapping.supabaseTable,
@@ -316,18 +282,12 @@ async function performRailwaySync(
   const endTime = new Date();
   const duration = endTime.getTime() - startTime.getTime();
 
-  // Update final job status
   await supabase
     .from('tally_sync_jobs')
     .update({
       status: totalErrors > 0 ? 'completed_with_errors' : 'completed',
-      completed_at: endTime.toISOString(),
-      duration_ms: duration,
-      tables_processed: tablesProcessed,
-      total_records: totalRecords,
-      total_inserted: totalInserted,
-      total_updated: totalUpdated,
-      total_errors: totalErrors
+      records_processed: totalRecords,
+      completed_at: endTime.toISOString()
     })
     .eq('id', jobId);
 
@@ -395,7 +355,7 @@ serve(async (req) => {
     // Handle different actions
     if (action === 'health_check') {
       try {
-        const healthUrl = `${RAILWAY_BASE_URL}/health`;
+        const healthUrl = `${RAILWAY_BASE_URL}/api/v1/health`;
         const response = await fetch(healthUrl);
         const healthData = await response.json();
         
