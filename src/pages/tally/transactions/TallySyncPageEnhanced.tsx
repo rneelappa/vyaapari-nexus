@@ -367,25 +367,55 @@ export function TallySyncPageEnhanced({
         progress: 80
       }));
 
-      addDebugLog('success', 'Enhanced sync completed successfully!');
-
-      // Update progress to complete
-      setSyncProgress(prev => ({
-        ...prev,
-        status: 'completed',
-        currentStep: 'Enhanced sync completed successfully!',
-        progress: 100,
-        endTime: new Date()
-      }));
-
-      // Save to sync history only if syncResults exists
-      console.log('[DEBUG] Before accessing syncResults:', syncResults);
-
-      console.log('[DEBUG] About to show toast');
-      toast({
-        title: "Enhanced Sync Complete",
-        description: "Sync completed successfully!",
-      });
+      // Determine sync outcome and messaging
+      const totalSynced = syncResults?.totalRecords || 0;
+      const hasErrors = (syncResults?.errors || 0) > 0;
+      
+      if (totalSynced === 0 && !hasErrors) {
+        addDebugLog('warn', 'Sync completed with no records - API source appears empty');
+        setSyncProgress(prev => ({
+          ...prev,
+          status: 'completed',
+          currentStep: 'Sync completed - No new records available from API',
+          progress: 100,
+          endTime: new Date()
+        }));
+        
+        toast({
+          title: "Sync Complete - No New Data",
+          description: "External API has no records to sync. Your existing local data remains unchanged.",
+          variant: "default"
+        });
+      } else if (hasErrors) {
+        addDebugLog('warn', `Sync completed with ${syncResults?.errors} errors`);
+        setSyncProgress(prev => ({
+          ...prev,
+          status: 'completed',
+          currentStep: `Sync completed with ${syncResults?.errors} errors`,
+          progress: 100,
+          endTime: new Date()
+        }));
+        
+        toast({
+          title: "Sync Complete with Issues",
+          description: `Synced ${totalSynced} records but encountered ${syncResults?.errors} errors`,
+          variant: "destructive"
+        });
+      } else {
+        addDebugLog('success', `Enhanced sync completed successfully! Synced ${totalSynced} records`);
+        setSyncProgress(prev => ({
+          ...prev,
+          status: 'completed',
+          currentStep: `Enhanced sync completed successfully! Synced ${totalSynced} records`,
+          progress: 100,
+          endTime: new Date()
+        }));
+        
+        toast({
+          title: "Enhanced Sync Complete",
+          description: `Successfully synced ${totalSynced} records from external API`,
+        });
+      }
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
