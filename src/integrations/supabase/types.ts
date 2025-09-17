@@ -593,6 +593,7 @@ export type Database = {
           capacity_unit: string | null
           company_id: string | null
           contact_number: string | null
+          created_at: string | null
           division_id: string | null
           godown_type: string | null
           guid: string
@@ -609,6 +610,7 @@ export type Database = {
           capacity_unit?: string | null
           company_id?: string | null
           contact_number?: string | null
+          created_at?: string | null
           division_id?: string | null
           godown_type?: string | null
           guid: string
@@ -625,6 +627,7 @@ export type Database = {
           capacity_unit?: string | null
           company_id?: string | null
           contact_number?: string | null
+          created_at?: string | null
           division_id?: string | null
           godown_type?: string | null
           guid?: string
@@ -656,6 +659,7 @@ export type Database = {
           _parent: string
           affects_gross_profit: number | null
           company_id: string | null
+          created_at: string | null
           division_id: string | null
           guid: string
           id: number
@@ -671,6 +675,7 @@ export type Database = {
           _parent?: string
           affects_gross_profit?: number | null
           company_id?: string | null
+          created_at?: string | null
           division_id?: string | null
           guid: string
           id?: never
@@ -686,6 +691,7 @@ export type Database = {
           _parent?: string
           affects_gross_profit?: number | null
           company_id?: string | null
+          created_at?: string | null
           division_id?: string | null
           guid?: string
           id?: never
@@ -795,6 +801,7 @@ export type Database = {
         Row: {
           _parent: string
           alias: string
+          alterid: number | null
           bank_account_holder: string
           bank_account_number: string
           bank_branch: string
@@ -842,6 +849,7 @@ export type Database = {
         Insert: {
           _parent?: string
           alias?: string
+          alterid?: number | null
           bank_account_holder?: string
           bank_account_number?: string
           bank_branch?: string
@@ -889,6 +897,7 @@ export type Database = {
         Update: {
           _parent?: string
           alias?: string
+          alterid?: number | null
           bank_account_holder?: string
           bank_account_number?: string
           bank_branch?: string
@@ -1193,6 +1202,7 @@ export type Database = {
           _alternate_uom: string
           _parent: string
           _uom: string
+          additional_units: string | null
           alias: string
           alternate_uom: string
           brand: string | null
@@ -1237,6 +1247,7 @@ export type Database = {
           _alternate_uom?: string
           _parent?: string
           _uom?: string
+          additional_units?: string | null
           alias?: string
           alternate_uom?: string
           brand?: string | null
@@ -1281,6 +1292,7 @@ export type Database = {
           _alternate_uom?: string
           _parent?: string
           _uom?: string
+          additional_units?: string | null
           alias?: string
           alternate_uom?: string
           brand?: string | null
@@ -1506,6 +1518,7 @@ export type Database = {
           _parent: string
           affects_stock: number | null
           company_id: string | null
+          created_at: string | null
           division_id: string | null
           guid: string
           is_deemedpositive: number | null
@@ -1517,6 +1530,7 @@ export type Database = {
           _parent?: string
           affects_stock?: number | null
           company_id?: string | null
+          created_at?: string | null
           division_id?: string | null
           guid: string
           is_deemedpositive?: number | null
@@ -1528,6 +1542,7 @@ export type Database = {
           _parent?: string
           affects_stock?: number | null
           company_id?: string | null
+          created_at?: string | null
           division_id?: string | null
           guid?: string
           is_deemedpositive?: number | null
