@@ -138,7 +138,7 @@ async function queryRailwayAPI(
   divisionId: string,
   table: string,
   filters: any = {},
-  limit: number = 1000,
+  limit: number = 50000,  // Increased limit to handle more records
   offset: number = 0
 ): Promise<any[]> {
   try {

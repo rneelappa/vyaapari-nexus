@@ -52,7 +52,8 @@ async function queryNewAPI(
   divisionId: string, 
   table: string, 
   filters: any = {}, 
-  limit = 1000
+  limit = 50000,  // Increased limit to handle more records
+  offset = 0
 ): Promise<any> {
   try {
     const apiUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
@@ -67,7 +68,7 @@ async function queryNewAPI(
         table,
         filters,
         limit,
-        offset: 0
+        offset
       })
     });
 
