@@ -24,19 +24,80 @@ interface TableMapping {
   supabaseTable: string;
   endpoint: string;
   keyField: string;
+  columnWhitelist?: string[];
 }
 
 const TABLE_MAPPINGS: TableMapping[] = [
-  { apiTable: 'groups', supabaseTable: 'mst_group', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'ledgers', supabaseTable: 'mst_ledger', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'stock_items', supabaseTable: 'mst_stock_item', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'voucher_types', supabaseTable: 'mst_vouchertype', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'cost_centers', supabaseTable: 'mst_cost_centre', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'godowns', supabaseTable: 'mst_godown', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'uoms', supabaseTable: 'mst_uom', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'vouchers', supabaseTable: 'tally_trn_voucher', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'accounting_entries', supabaseTable: 'trn_accounting', endpoint: '/api/v1/query', keyField: 'guid' },
-  { apiTable: 'inventory_entries', supabaseTable: 'trn_inventory', endpoint: '/api/v1/query', keyField: 'guid' }
+  { 
+    apiTable: 'groups', 
+    supabaseTable: 'mst_group', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'primary_group', 'is_revenue', 'affects_gross_profit', 'is_reserved', 'is_deemedpositive', 'sort_position', 'alterid', 'company_id', 'division_id', 'created_at', 'id']
+  },
+  { 
+    apiTable: 'ledgers', 
+    supabaseTable: 'mst_ledger', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'alias', 'description', 'notes', 'mailing_name', 'mailing_address', 'mailing_state', 'mailing_country', 'mailing_pincode', 'email', 'it_pan', 'gstn', 'gst_registration_type', 'gst_supply_type', 'gst_duty_head', 'opening_balance', 'closing_balance', 'is_revenue', 'is_deemedpositive', 'tax_rate', 'credit_limit', 'credit_days', 'bill_credit_period', 'bill_credit_limit', 'bank_account_holder', 'bank_account_number', 'bank_ifsc', 'bank_swift', 'bank_name', 'bank_branch', 'income_tax_number', 'sales_tax_number', 'excise_registration_number', 'service_tax_number', 'buyer_type', 'buyer_category', 'ledger_contact', 'ledger_mobile', 'ledger_fax', 'ledger_website', 'company_id', 'division_id', 'id', 'alterid']
+  },
+  { 
+    apiTable: 'stock_items', 
+    supabaseTable: 'mst_stock_item', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'alias', 'description', 'notes', 'part_number', 'uom', '_uom', 'alternate_uom', '_alternate_uom', 'costing_method', 'opening_balance', 'opening_rate', 'opening_value', 'closing_balance', 'closing_rate', 'closing_value', 'reorder_level', 'minimum_level', 'maximum_level', 'conversion', 'gst_rate', 'gst_type_of_supply', 'gst_hsn_code', 'gst_hsn_description', 'gst_taxability', 'weight', 'weight_unit', 'volume', 'volume_unit', 'shelf_life_days', 'item_category', 'item_classification', 'manufacturer', 'brand', 'model', 'size', 'color', 'base_units', 'additional_units', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'voucher_types', 
+    supabaseTable: 'mst_vouchertype', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'numbering_method', 'affects_stock', 'is_deemedpositive', 'company_id', 'division_id', 'id', 'created_at']
+  },
+  { 
+    apiTable: 'cost_centers', 
+    supabaseTable: 'mst_cost_centre', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'category', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'godowns', 
+    supabaseTable: 'mst_godown', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'address', 'storage_type', 'capacity', 'capacity_unit', 'godown_type', 'location_code', 'manager_name', 'contact_number', 'company_id', 'division_id', 'id', 'created_at']
+  },
+  { 
+    apiTable: 'uoms', 
+    supabaseTable: 'mst_uom', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'formalname', 'is_simple_unit', 'base_units', 'additional_units', 'conversion', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'vouchers', 
+    supabaseTable: 'tally_trn_voucher', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_number_prefix', 'voucher_number_suffix', 'date', 'due_date', 'narration', 'reference', 'party_ledger_name', 'basic_amount', 'discount_amount', 'tax_amount', 'net_amount', 'total_amount', 'final_amount', 'currency', 'exchange_rate', 'order_reference', 'receipt_reference', 'consignment_note', 'is_optional', 'is_cancelled', 'persistedview', 'altered_by', 'altered_on', 'alterid', 'company_id', 'division_id', 'created_at']
+  },
+  { 
+    apiTable: 'accounting_entries', 
+    supabaseTable: 'trn_accounting', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'ledger', '_ledger', 'amount', 'amount_forex', 'amount_cleared', 'currency', 'voucher_guid', 'voucher_type', 'voucher_number', 'voucher_date', 'cost_centre', 'cost_category', 'bill_allocations', 'is_deemed_positive', 'is_party_ledger', 'alterid', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'inventory_entries', 
+    supabaseTable: 'trn_inventory', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_date', 'item_name', 'godown', 'quantity', 'rate', 'amount', 'company_id', 'division_id', 'created_at']
+  }
 ];
 
 const RAILWAY_BASE_URL = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
@@ -157,32 +218,52 @@ async function queryWithPagination(
   return allRecords;
 }
 
-// Enhanced bulk sync with better conflict handling
+// Enhanced bulk sync with better conflict handling and column whitelisting
 async function bulkSyncToSupabase(
   supabase: any,
   tableName: string,
   records: any[],
   companyId: string,
   divisionId: string,
-  keyField: string = 'guid'
+  keyField: string = 'guid',
+  columnWhitelist?: string[]
 ): Promise<{ inserted: number; updated: number; errors: number }> {
   if (!records || records.length === 0) {
     return { inserted: 0, updated: 0, errors: 0 };
   }
 
   try {
-    // Add company_id and division_id to all records
-    const enrichedRecords = records.map(record => ({
-      ...record,
-      company_id: companyId,
-      division_id: divisionId
-    }));
+    // Filter records to only include whitelisted columns
+    const filteredRecords = records.map(record => {
+      let filteredRecord: any = {
+        company_id: companyId,
+        division_id: divisionId
+      };
 
-    // Use guid as primary conflict resolution
+      if (columnWhitelist) {
+        // Only include columns that are in the whitelist
+        for (const column of columnWhitelist) {
+          if (record.hasOwnProperty(column)) {
+            filteredRecord[column] = record[column];
+          }
+        }
+      } else {
+        // No whitelist - include all columns
+        filteredRecord = {
+          ...record,
+          company_id: companyId,
+          division_id: divisionId
+        };
+      }
+
+      return filteredRecord;
+    });
+
+    // Use composite unique constraint for conflict resolution
     const { data, error } = await supabase
       .from(tableName)
-      .upsert(enrichedRecords, {
-        onConflict: 'guid',
+      .upsert(filteredRecords, {
+        onConflict: 'guid,company_id,division_id',
         ignoreDuplicates: false
       });
 
@@ -309,7 +390,8 @@ async function performRailwaySync(
           records,
           companyId,
           divisionId,
-          tableMapping.keyField
+          tableMapping.keyField,
+          tableMapping.columnWhitelist
         );
 
         const tableResult = {

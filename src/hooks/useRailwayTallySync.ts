@@ -96,7 +96,9 @@ export const useRailwayTallySync = () => {
 
         return data;
       } else {
-        throw new Error(data.error || 'Railway sync failed');
+        const errorMessage = data.error || 'Railway sync failed';
+        console.error('[Railway Sync] Failed:', errorMessage, data);
+        throw new Error(errorMessage);
       }
     } catch (error: any) {
       console.error('[Railway Sync] Error:', error);
