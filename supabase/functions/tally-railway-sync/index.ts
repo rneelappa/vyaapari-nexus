@@ -143,7 +143,7 @@ async function queryRailwayAPI(
 ): Promise<any[]> {
   try {
     const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
-    const queryUrl = `${RAILWAY_BASE_URL}/api/v1/query/${companyId}/${divisionId}`;
+    const queryUrl = `${RAILWAY_BASE_URL}/api/v1/query`;
     
     console.log(`[Railway API] Querying ${table} from: ${queryUrl} (limit: ${limit}, offset: ${offset})`);
 
@@ -154,6 +154,8 @@ async function queryRailwayAPI(
         ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
       },
       body: JSON.stringify({
+        companyId: companyId,
+        divisionId: divisionId,
         table: table,
         filters: filters,
         limit: limit,
