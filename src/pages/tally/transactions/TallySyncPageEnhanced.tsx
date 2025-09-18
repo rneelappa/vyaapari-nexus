@@ -449,6 +449,8 @@ export function TallySyncPageEnhanced({
       setFixingDatabase(true);
       addDebugLog('info', 'Starting database relationship fix...');
       
+      console.log('Calling database-fix function with:', { companyId, divisionId });
+      
       const { data, error } = await supabase.functions.invoke('database-fix', {
         body: { 
           companyId, 
@@ -457,17 +459,25 @@ export function TallySyncPageEnhanced({
         }
       });
 
-      if (error) throw error;
+      console.log('Function response:', { data, error });
 
-      const result = data?.result;
-      if (result) {
+      if (error) {
+        console.error('Function error details:', error);
+        throw error;
+      }
+
+      if (data?.success && data?.result) {
+        const result = data.result;
         addDebugLog('success', 'Database relationships fixed successfully', result);
         toast({
           title: "Database Fixed Successfully",
           description: `Fixed ${result.accounting.fixed}/${result.accounting.total} accounting entries and ${result.inventory.fixed}/${result.inventory.total} inventory entries`,
         });
+      } else {
+        throw new Error(data?.error || 'Unknown error occurred');
       }
     } catch (error: any) {
+      console.error('Database fix error:', error);
       addDebugLog('error', 'Database fix failed:', error);
       toast({
         title: "Database Fix Failed",

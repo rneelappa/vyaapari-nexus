@@ -67,3 +67,6 @@ verify_jwt = true
 
 [functions.tally-railway-sync]
 verify_jwt = true
+
+[functions.database-fix]
+verify_jwt = false
