@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
 interface SyncJobDetail {
@@ -29,14 +30,14 @@ interface TableMapping {
 
 const TABLE_MAPPINGS: TableMapping[] = [
   { 
-    apiTable: 'groups', 
+    apiTable: 'mst_group', 
     supabaseTable: 'mst_group', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'name', 'parent', '_parent', 'primary_group', 'is_revenue', 'affects_gross_profit', 'is_reserved', 'is_deemedpositive', 'sort_position', 'alterid', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'ledgers', 
+    apiTable: 'mst_ledger', 
     supabaseTable: 'mst_ledger', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
@@ -212,6 +213,8 @@ async function queryRailwayAPI(
     
   } catch (error) {
     console.error(`[Railway API] Error querying ${table}:`, error);
+    console.error(`[Railway API] Failed SQL:`, sql);
+    console.error(`[Railway API] Failed Params:`, params);
     throw error;
   }
 }

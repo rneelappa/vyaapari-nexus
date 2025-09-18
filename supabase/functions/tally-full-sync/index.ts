@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
 interface SyncJobDetail {
@@ -23,22 +24,22 @@ interface TableMapping {
 }
 
 const TABLE_MAPPINGS: TableMapping[] = [
-  // Master data tables (sync first for referential integrity)
-  { apiTable: 'groups', supabaseTable: 'mst_group', endpoint: '/masters/groups', keyField: 'guid' },
-  { apiTable: 'ledgers', supabaseTable: 'mst_ledger', endpoint: '/masters/ledgers', keyField: 'guid' },
-  { apiTable: 'stock_items', supabaseTable: 'mst_stock_item', endpoint: '/masters/stock-items', keyField: 'guid' },
-  { apiTable: 'voucher_types', supabaseTable: 'mst_vouchertype', endpoint: '/masters/voucher-types', keyField: 'guid' },
-  { apiTable: 'cost_centers', supabaseTable: 'mst_cost_centre', endpoint: '/masters/cost-centers', keyField: 'guid' },
-  { apiTable: 'godowns', supabaseTable: 'mst_godown', endpoint: '/masters/godowns', keyField: 'guid' },
-  { apiTable: 'employees', supabaseTable: 'mst_employee', endpoint: '/masters/employees', keyField: 'guid' },
-  { apiTable: 'uoms', supabaseTable: 'mst_uom', endpoint: '/masters/uoms', keyField: 'guid' },
-  { apiTable: 'cost_categories', supabaseTable: 'mst_cost_category', endpoint: '/masters/cost-categories', keyField: 'guid' },
-  { apiTable: 'payheads', supabaseTable: 'mst_payhead', endpoint: '/masters/payheads', keyField: 'guid' },
+  // Master data tables (sync first for referential integrity) - using actual SQL table names
+  { apiTable: 'mst_group', supabaseTable: 'mst_group', endpoint: '/masters/groups', keyField: 'guid' },
+  { apiTable: 'mst_ledger', supabaseTable: 'mst_ledger', endpoint: '/masters/ledgers', keyField: 'guid' },
+  { apiTable: 'mst_stock_item', supabaseTable: 'mst_stock_item', endpoint: '/masters/stock-items', keyField: 'guid' },
+  { apiTable: 'mst_vouchertype', supabaseTable: 'mst_vouchertype', endpoint: '/masters/voucher-types', keyField: 'guid' },
+  { apiTable: 'mst_cost_centre', supabaseTable: 'mst_cost_centre', endpoint: '/masters/cost-centers', keyField: 'guid' },
+  { apiTable: 'mst_godown', supabaseTable: 'mst_godown', endpoint: '/masters/godowns', keyField: 'guid' },
+  { apiTable: 'mst_employee', supabaseTable: 'mst_employee', endpoint: '/masters/employees', keyField: 'guid' },
+  { apiTable: 'mst_uom', supabaseTable: 'mst_uom', endpoint: '/masters/uoms', keyField: 'guid' },
+  { apiTable: 'mst_cost_category', supabaseTable: 'mst_cost_category', endpoint: '/masters/cost-categories', keyField: 'guid' },
+  { apiTable: 'mst_payhead', supabaseTable: 'mst_payhead', endpoint: '/masters/payheads', keyField: 'guid' },
   
   // Transaction tables (sync after master data)
-  { apiTable: 'vouchers', supabaseTable: 'tally_trn_voucher', endpoint: '/vouchers', keyField: 'guid' },
-  { apiTable: 'accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' },
-  { apiTable: 'inventory', supabaseTable: 'trn_inventory', endpoint: '/inventory', keyField: 'guid' }
+  { apiTable: 'tally_trn_voucher', supabaseTable: 'tally_trn_voucher', endpoint: '/vouchers', keyField: 'guid' },
+  { apiTable: 'trn_accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' },
+  { apiTable: 'trn_inventory', supabaseTable: 'trn_inventory', endpoint: '/inventory', keyField: 'guid' }
 ];
 
 async function validateUUID(uuid: string): Promise<boolean> {
@@ -120,6 +121,8 @@ async function queryNewAPI(
     return Array.isArray(responseData) ? responseData : responseData.data || responseData.records || [];
   } catch (error) {
     console.error(`Error querying API for ${table}:`, error);
+    console.error(`[API Error] Failed SQL:`, sql);
+    console.error(`[API Error] Failed Params:`, params);
     throw error;
   }
 }
