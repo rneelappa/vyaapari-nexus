@@ -836,25 +836,28 @@ async function performRailwaySync(
 
   // Test POST /api/v1/query endpoint specifically
   try {
-    const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
-    const testQuery = await fetch(`${RAILWAY_BASE_URL}/api/v1/query/${companyId}/${divisionId}`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
-      },
-      body: JSON.stringify({
-        table: 'groups',
-        limit: 1
-      })
-    });
+const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
+const testQuery = await fetch(`${RAILWAY_BASE_URL}/api/v1/query`, {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
+  },
+  body: JSON.stringify({
+    companyId,
+    divisionId,
+    table: 'groups',
+    limit: 1
+  })
+});
     
-    if (!testQuery.ok) {
-      throw new Error(`Query endpoint test failed: ${testQuery.status} ${testQuery.statusText}`);
-    }
+if (!testQuery.ok) {
+  const errText = await testQuery.text();
+  throw new Error(`Query endpoint test failed: ${testQuery.status} ${testQuery.statusText} - ${errText}`);
+}
     
-    const testData = await testQuery.json();
-    console.log(`[Sync Job ${jobId}] ✅ POST /api/v1/query endpoint working:`, testData.success);
+const testData = await testQuery.json();
+console.log(`[Sync Job ${jobId}] ✅ POST /api/v1/query endpoint working:`, testData.success);
   } catch (error) {
     throw new Error(`Query endpoint test failed: ${error.message}`);
   }

@@ -56,21 +56,23 @@ async function queryNewAPI(
   offset = 0
 ): Promise<any> {
   try {
-    const apiUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
-    const queryUrl = `${apiUrl}/api/v1/query/${companyId}/${divisionId}`;
-    
-    console.log(`Querying API: ${queryUrl} for table: ${table}`);
-    
-    const response = await fetch(queryUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        table,
-        filters,
-        limit,
-        offset
-      })
-    });
+const apiUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
+const queryUrl = `${apiUrl}/api/v1/query`;
+
+console.log(`Querying API: ${queryUrl} for table: ${table}`);
+
+const response = await fetch(queryUrl, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    companyId,
+    divisionId,
+    table,
+    filters,
+    limit,
+    offset
+  })
+});
 
     if (!response.ok) {
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
