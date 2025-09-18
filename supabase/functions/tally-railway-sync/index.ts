@@ -411,6 +411,244 @@ async function bulkSyncToSupabase(
   }
 }
 
+// Function to link voucher entries after sync
+async function linkVoucherEntries(
+  supabase: any,
+  companyId: string,
+  divisionId: string,
+  jobId: string
+): Promise<any> {
+  console.log(`[Job ${jobId}] Starting voucher relationship repair...`);
+  
+  const results = {
+    accounting: { total: 0, fixed: 0 },
+    inventory: { total: 0, fixed: 0 },
+    diagnostics: {}
+  };
+
+  // Fix trn_accounting relationships (batched)
+  console.log(`[Job ${jobId}] Processing trn_accounting relationships...`);
+  let accOffset = 0;
+  const accBatchSize = 1000;
+  while (true) {
+    const { data: accountingRows, error: accError } = await supabase
+      .from('trn_accounting')
+      .select('guid, voucher_number, voucher_guid')
+      .eq('company_id', companyId)
+      .eq('division_id', divisionId)
+      .not('voucher_number', 'is', null)
+      .neq('voucher_number', '')
+      .order('guid', { ascending: true })
+      .range(accOffset, accOffset + accBatchSize - 1);
+
+    if (accError) {
+      console.error(`[Job ${jobId}] Error fetching accounting rows:`, accError);
+      break;
+    }
+
+    const batch = accountingRows || [];
+    if (accOffset === 0) {
+      console.log(`[Job ${jobId}] Found ${batch.length} accounting entries to process`);
+    }
+    results.accounting.total += batch.length;
+
+    if (batch.length === 0) break;
+
+    for (const row of batch) {
+      try {
+        // Find the corresponding voucher
+        const { data: voucher, error: vError } = await supabase
+          .from('tally_trn_voucher')
+          .select('guid')
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId)
+          .eq('voucher_number', row.voucher_number)
+          .maybeSingle();
+
+        if (vError || !voucher) {
+          continue;
+        }
+
+        // Update if voucher_guid is different or empty
+        if (!row.voucher_guid || row.voucher_guid !== voucher.guid) {
+          const { error: updateError } = await supabase
+            .from('trn_accounting')
+            .update({ voucher_guid: voucher.guid })
+            .eq('guid', row.guid);
+
+          if (!updateError) {
+            results.accounting.fixed++;
+          }
+        }
+      } catch (e) {
+        console.error(`[Job ${jobId}] Error processing accounting row ${row.guid}:`, e);
+      }
+    }
+
+    accOffset += batch.length;
+    if (batch.length < accBatchSize) break; // last page
+  }
+
+  // Fix trn_inventory relationships (handle missing voucher_number gracefully)
+  console.log(`[Job ${jobId}] Processing trn_inventory relationships...`);
+  const invBatchSize = 1000;
+
+  // First probe to detect if voucher_number column exists
+  let probe = await supabase
+    .from('trn_inventory')
+    .select('guid, voucher_number, voucher_guid')
+    .eq('company_id', companyId)
+    .eq('division_id', divisionId)
+    .order('guid', { ascending: true })
+    .range(0, invBatchSize - 1);
+
+  if (probe.error && probe.error.code === '42703') {
+    // Fallback path: derive voucher_guid from inventory guid prefix
+    console.warn(`[Job ${jobId}] trn_inventory.voucher_number column missing. Using GUID-derivation strategy.`);
+    let invOffset = 0;
+    while (true) {
+      const { data: invRows, error: invErr } = await supabase
+        .from('trn_inventory')
+        .select('guid, voucher_guid')
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .order('guid', { ascending: true })
+        .range(invOffset, invOffset + invBatchSize - 1);
+
+      if (invErr) {
+        console.error(`[Job ${jobId}] Error fetching inventory rows (fallback):`, invErr);
+        break;
+      }
+
+      const batch = invRows || [];
+      results.inventory.total += batch.length;
+      if (batch.length === 0) break;
+
+      for (const row of batch) {
+        try {
+          const derivedGuid = row.guid?.split('-inventory-')[0] || '';
+          if (derivedGuid && row.voucher_guid !== derivedGuid) {
+            const { error: updErr } = await supabase
+              .from('trn_inventory')
+              .update({ voucher_guid: derivedGuid })
+              .eq('guid', row.guid);
+            if (!updErr) results.inventory.fixed++;
+          }
+        } catch (e) {
+          console.error(`[Job ${jobId}] Error processing inventory row ${row.guid} (fallback):`, e);
+        }
+      }
+
+      invOffset += batch.length;
+      if (batch.length < invBatchSize) break;
+    }
+  } else {
+    // Standard path using voucher_number
+    if (probe.error) {
+      console.error(`[Job ${jobId}] Error probing inventory rows:`, probe.error);
+    }
+
+    let invOffset = 0;
+    while (true) {
+      const { data: inventoryRows, error: invError } = await supabase
+        .from('trn_inventory')
+        .select('guid, voucher_number, voucher_guid')
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .not('voucher_number', 'is', null)
+        .neq('voucher_number', '')
+        .order('guid', { ascending: true })
+        .range(invOffset, invOffset + invBatchSize - 1);
+
+      if (invError) {
+        console.error(`[Job ${jobId}] Error fetching inventory rows:`, invError);
+        break;
+      }
+
+      const batch = inventoryRows || [];
+      results.inventory.total += batch.length;
+      if (invOffset === 0) {
+        console.log(`[Job ${jobId}] Found ${batch.length} inventory entries to process`);
+      }
+      if (batch.length === 0) break;
+
+      for (const row of batch) {
+        try {
+          // Find the corresponding voucher
+          const { data: voucher, error: vError } = await supabase
+            .from('tally_trn_voucher')
+            .select('guid')
+            .eq('company_id', companyId)
+            .eq('division_id', divisionId)
+            .eq('voucher_number', row.voucher_number)
+            .maybeSingle();
+
+          if (vError || !voucher) continue;
+
+          // Update if voucher_guid is different or empty
+          if (!row.voucher_guid || row.voucher_guid !== voucher.guid) {
+            const { error: updateError } = await supabase
+              .from('trn_inventory')
+              .update({ voucher_guid: voucher.guid })
+              .eq('guid', row.guid);
+
+            if (!updateError) {
+              results.inventory.fixed++;
+            }
+          }
+        } catch (e) {
+          console.error(`[Job ${jobId}] Error processing inventory row ${row.guid}:`, e);
+        }
+      }
+
+      invOffset += batch.length;
+      if (batch.length < invBatchSize) break; // last page
+    }
+  }
+
+  // Diagnostic check for a specific voucher
+  const targetVoucher = '2800240/25-26';
+  console.log(`[Job ${jobId}] Checking diagnostic for voucher: ${targetVoucher}`);
+  
+  const { data: voucherData } = await supabase
+    .from('tally_trn_voucher')
+    .select('guid')
+    .eq('company_id', companyId)
+    .eq('division_id', divisionId)
+    .eq('voucher_number', targetVoucher)
+    .maybeSingle();
+
+  if (voucherData?.guid) {
+    const { count: accCount } = await supabase
+      .from('trn_accounting')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('division_id', divisionId)
+      .eq('voucher_guid', voucherData.guid);
+
+    const { count: invCount } = await supabase
+      .from('trn_inventory')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId)
+      .eq('division_id', divisionId)
+      .eq('voucher_guid', voucherData.guid);
+
+    results.diagnostics[targetVoucher] = {
+      voucher_guid: voucherData.guid,
+      accounting_entries: accCount || 0,
+      inventory_entries: invCount || 0
+    };
+  } else {
+    results.diagnostics[targetVoucher] = {
+      error: 'Voucher not found'
+    };
+  }
+
+  console.log(`[Job ${jobId}] Relationship linking completed: accounting fixed ${results.accounting.fixed}/${results.accounting.total}, inventory fixed ${results.inventory.fixed}/${results.inventory.total}`);
+  
+  return results;
+}
+
 // Main sync function
 async function performRailwaySync(
   supabase: any,
@@ -575,6 +813,16 @@ async function performRailwaySync(
       results.push(errorResult);
       totalErrors += 1;
     }
+  }
+
+  // Link voucher relationships after main sync is complete
+  console.log(`[Sync Job ${jobId}] Starting voucher relationship linking...`);
+  try {
+    const linkResults = await linkVoucherEntries(supabase, companyId, divisionId, jobId);
+    console.log(`[Sync Job ${jobId}] ✅ Relationship linking completed:`, linkResults);
+  } catch (linkError) {
+    console.error(`[Sync Job ${jobId}] ⚠️ Relationship linking failed:`, linkError);
+    // Don't fail the entire sync for this, but log it
   }
 
   const duration = Date.now() - startTime;
