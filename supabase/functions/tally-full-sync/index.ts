@@ -56,35 +56,68 @@ async function queryNewAPI(
   offset = 0
 ): Promise<any> {
   try {
-const apiUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
-const queryUrl = `${apiUrl}/api/v1/query`;
+    const apiUrl = 'https://tally-sync-vyaapari360-railway-production.up.railway.app';
+    const queryUrl = `${apiUrl}/api/v1/query`;
 
-console.log(`Querying API: ${queryUrl} for table: ${table}`);
+    // Build SQL query with parameters
+    let sql = `SELECT * FROM ${table}`;
+    const params: any[] = [];
+    
+    // Add WHERE conditions
+    const conditions: string[] = [];
+    if (companyId) {
+      conditions.push('company_id = ?');
+      params.push(companyId);
+    }
+    if (divisionId) {
+      conditions.push('division_id = ?');
+      params.push(divisionId);
+    }
+    
+    // Add custom filters
+    if (filters && Object.keys(filters).length > 0) {
+      for (const [key, value] of Object.entries(filters)) {
+        if (value !== null && value !== undefined) {
+          conditions.push(`${key} = ?`);
+          params.push(value);
+        }
+      }
+    }
+    
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+    
+    // Add pagination
+    if (limit) {
+      sql += ` LIMIT ${limit}`;
+    }
+    if (offset) {
+      sql += ` OFFSET ${offset}`;
+    }
 
-const response = await fetch(queryUrl, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    companyId,
-    divisionId,
-    table,
-    filters,
-    limit,
-    offset
-  })
-});
+    console.log(`Querying API: ${queryUrl} for table: ${table}`);
+    console.log(`SQL Query: ${sql}`);
+    console.log(`Params:`, params);
+
+    const response = await fetch(queryUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sql: sql,
+        params: params
+      })
+    });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const responseData = await response.json();
     
-    if (!responseData.success) {
-      throw new Error(responseData.error || 'API request failed');
-    }
-
-    return responseData.data;
+    // Return the records directly - Railway should return array of records
+    return Array.isArray(responseData) ? responseData : responseData.data || responseData.records || [];
   } catch (error) {
     console.error(`Error querying API for ${table}:`, error);
     throw error;
@@ -568,11 +601,45 @@ serve(async (req) => {
         const healthResponse = await fetch(`${apiUrl}/api/v1/health`);
         const healthData = await healthResponse.json();
         
-        result = {
-          api_health: healthData,
-          supabase_connection: true,
-          division_found: true
-        };
+        // Test the query endpoint with SQL format
+        try {
+          const testSql = `SELECT * FROM mst_group WHERE company_id = ? AND division_id = ? LIMIT 1`;
+          const testParams = [companyId, divisionId];
+          
+          const queryResponse = await fetch(`${apiUrl}/api/v1/query`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sql: testSql,
+              params: testParams
+            })
+          });
+          
+          const queryWorking = queryResponse.ok;
+          const queryData = queryWorking ? await queryResponse.json() : null;
+          const recordCount = queryWorking && Array.isArray(queryData) ? queryData.length : 0;
+          
+          result = {
+            api_health: healthData,
+            query_endpoint: {
+              working: queryWorking,
+              status: queryResponse.status,
+              records_found: recordCount
+            },
+            supabase_connection: true,
+            division_found: true
+          };
+        } catch (queryError) {
+          result = {
+            api_health: healthData,
+            query_endpoint: {
+              working: false,
+              error: queryError.message
+            },
+            supabase_connection: true,
+            division_found: true
+          };
+        }
         break;
         
       case 'metadata':

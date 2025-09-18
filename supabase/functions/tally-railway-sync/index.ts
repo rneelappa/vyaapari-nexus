@@ -145,7 +145,45 @@ async function queryRailwayAPI(
     const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
     const queryUrl = `${RAILWAY_BASE_URL}/api/v1/query`;
     
-    console.log(`[Railway API] Querying ${table} from: ${queryUrl} (limit: ${limit}, offset: ${offset})`);
+    // Build SQL query with parameters
+    let sql = `SELECT * FROM ${table}`;
+    const params: any[] = [];
+    
+    // Add WHERE conditions
+    const conditions: string[] = [];
+    if (companyId) {
+      conditions.push('company_id = ?');
+      params.push(companyId);
+    }
+    if (divisionId) {
+      conditions.push('division_id = ?');
+      params.push(divisionId);
+    }
+    
+    // Add custom filters
+    if (filters && Object.keys(filters).length > 0) {
+      for (const [key, value] of Object.entries(filters)) {
+        if (value !== null && value !== undefined) {
+          conditions.push(`${key} = ?`);
+          params.push(value);
+        }
+      }
+    }
+    
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+    
+    // Add pagination
+    if (limit) {
+      sql += ` LIMIT ${limit}`;
+    }
+    if (offset) {
+      sql += ` OFFSET ${offset}`;
+    }
+    
+    console.log(`[Railway API] SQL Query: ${sql}`);
+    console.log(`[Railway API] Params:`, params);
 
     const response = await fetch(queryUrl, {
       method: 'POST',
@@ -154,12 +192,8 @@ async function queryRailwayAPI(
         ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
       },
       body: JSON.stringify({
-        companyId: companyId,
-        divisionId: divisionId,
-        table: table,
-        filters: filters,
-        limit: limit,
-        offset: offset
+        sql: sql,
+        params: params
       })
     });
 
@@ -170,12 +204,8 @@ async function queryRailwayAPI(
 
     const responseData = await response.json();
     
-    if (!responseData.success) {
-      throw new Error(responseData.error || 'API request failed');
-    }
-
-    // Railway returns data directly as array
-    const records = extractRecords(responseData, table);
+    // Railway should return records directly in the response
+    const records = Array.isArray(responseData) ? responseData : responseData.data || responseData.records || [];
     console.log(`[Railway API] Retrieved ${records.length} records for ${table}`);
     
     return records;
@@ -836,28 +866,30 @@ async function performRailwaySync(
 
   // Test POST /api/v1/query endpoint specifically
   try {
-const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
-const testQuery = await fetch(`${RAILWAY_BASE_URL}/api/v1/query`, {
-  method: 'POST',
-  headers: { 
-    'Content-Type': 'application/json',
-    ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
-  },
-  body: JSON.stringify({
-    companyId,
-    divisionId,
-    table: 'groups',
-    limit: 1
-  })
-});
+    const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
+    const testSql = `SELECT * FROM mst_group WHERE company_id = ? AND division_id = ? LIMIT 1`;
+    const testParams = [companyId, divisionId];
     
-if (!testQuery.ok) {
-  const errText = await testQuery.text();
-  throw new Error(`Query endpoint test failed: ${testQuery.status} ${testQuery.statusText} - ${errText}`);
-}
-    
-const testData = await testQuery.json();
-console.log(`[Sync Job ${jobId}] ✅ POST /api/v1/query endpoint working:`, testData.success);
+    const testQuery = await fetch(`${RAILWAY_BASE_URL}/api/v1/query`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
+      },
+      body: JSON.stringify({
+        sql: testSql,
+        params: testParams
+      })
+    });
+        
+    if (!testQuery.ok) {
+      const errText = await testQuery.text();
+      throw new Error(`Query endpoint test failed: ${testQuery.status} ${testQuery.statusText} - ${errText}`);
+    }
+        
+    const testData = await testQuery.json();
+    const recordCount = Array.isArray(testData) ? testData.length : (testData.data?.length || 0);
+    console.log(`[Sync Job ${jobId}] ✅ POST /api/v1/query endpoint working - retrieved ${recordCount} test records`);
   } catch (error) {
     throw new Error(`Query endpoint test failed: ${error.message}`);
   }
