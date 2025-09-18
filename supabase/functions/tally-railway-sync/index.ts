@@ -331,6 +331,11 @@ async function bulkSyncToSupabase(
       // First normalize the record
       const normalized = normalizeRecord(record, tableName);
       
+      // Remove problematic fields that don't exist in Railway schema
+      delete normalized.additional_allocation_type;
+      delete normalized.sync_timestamp;
+      delete normalized.source;
+      
       let filteredRecord: any = {
         company_id: companyId,
         division_id: divisionId
@@ -344,7 +349,7 @@ async function bulkSyncToSupabase(
           }
         }
       } else {
-        // No whitelist - include all columns
+        // No whitelist - include all columns except problematic ones
         filteredRecord = {
           ...normalized,
           company_id: companyId,
