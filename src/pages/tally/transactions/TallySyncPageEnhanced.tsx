@@ -451,6 +451,7 @@ export function TallySyncPageEnhanced({
       
       console.log('Calling database-fix function with:', { companyId, divisionId });
       
+      // Primary call through Supabase client
       const { data, error } = await supabase.functions.invoke('database-fix', {
         body: { 
           companyId, 
@@ -461,28 +462,49 @@ export function TallySyncPageEnhanced({
 
       console.log('Function response:', { data, error });
 
-      if (error) {
-        console.error('Function error details:', error);
-        throw error;
+      let payload = data;
+
+      if (error || !data?.success) {
+        console.warn('Primary invoke failed or returned unsuccessful payload. Falling back to direct fetch...', error || data);
+        // Fallback: direct fetch to Edge Function (full URL required)
+        const EDGE_URL = 'https://hycyhnjsldiokfkpqzoz.supabase.co/functions/v1/database-fix';
+        const { data: sessionRes } = await supabase.auth.getSession();
+        const token = sessionRes?.session?.access_token;
+        const res = await fetch(EDGE_URL, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            // apikey header helps Supabase route the request properly
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5Y3lobmpzbGRpb2tma3Bxem96Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NzQyMzksImV4cCI6MjA3MzA1MDIzOX0.pYalSrD_FP8tRY-bPCfFGbXavUq0eGwRmQUCIPnPxNk',
+            ...(token ? { 'authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ companyId, divisionId, operation: 'fix-voucher-relationships' })
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Edge function HTTP ${res.status}: ${text}`);
+        }
+        payload = await res.json();
+        console.log('Fallback fetch payload:', payload);
       }
 
-      if (data?.success && data?.result) {
-        const result = data.result;
+      if (payload?.success && payload?.result) {
+        const result = payload.result;
         addDebugLog('success', 'Database relationships fixed successfully', result);
         toast({
-          title: "Database Fixed Successfully",
+          title: 'Database Fixed Successfully',
           description: `Fixed ${result.accounting.fixed}/${result.accounting.total} accounting entries and ${result.inventory.fixed}/${result.inventory.total} inventory entries`,
         });
       } else {
-        throw new Error(data?.error || 'Unknown error occurred');
+        throw new Error(payload?.error || 'Unknown error occurred');
       }
     } catch (error: any) {
       console.error('Database fix error:', error);
       addDebugLog('error', 'Database fix failed:', error);
       toast({
-        title: "Database Fix Failed",
-        description: error.message || "Failed to fix database relationships",
-        variant: "destructive",
+        title: 'Database Fix Failed',
+        description: error.message || 'Failed to fix database relationships',
+        variant: 'destructive',
       });
     } finally {
       setFixingDatabase(false);
