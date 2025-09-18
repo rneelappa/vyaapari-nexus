@@ -184,7 +184,97 @@ async function queryRailwayAPI(
   }
 }
 
-// Pagination support for large tables
+// Batch processing for large tables to prevent memory issues
+async function processBatchedSync(
+  supabase: any,
+  tableMapping: any,
+  companyId: string,
+  divisionId: string,
+  jobId: string,
+  batchSize: number = 1000
+): Promise<any> {
+  console.log(`[Job ${jobId}] Starting batched sync for ${tableMapping.supabaseTable} (${tableMapping.apiTable})`);
+  
+  let offset = 0;
+  let totalRecords = 0;
+  let totalInserted = 0;
+  let totalUpdated = 0;
+  let totalErrors = 0;
+  let batchNumber = 1;
+  
+  while (true) {
+    console.log(`[Job ${jobId}] Processing batch ${batchNumber} for ${tableMapping.apiTable} (offset: ${offset})`);
+    
+    try {
+      // Fetch one batch of records
+      const records = await queryRailwayAPI(
+        tableMapping.endpoint,
+        companyId,
+        divisionId,
+        tableMapping.apiTable,
+        {}, // filters
+        batchSize,
+        offset
+      );
+      
+      if (records.length === 0) {
+        console.log(`[Job ${jobId}] No more records found for ${tableMapping.apiTable}, completed batched sync`);
+        break;
+      }
+      
+      console.log(`[Job ${jobId}] Batch ${batchNumber}: Retrieved ${records.length} records for ${tableMapping.apiTable}`);
+      
+      // Immediately process this batch
+      const syncResult = await bulkSyncToSupabase(
+        supabase,
+        tableMapping.supabaseTable,
+        records,
+        companyId,
+        divisionId,
+        tableMapping.keyField,
+        tableMapping.columnWhitelist
+      );
+      
+      // Accumulate results
+      totalRecords += records.length;
+      totalInserted += syncResult.inserted;
+      totalUpdated += syncResult.updated;
+      totalErrors += syncResult.errors;
+      
+      console.log(`[Job ${jobId}] Batch ${batchNumber} completed: ${records.length} fetched, ${syncResult.inserted} inserted, ${syncResult.updated} updated, ${syncResult.errors} errors`);
+      
+      // Move to next batch
+      offset += records.length;
+      batchNumber++;
+      
+      // Break if we got fewer records than batch size (last page)
+      if (records.length < batchSize) {
+        console.log(`[Job ${jobId}] Last batch processed for ${tableMapping.apiTable} (${records.length} < ${batchSize})`);
+        break;
+      }
+      
+    } catch (error) {
+      console.error(`[Job ${jobId}] Error processing batch ${batchNumber} for ${tableMapping.apiTable}:`, error);
+      totalErrors++;
+      break;
+    }
+  }
+  
+  console.log(`[Job ${jobId}] Batched sync completed for ${tableMapping.supabaseTable}: ${totalRecords} total records, ${totalInserted} inserted, ${totalUpdated} updated, ${totalErrors} errors`);
+  
+  return {
+    table: tableMapping.supabaseTable,
+    api_table: tableMapping.apiTable,
+    records_fetched: totalRecords,
+    records_inserted: totalInserted,
+    records_updated: totalUpdated,
+    errors: totalErrors,
+    status: totalErrors > 0 ? 'failed' : 'success',
+    batches_processed: batchNumber - 1
+  };
+}
+
+// Legacy pagination support for compatibility (deprecated - use processBatchedSync instead)
 async function queryWithPagination(
   companyId: string,
   divisionId: string,
@@ -804,67 +894,78 @@ async function performRailwaySync(
     console.log(`[Sync Job ${jobId}] Processing table: ${tableMapping.supabaseTable} (API: ${tableMapping.apiTable})`);
     
     try {
-      // Use pagination for large tables
+      // Use batch processing for large tables to prevent memory issues
       const isLargeTable = ['vouchers', 'accounting_entries', 'inventory_entries'].includes(tableMapping.apiTable);
-      let records: any[];
+      
+      let tableResult: any;
       
       if (isLargeTable) {
-        records = await queryWithPagination(companyId, divisionId, tableMapping.apiTable, 1000);
+        // Use batched sync for large tables
+        console.log(`[Sync Job ${jobId}] Using batched processing for large table: ${tableMapping.apiTable}`);
+        tableResult = await processBatchedSync(
+          supabase,
+          tableMapping,
+          companyId,
+          divisionId,
+          jobId,
+          1000 // batch size
+        );
       } else {
-        records = await queryRailwayAPI(
+        // Use traditional approach for smaller tables
+        console.log(`[Sync Job ${jobId}] Using traditional sync for table: ${tableMapping.apiTable}`);
+        const records = await queryRailwayAPI(
           tableMapping.endpoint,
           companyId,
           divisionId,
           tableMapping.apiTable
         );
+
+        console.log(`[Sync Job ${jobId}] Retrieved ${records.length} records for ${tableMapping.apiTable}`);
+
+        if (records.length > 0) {
+          const syncResult = await bulkSyncToSupabase(
+            supabase,
+            tableMapping.supabaseTable,
+            records,
+            companyId,
+            divisionId,
+            tableMapping.keyField,
+            tableMapping.columnWhitelist
+          );
+
+          tableResult = {
+            table: tableMapping.supabaseTable,
+            api_table: tableMapping.apiTable,
+            records_fetched: records.length,
+            records_inserted: syncResult.inserted,
+            records_updated: syncResult.updated,
+            errors: syncResult.errors,
+            status: syncResult.errors > 0 ? 'failed' : 'success',
+            ...(syncResult.errorMessage && { error: syncResult.errorMessage })
+          };
+        } else {
+          console.log(`[Sync Job ${jobId}] ⚠️ No records found for ${tableMapping.apiTable} - API source appears empty`);
+          
+          tableResult = {
+            table: tableMapping.supabaseTable,
+            api_table: tableMapping.apiTable,
+            records_fetched: 0,
+            records_inserted: 0,
+            records_updated: 0,
+            errors: 0,
+            status: 'success'
+          };
+        }
       }
 
-      console.log(`[Sync Job ${jobId}] Retrieved ${records.length} records for ${tableMapping.apiTable}`);
+      // Add results to totals
+      results.push(tableResult);
+      totalRecords += tableResult.records_fetched;
+      totalInserted += tableResult.records_inserted;
+      totalUpdated += tableResult.records_updated;
+      totalErrors += tableResult.errors;
 
-      if (records.length > 0) {
-        const syncResult = await bulkSyncToSupabase(
-          supabase,
-          tableMapping.supabaseTable,
-          records,
-          companyId,
-          divisionId,
-          tableMapping.keyField,
-          tableMapping.columnWhitelist
-        );
-
-        const tableResult = {
-          table: tableMapping.supabaseTable,
-          api_table: tableMapping.apiTable,
-          records_fetched: records.length,
-          records_inserted: syncResult.inserted,
-          records_updated: syncResult.updated,
-          errors: syncResult.errors,
-          status: syncResult.errors > 0 ? 'failed' : 'success',
-          ...(syncResult.errorMessage && { error: syncResult.errorMessage })
-        };
-
-        results.push(tableResult);
-        totalRecords += records.length;
-        totalInserted += syncResult.inserted;
-        totalUpdated += syncResult.updated;
-        totalErrors += syncResult.errors;
-
-        console.log(`[Sync Job ${jobId}] ${tableMapping.supabaseTable} (${tableMapping.apiTable}): ${records.length} fetched, ${syncResult.inserted} inserted, ${syncResult.errors} errors`, tableResult);
-      } else {
-        console.log(`[Sync Job ${jobId}] ⚠️ No records found for ${tableMapping.apiTable} - API source appears empty`);
-        
-        const emptyResult = {
-          table: tableMapping.supabaseTable,
-          api_table: tableMapping.apiTable,
-          records_fetched: 0,
-          records_inserted: 0,
-          records_updated: 0,
-          errors: 0,
-          status: 'success'
-        };
-        
-        results.push(emptyResult);
-      }
+      console.log(`[Sync Job ${jobId}] ${tableMapping.supabaseTable} completed:`, tableResult);
 
     } catch (error) {
       console.error(`[Sync Job ${jobId}] Error processing ${tableMapping.supabaseTable}:`, error);
