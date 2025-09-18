@@ -103,11 +103,11 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
     setError(null);
     
     try {
-// Fetch actual inventory entries for this voucher by linking through the guid
+// Fetch actual inventory entries for this voucher by linking through voucher_guid
       const { data: inventoryData, error: inventoryError } = await supabase
         .from('trn_inventory')
         .select('guid, item, godown, quantity, rate, amount, tracking_number')
-        .eq('guid', voucherGuid)
+        .eq('voucher_guid', voucherGuid)
         .eq('company_id', companyId)
         .eq('division_id', divisionId);
 
