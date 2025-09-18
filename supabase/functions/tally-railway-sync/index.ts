@@ -29,6 +29,7 @@ interface TableMapping {
 }
 
 const TABLE_MAPPINGS: TableMapping[] = [
+  // Master data tables (sync first for referential integrity) - using CORRECT Railway SQLite table names
   { 
     apiTable: 'mst_group', 
     supabaseTable: 'mst_group', 
@@ -44,60 +45,118 @@ const TABLE_MAPPINGS: TableMapping[] = [
     columnWhitelist: ['guid', 'name', 'parent', '_parent', 'alias', 'description', 'notes', 'mailing_name', 'mailing_address', 'mailing_state', 'mailing_country', 'mailing_pincode', 'email', 'it_pan', 'gstn', 'gst_registration_type', 'gst_supply_type', 'gst_duty_head', 'opening_balance', 'closing_balance', 'is_revenue', 'is_deemedpositive', 'tax_rate', 'credit_limit', 'credit_days', 'bill_credit_period', 'bill_credit_limit', 'bank_account_holder', 'bank_account_number', 'bank_ifsc', 'bank_swift', 'bank_name', 'bank_branch', 'income_tax_number', 'sales_tax_number', 'excise_registration_number', 'service_tax_number', 'buyer_type', 'buyer_category', 'ledger_contact', 'ledger_mobile', 'ledger_fax', 'ledger_website', 'company_id', 'division_id', 'alterid']
   },
   { 
-    apiTable: 'stock_items', 
+    apiTable: 'mst_stock_item', 
     supabaseTable: 'mst_stock_item', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'name', 'parent', '_parent', 'alias', 'description', 'notes', 'part_number', 'uom', '_uom', 'alternate_uom', '_alternate_uom', 'costing_method', 'opening_balance', 'opening_rate', 'opening_value', 'closing_balance', 'closing_rate', 'closing_value', 'reorder_level', 'minimum_level', 'maximum_level', 'conversion', 'gst_rate', 'gst_type_of_supply', 'gst_hsn_code', 'gst_hsn_description', 'gst_taxability', 'weight', 'weight_unit', 'volume', 'volume_unit', 'shelf_life_days', 'item_category', 'item_classification', 'manufacturer', 'brand', 'model', 'size', 'color', 'base_units', 'additional_units', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'voucher_types', 
+    apiTable: 'mst_vouchertype', 
     supabaseTable: 'mst_vouchertype', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'name', 'parent', '_parent', 'numbering_method', 'affects_stock', 'is_deemedpositive', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'cost_centers', 
+    apiTable: 'mst_cost_centre', 
     supabaseTable: 'mst_cost_centre', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'name', 'parent', '_parent', 'category', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'godowns', 
+    apiTable: 'mst_godown', 
     supabaseTable: 'mst_godown', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'name', 'parent', '_parent', 'address', 'storage_type', 'capacity', 'capacity_unit', 'godown_type', 'location_code', 'manager_name', 'contact_number', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'uoms', 
+    apiTable: 'mst_uom', 
     supabaseTable: 'mst_uom', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'name', 'formalname', 'is_simple_unit', 'base_units', 'additional_units', 'conversion', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'vouchers', 
+    apiTable: 'mst_employee', 
+    supabaseTable: 'mst_employee', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'designation', 'father_mother_name', 'spouse_name', 'blood_group', 'gender', 'date_of_birth', 'date_of_joining', 'date_of_release', 'location', 'function_role', 'address', 'mobile', 'email', 'pan', 'aadhar', 'uan', 'pf_number', 'pf_joining_date', 'pf_relieving_date', 'pr_account_number', 'id_number', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'mst_cost_category', 
+    supabaseTable: 'mst_cost_category', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'allocate_revenue', 'allocate_non_revenue', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'mst_payhead', 
+    supabaseTable: 'mst_payhead', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'payslip_name', 'pay_type', 'income_type', 'calculation_type', 'calculation_period', 'leave_type', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'mst_stock_group', 
+    supabaseTable: 'mst_stock_group', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'name', 'parent', '_parent', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'config', 
+    supabaseTable: 'config', 
+    endpoint: '/api/v1/query', 
+    keyField: 'name',
+    columnWhitelist: ['name', 'value']
+  },
+  
+  // Transaction tables (sync after master data) - using CORRECT Railway SQLite table names
+  { 
+    apiTable: 'trn_voucher', 
     supabaseTable: 'tally_trn_voucher', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'voucher_type', 'voucher_number', 'voucher_number_prefix', 'voucher_number_suffix', 'date', 'due_date', 'narration', 'reference', 'party_ledger_name', 'basic_amount', 'discount_amount', 'tax_amount', 'net_amount', 'total_amount', 'final_amount', 'currency', 'exchange_rate', 'order_reference', 'receipt_reference', 'consignment_note', 'is_optional', 'is_cancelled', 'persistedview', 'altered_by', 'altered_on', 'alterid', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'accounting_entries', 
+    apiTable: 'trn_accounting', 
     supabaseTable: 'trn_accounting', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'ledger', '_ledger', 'amount', 'amount_forex', 'amount_cleared', 'currency', 'voucher_guid', 'voucher_type', 'voucher_number', 'voucher_date', 'cost_centre', 'cost_category', 'bill_allocations', 'is_deemed_positive', 'is_party_ledger', 'alterid', 'company_id', 'division_id']
   },
   { 
-    apiTable: 'inventory_entries', 
+    apiTable: 'trn_inventory', 
     supabaseTable: 'trn_inventory', 
     endpoint: '/api/v1/query', 
     keyField: 'guid',
     columnWhitelist: ['guid', 'voucher_guid', 'voucher_type', 'voucher_number', 'voucher_date', 'item', '_item', 'godown', '_godown', 'quantity', 'rate', 'amount', 'actual_quantity', 'billed_quantity', 'tracking_number', 'order_reference', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'trn_cost_centre', 
+    supabaseTable: 'trn_cost_centre', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'voucher_guid', 'cost_centre', '_cost_centre', 'amount', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'trn_bill', 
+    supabaseTable: 'trn_bill', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'voucher_guid', 'bill_name', 'bill_type', 'amount', 'company_id', 'division_id']
+  },
+  { 
+    apiTable: 'trn_bank', 
+    supabaseTable: 'trn_bank', 
+    endpoint: '/api/v1/query', 
+    keyField: 'guid',
+    columnWhitelist: ['guid', 'voucher_guid', 'bank_name', 'bank_date', 'amount', 'company_id', 'division_id']
   }
 ];
 

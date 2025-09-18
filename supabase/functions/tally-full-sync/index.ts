@@ -24,22 +24,27 @@ interface TableMapping {
 }
 
 const TABLE_MAPPINGS: TableMapping[] = [
-  // Master data tables (sync first for referential integrity) - using actual SQL table names
-  { apiTable: 'mst_group', supabaseTable: 'mst_group', endpoint: '/masters/groups', keyField: 'guid' },
-  { apiTable: 'mst_ledger', supabaseTable: 'mst_ledger', endpoint: '/masters/ledgers', keyField: 'guid' },
-  { apiTable: 'mst_stock_item', supabaseTable: 'mst_stock_item', endpoint: '/masters/stock-items', keyField: 'guid' },
-  { apiTable: 'mst_vouchertype', supabaseTable: 'mst_vouchertype', endpoint: '/masters/voucher-types', keyField: 'guid' },
-  { apiTable: 'mst_cost_centre', supabaseTable: 'mst_cost_centre', endpoint: '/masters/cost-centers', keyField: 'guid' },
-  { apiTable: 'mst_godown', supabaseTable: 'mst_godown', endpoint: '/masters/godowns', keyField: 'guid' },
-  { apiTable: 'mst_employee', supabaseTable: 'mst_employee', endpoint: '/masters/employees', keyField: 'guid' },
-  { apiTable: 'mst_uom', supabaseTable: 'mst_uom', endpoint: '/masters/uoms', keyField: 'guid' },
-  { apiTable: 'mst_cost_category', supabaseTable: 'mst_cost_category', endpoint: '/masters/cost-categories', keyField: 'guid' },
-  { apiTable: 'mst_payhead', supabaseTable: 'mst_payhead', endpoint: '/masters/payheads', keyField: 'guid' },
+  // Master data tables (sync first for referential integrity) - using CORRECT Railway SQLite table names
+  { apiTable: 'mst_group', supabaseTable: 'mst_group', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_ledger', supabaseTable: 'mst_ledger', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_stock_item', supabaseTable: 'mst_stock_item', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_vouchertype', supabaseTable: 'mst_vouchertype', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_cost_centre', supabaseTable: 'mst_cost_centre', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_godown', supabaseTable: 'mst_godown', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_employee', supabaseTable: 'mst_employee', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_uom', supabaseTable: 'mst_uom', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_cost_category', supabaseTable: 'mst_cost_category', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_payhead', supabaseTable: 'mst_payhead', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'mst_stock_group', supabaseTable: 'mst_stock_group', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'config', supabaseTable: 'config', endpoint: '/api/v1/query', keyField: 'name' },
   
-  // Transaction tables (sync after master data)
-  { apiTable: 'tally_trn_voucher', supabaseTable: 'tally_trn_voucher', endpoint: '/vouchers', keyField: 'guid' },
-  { apiTable: 'trn_accounting', supabaseTable: 'trn_accounting', endpoint: '/accounting', keyField: 'guid' },
-  { apiTable: 'trn_inventory', supabaseTable: 'trn_inventory', endpoint: '/inventory', keyField: 'guid' }
+  // Transaction tables (sync after master data) - using CORRECT Railway SQLite table names
+  { apiTable: 'trn_voucher', supabaseTable: 'tally_trn_voucher', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'trn_accounting', supabaseTable: 'trn_accounting', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'trn_inventory', supabaseTable: 'trn_inventory', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'trn_cost_centre', supabaseTable: 'trn_cost_centre', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'trn_bill', supabaseTable: 'trn_bill', endpoint: '/api/v1/query', keyField: 'guid' },
+  { apiTable: 'trn_bank', supabaseTable: 'trn_bank', endpoint: '/api/v1/query', keyField: 'guid' }
 ];
 
 async function validateUUID(uuid: string): Promise<boolean> {
