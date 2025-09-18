@@ -26,7 +26,8 @@ import {
   Network,
   Target,
   Award,
-  Copy
+  Copy,
+  Wrench
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'react-router-dom';
@@ -35,6 +36,7 @@ import { tallyApi, type ApiResponse } from '@/services/tallyApiService';
 import { useFullTallySync } from '@/hooks/useFullTallySync';
 import { useRailwayTallySync } from '@/hooks/useRailwayTallySync';
 import { useDatabaseDiagnosis } from '@/hooks/useDatabaseDiagnosis';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SyncProgress {
   status: 'idle' | 'syncing' | 'completed' | 'error';
@@ -119,6 +121,7 @@ export function TallySyncPageEnhanced({
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [isFullDatabaseSync, setIsFullDatabaseSync] = useState(false);
   const [useRailwayApi, setUseRailwayApi] = useState(true);
+  const [fixingDatabase, setFixingDatabase] = useState(false);
   const { toast } = useToast();
   
   // New hooks for enhanced functionality
@@ -441,6 +444,41 @@ export function TallySyncPageEnhanced({
     }
   };
 
+  const fixDatabaseRelationships = async () => {
+    try {
+      setFixingDatabase(true);
+      addDebugLog('info', 'Starting database relationship fix...');
+      
+      const { data, error } = await supabase.functions.invoke('database-fix', {
+        body: { 
+          companyId, 
+          divisionId,
+          operation: 'fix-voucher-relationships'
+        }
+      });
+
+      if (error) throw error;
+
+      const result = data?.result;
+      if (result) {
+        addDebugLog('success', 'Database relationships fixed successfully', result);
+        toast({
+          title: "Database Fixed Successfully",
+          description: `Fixed ${result.accounting.fixed}/${result.accounting.total} accounting entries and ${result.inventory.fixed}/${result.inventory.total} inventory entries`,
+        });
+      }
+    } catch (error: any) {
+      addDebugLog('error', 'Database fix failed:', error);
+      toast({
+        title: "Database Fix Failed",
+        description: error.message || "Failed to fix database relationships",
+        variant: "destructive",
+      });
+    } finally {
+      setFixingDatabase(false);
+    }
+  };
+
   const getSyncDuration = () => {
     if (!syncProgress.startTime) return 0;
     const endTime = syncProgress.endTime || new Date();
@@ -472,8 +510,17 @@ export function TallySyncPageEnhanced({
             Debug Panel ({debugLogs.length})
           </Button>
           <Button 
+            variant="outline"
+            onClick={fixDatabaseRelationships}
+            disabled={fixingDatabase || syncProgress.status === 'syncing'}
+            className="flex items-center"
+          >
+            <Wrench className={`h-4 w-4 mr-2 ${fixingDatabase ? 'animate-spin' : ''}`} />
+            {fixingDatabase ? 'Fixing...' : 'Fix Database'}
+          </Button>
+          <Button 
             onClick={performEnhancedSync} 
-            disabled={syncProgress.status === 'syncing'}
+            disabled={syncProgress.status === 'syncing' || fixingDatabase}
             className="flex items-center"
           >
             {syncProgress.status === 'syncing' ? (
