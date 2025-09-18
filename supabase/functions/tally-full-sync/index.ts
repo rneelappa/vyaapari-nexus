@@ -134,6 +134,99 @@ async function bulkSyncToSupabase(
   return { inserted, updated, errors };
 }
 
+// Post-processing function to link voucher relationships
+async function linkVoucherRelationships(supabase: any, companyId: string, divisionId: string): Promise<void> {
+  try {
+    console.log('Linking trn_accounting and trn_inventory to tally_trn_voucher via voucher_number...');
+
+    // Helper to link a table's rows to vouchers
+    const linkTable = async (tableName: string) => {
+      // Fetch rows missing voucher_guid but having voucher_number
+      const { data: rows, error } = await supabase
+        .from(tableName)
+        .select('guid, voucher_number')
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .not('voucher_number', 'is', null)
+        .neq('voucher_number', '')
+        .or('voucher_guid.is.null,voucher_guid.eq.')
+        .limit(5000);
+
+      if (error) {
+        console.error(`Error fetching ${tableName} rows to link:`, error);
+        return { linked: 0, total: 0 };
+      }
+
+      if (!rows || rows.length === 0) {
+        console.log(`No ${tableName} rows need linking`);
+        return { linked: 0, total: 0 };
+      }
+
+      let linked = 0;
+      for (const row of rows) {
+        try {
+          const { data: voucher, error: vErr } = await supabase
+            .from('tally_trn_voucher')
+            .select('guid')
+            .eq('company_id', companyId)
+            .eq('division_id', divisionId)
+            .eq('voucher_number', row.voucher_number)
+            .maybeSingle();
+
+          if (vErr || !voucher) continue;
+
+          const { error: uErr } = await supabase
+            .from(tableName)
+            .update({ voucher_guid: voucher.guid })
+            .eq('guid', row.guid);
+
+          if (!uErr) linked++;
+        } catch (e) {
+          // continue
+        }
+      }
+
+      console.log(`Linked ${linked}/${rows.length} rows for ${tableName}`);
+      return { linked, total: rows.length };
+    };
+
+    const accRes = await linkTable('trn_accounting');
+    const invRes = await linkTable('trn_inventory');
+
+    // Targeted diagnostics for the reported voucher
+    const targetVoucherNo = '2800240/25-26';
+    const { data: vTarget } = await supabase
+      .from('tally_trn_voucher')
+      .select('guid')
+      .eq('company_id', companyId)
+      .eq('division_id', divisionId)
+      .eq('voucher_number', targetVoucherNo)
+      .maybeSingle();
+
+    if (vTarget?.guid) {
+      const { count: accCount } = await supabase
+        .from('trn_accounting')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .eq('voucher_guid', vTarget.guid);
+
+      const { count: invCount } = await supabase
+        .from('trn_inventory')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .eq('voucher_guid', vTarget.guid);
+
+      console.log(`Voucher ${targetVoucherNo} linkage: accounting=${accCount || 0}, inventory=${invCount || 0}`);
+    } else {
+      console.log(`Voucher ${targetVoucherNo} not found during linking step.`);
+    }
+  } catch (error) {
+    console.error('Error in linkVoucherRelationships:', error);
+  }
+}
+
 // Post-processing function to calculate missing voucher amounts
 async function calculateMissingVoucherAmounts(supabase: any, companyId: string, divisionId: string): Promise<void> {
   try {
@@ -350,6 +443,10 @@ async function performFullSync(
           });
       }
     }
+
+    // Post-processing: Link relationships based on voucher_number -> voucher_guid
+    console.log('Starting post-processing: linking voucher relationships...');
+    await linkVoucherRelationships(supabase, companyId, divisionId);
 
     // Post-processing: Calculate voucher amounts from accounting entries
     console.log('Starting post-processing: calculating voucher amounts...');
