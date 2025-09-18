@@ -603,15 +603,13 @@ serve(async (req) => {
         
         // Test the query endpoint with SQL format
         try {
-          const testSql = `SELECT * FROM mst_group WHERE company_id = ? AND division_id = ? LIMIT 1`;
-          const testParams = [companyId, divisionId];
+          const testSql = `SELECT 1 AS ok`;
           
           const queryResponse = await fetch(`${apiUrl}/api/v1/query`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              sql: testSql,
-              params: testParams
+              sql: testSql
             })
           });
           

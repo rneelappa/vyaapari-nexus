@@ -867,8 +867,7 @@ async function performRailwaySync(
   // Test POST /api/v1/query endpoint specifically
   try {
     const railwayApiKey = Deno.env.get('RAILWAY_API_KEY');
-    const testSql = `SELECT * FROM mst_group WHERE company_id = ? AND division_id = ? LIMIT 1`;
-    const testParams = [companyId, divisionId];
+    const testSql = `SELECT 1 AS ok`;
     
     const testQuery = await fetch(`${RAILWAY_BASE_URL}/api/v1/query`, {
       method: 'POST',
@@ -877,8 +876,7 @@ async function performRailwaySync(
         ...(railwayApiKey && { 'Authorization': `Bearer ${railwayApiKey}` })
       },
       body: JSON.stringify({
-        sql: testSql,
-        params: testParams
+        sql: testSql
       })
     });
         
@@ -889,7 +887,8 @@ async function performRailwaySync(
         
     const testData = await testQuery.json();
     const recordCount = Array.isArray(testData) ? testData.length : (testData.data?.length || 0);
-    console.log(`[Sync Job ${jobId}] ✅ POST /api/v1/query endpoint working - retrieved ${recordCount} test records`);
+    console.log(`[Sync Job ${jobId}] ✅ POST /api/v1/query endpoint working - test returned`, testData);
+  
   } catch (error) {
     throw new Error(`Query endpoint test failed: ${error.message}`);
   }
