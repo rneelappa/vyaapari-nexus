@@ -37,6 +37,7 @@ import ConfigurationPage from "@/pages/tally/utilities/ConfigurationPage";
 import { VoucherViewsPage } from "@/pages/tally/utilities/VoucherViewsPage";
 import SyncJobsManagement from "@/pages/tally/utilities/SyncJobsManagement";
 import TallySyncLogs from "@/pages/tally/utilities/TallySyncLogs";
+import TallySync from "@/pages/tally/utilities/TallySync";
 import { VoucherViewBuilder } from "@/pages/tally/utilities/VoucherViewBuilder";
 import { VoucherViewsManager } from "@/pages/tally/utilities/VoucherViewsManager";
 
@@ -105,7 +106,7 @@ export function TallyRouter() {
           divisionId={divisionId!}
         />
       } />
-      <Route path="utilities/sync" element={<TallySyncPageEnhanced />} />
+      <Route path="utilities/sync" element={<TallySync />} />
 
       {/* Data Management */}
       <Route path="data/*" element={<DataManagementPage />} />
