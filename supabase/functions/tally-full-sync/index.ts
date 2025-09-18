@@ -523,8 +523,14 @@ async function performFullSync(
 }
 
 serve(async (req) => {
+  console.log(`\n🌟 ========== NEW FULL SYNC REQUEST ==========`);
+  console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+  console.log(`🔗 Request URL: ${req.url}`);
+  console.log(`📡 Request Method: ${req.method}`);
+  console.log(`📋 Request Headers:`, Object.fromEntries(req.headers.entries()));
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log(`✈️ Handling CORS preflight request`);
     return new Response(null, { headers: corsHeaders });
   }
 

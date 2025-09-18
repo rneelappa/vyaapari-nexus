@@ -852,6 +852,7 @@ async function performRailwaySync(
   tables?: string[]
 ): Promise<any> {
   const jobId = crypto.randomUUID();
+  console.log(`🆔 Generated Job ID: ${jobId}`);
   const startTime = Date.now();
   
   console.log(`[Sync Job ${jobId}] Starting Railway API sync`);
@@ -1079,8 +1080,14 @@ async function performRailwaySync(
 }
 
 serve(async (req) => {
+  console.log(`\n🌟 ========== NEW RAILWAY SYNC REQUEST ==========`);
+  console.log(`📅 Timestamp: ${new Date().toISOString()}`);
+  console.log(`🔗 Request URL: ${req.url}`);
+  console.log(`📡 Request Method: ${req.method}`);
+  console.log(`📋 Request Headers:`, Object.fromEntries(req.headers.entries()));
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log(`✈️ Handling CORS preflight request`);
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -1088,11 +1095,14 @@ serve(async (req) => {
     const { companyId, divisionId, tables, action } = await req.json();
 
     // Validate required parameters
+    console.log(`\n🔍 ========== VALIDATING PARAMETERS ==========`);
     if (!companyId || !divisionId) {
+      const error = 'Missing required parameters: companyId and divisionId';
+      console.error(`❌ ${error}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Missing required parameters: companyId and divisionId' 
+          error
         }),
         { 
           status: 400, 
@@ -1100,13 +1110,18 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log(`✅ Parameters validated successfully`);
 
     // Validate UUIDs
+    console.log(`\n🔍 ========== VALIDATING UUIDS ==========`);
     if (!await validateUUID(companyId) || !await validateUUID(divisionId)) {
+      const error = 'Invalid UUID format for companyId or divisionId';
+      console.error(`❌ ${error}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Invalid UUID format for companyId or divisionId' 
+          error
         }),
         { 
           status: 400, 
@@ -1115,11 +1130,15 @@ serve(async (req) => {
       );
     }
 
+    console.log(`✅ UUIDs validated successfully`);
+
     // Initialize Supabase client
+    console.log(`\n🚀 ========== INITIALIZING SUPABASE CLIENT ==========`);
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    console.log(`✅ Supabase client initialized successfully`);
 
     let result: any;
 
@@ -1225,9 +1244,15 @@ serve(async (req) => {
 
       default:
         // Default action: full_sync
+        console.log(`\n🎯 ========== EXECUTING FULL SYNC ==========`);
+        console.log(`📋 Calling performRailwaySync with:`, { companyId, divisionId, tables });
         result = await performRailwaySync(supabase, companyId, divisionId, tables);
+        console.log(`✅ performRailwaySync completed, result:`, JSON.stringify(result, null, 2));
         break;
     }
+
+    console.log(`\n✅ ========== REQUEST COMPLETED SUCCESSFULLY ==========`);
+    console.log(`🎉 Final Result:`, JSON.stringify(result, null, 2));
 
     return new Response(
       JSON.stringify(result),
@@ -1238,11 +1263,17 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Railway sync function error:', error);
+    console.error(`\n💥 ========== RAILWAY SYNC FAILED ==========`);
+    console.error(`❌ Error Name: ${error.name}`);
+    console.error(`❌ Error Message: ${error.message}`);
+    console.error(`❌ Error Stack:`, error.stack);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        errorType: error.name,
+        timestamp: new Date().toISOString()
       }),
       { 
         status: 500, 
