@@ -17,7 +17,8 @@ import {
   Database,
   Wifi,
   WifiOff,
-  Timer
+  Timer,
+  Wrench
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +45,7 @@ export default function SyncJobsManagement() {
   const [division, setDivision] = useState<DivisionSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fixingDatabase, setFixingDatabase] = useState(false);
 
   useEffect(() => {
     if (divisionId) {
@@ -161,6 +163,89 @@ export default function SyncJobsManagement() {
         description: error.message || "Failed to trigger health check",
         variant: "destructive",
       });
+    }
+  };
+
+  const fixDatabaseRelationships = async () => {
+    if (!divisionId) return;
+
+    try {
+      setFixingDatabase(true);
+      
+      const { data, error } = await supabase.functions.invoke('database-fix', {
+        body: { 
+          companyId: division?.id || '',
+          divisionId: divisionId,
+          operation: 'fix-voucher-relationships'
+        }
+      });
+
+      if (error) throw error;
+
+      const result = data?.result;
+      if (result) {
+        toast({
+          title: "Database Fixed Successfully",
+          description: `Fixed ${result.accounting.fixed}/${result.accounting.total} accounting entries and ${result.inventory.fixed}/${result.inventory.total} inventory entries`,
+        });
+        
+        // Show diagnostic info if available
+        const diagnostics = result.diagnostics;
+        if (diagnostics && Object.keys(diagnostics).length > 0) {
+          const voucherInfo = Object.entries(diagnostics)[0];
+          const [voucherNumber, info] = voucherInfo as [string, any];
+          
+          if (info.error) {
+            console.log(`Voucher ${voucherNumber}: ${info.error}`);
+          } else {
+            console.log(`Voucher ${voucherNumber}: ${info.accounting_entries} accounting, ${info.inventory_entries} inventory entries linked`);
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fixing database:', error);
+      toast({
+        title: "Database Fix Failed",
+        description: error.message || "Failed to fix database relationships",
+        variant: "destructive",
+      });
+    } finally {
+      setFixingDatabase(false);
+    }
+  };
+
+  const calculateVoucherAmounts = async () => {
+    if (!divisionId) return;
+
+    try {
+      setFixingDatabase(true);
+      
+      const { data, error } = await supabase.functions.invoke('database-fix', {
+        body: { 
+          companyId: division?.id || '',
+          divisionId: divisionId,
+          operation: 'calculate-voucher-amounts'
+        }
+      });
+
+      if (error) throw error;
+
+      const result = data?.result;
+      if (result) {
+        toast({
+          title: "Amounts Calculated Successfully",
+          description: `Updated ${result.vouchers_updated}/${result.vouchers_processed} vouchers with calculated amounts`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error calculating amounts:', error);
+      toast({
+        title: "Amount Calculation Failed",
+        description: error.message || "Failed to calculate voucher amounts",
+        variant: "destructive",
+      });
+    } finally {
+      setFixingDatabase(false);
     }
   };
 
@@ -458,15 +543,32 @@ export default function SyncJobsManagement() {
               Check Health Now
             </Button>
             
-            <Button variant="outline" disabled>
-              <Pause className="h-4 w-4 mr-2" />
-              Pause All Syncs
+            <Button 
+              variant="outline" 
+              onClick={fixDatabaseRelationships}
+              disabled={fixingDatabase}
+            >
+              <Wrench className={`h-4 w-4 mr-2 ${fixingDatabase ? 'animate-spin' : ''}`} />
+              Fix Database
             </Button>
             
-            <Button variant="outline" disabled>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Reset Sync Status
+            <Button 
+              variant="outline" 
+              onClick={calculateVoucherAmounts}
+              disabled={fixingDatabase}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${fixingDatabase ? 'animate-spin' : ''}`} />
+              Calculate Amounts
             </Button>
+          </div>
+          
+          <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+            <h4 className="text-sm font-medium mb-2">Database Maintenance</h4>
+            <p className="text-sm text-muted-foreground">
+              <strong>Fix Database:</strong> Repairs voucher relationships between accounting/inventory entries and vouchers using voucher numbers.
+              <br />
+              <strong>Calculate Amounts:</strong> Recalculates total and final amounts for vouchers based on their accounting entries.
+            </p>
           </div>
         </CardContent>
       </Card>
