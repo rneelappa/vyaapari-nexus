@@ -649,6 +649,76 @@ async function linkVoucherEntries(
   return results;
 }
 
+// Function to recalculate voucher totals after sync
+async function recalculateVoucherTotals(
+  supabase: any,
+  companyId: string,
+  divisionId: string,
+  jobId: string
+): Promise<any> {
+  console.log(`[Job ${jobId}] Starting voucher amount calculations...`);
+  
+  const results = {
+    vouchers_processed: 0,
+    vouchers_updated: 0
+  };
+
+  // Get vouchers that need amount calculation (limit to recent ones to avoid processing all)
+  const { data: vouchers, error: vError } = await supabase
+    .from('tally_trn_voucher')
+    .select('guid, voucher_number, total_amount, final_amount')
+    .eq('company_id', companyId)
+    .eq('division_id', divisionId)
+    .limit(5000)
+    .order('created_at', { ascending: false });
+
+  if (vError || !vouchers) {
+    console.error(`[Job ${jobId}] Error fetching vouchers:`, vError);
+    return results;
+  }
+
+  results.vouchers_processed = vouchers.length;
+  console.log(`[Job ${jobId}] Found ${vouchers.length} vouchers to process for amount calculation`);
+
+  for (const voucher of vouchers) {
+    try {
+      // Calculate total from accounting entries (only positive amounts for total)
+      const { data: accEntries } = await supabase
+        .from('trn_accounting')
+        .select('amount')
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
+        .eq('voucher_guid', voucher.guid)
+        .gt('amount', 0);
+
+      if (accEntries && accEntries.length > 0) {
+        const calculatedTotal = accEntries.reduce((sum, entry) => sum + (entry.amount || 0), 0);
+        
+        // Update if amounts are different or zero
+        if (voucher.total_amount !== calculatedTotal || voucher.final_amount !== calculatedTotal) {
+          const { error: updateError } = await supabase
+            .from('tally_trn_voucher')
+            .update({ 
+              total_amount: calculatedTotal,
+              final_amount: calculatedTotal 
+            })
+            .eq('guid', voucher.guid);
+
+          if (!updateError) {
+            results.vouchers_updated++;
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`[Job ${jobId}] Error calculating amounts for voucher ${voucher.guid}:`, e);
+    }
+  }
+
+  console.log(`[Job ${jobId}] Amount calculation completed: ${results.vouchers_updated}/${results.vouchers_processed} vouchers updated`);
+  
+  return results;
+}
+
 // Main sync function
 async function performRailwaySync(
   supabase: any,
@@ -822,6 +892,16 @@ async function performRailwaySync(
     console.log(`[Sync Job ${jobId}] ✅ Relationship linking completed:`, linkResults);
   } catch (linkError) {
     console.error(`[Sync Job ${jobId}] ⚠️ Relationship linking failed:`, linkError);
+    // Don't fail the entire sync for this, but log it
+  }
+
+  // Calculate voucher amounts after relationships are linked
+  console.log(`[Sync Job ${jobId}] Starting voucher amount calculations...`);
+  try {
+    const amountResults = await recalculateVoucherTotals(supabase, companyId, divisionId, jobId);
+    console.log(`[Sync Job ${jobId}] ✅ Amount calculation completed:`, amountResults);
+  } catch (amountError) {
+    console.error(`[Sync Job ${jobId}] ⚠️ Amount calculation failed:`, amountError);
     // Don't fail the entire sync for this, but log it
   }
 
