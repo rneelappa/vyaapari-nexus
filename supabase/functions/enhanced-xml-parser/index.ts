@@ -94,11 +94,20 @@ serve(async (req) => {
           results.push(ledgerResult);
         }
 
-        // Step 4: Process inventory entries
+        // Step 4: Process inventory entries - FIX: use trn_inventory instead of trn_batch
         const inventoryEntries = extractInventoryEntries(voucherXml, voucherData.guid, companyId, divisionId, voucherData);
         for (const entry of inventoryEntries) {
           const inventoryResult = await upsertInventoryEntry(supabase, entry);
           results.push(inventoryResult);
+        }
+
+        // Step 4.5: Calculate and update voucher amounts if they are 0
+        if (voucherData.total_amount === 0 || voucherData.final_amount === 0) {
+          const updatedAmounts = await calculateVoucherAmounts(supabase, voucherData.guid, ledgerEntries);
+          if (updatedAmounts) {
+            const amountUpdateResult = await updateVoucherAmounts(supabase, voucherData.guid, updatedAmounts);
+            results.push(amountUpdateResult);
+          }
         }
 
         // Step 5: Process party details
@@ -561,14 +570,18 @@ function extractLedgerEntries(voucherXml: string, voucherGuid: string, companyId
   const entries: any[] = [];
   const ledgerMatches = voucherXml.match(/<LEDGERENTRIES\.LIST>[\s\S]*?<\/LEDGERENTRIES\.LIST>/g) || [];
   
+  let entryIndex = 0;
   for (const ledgerXml of ledgerMatches) {
     const ledgerName = extractValue(ledgerXml, 'LEDGERNAME');
     const amount = parseFloat(extractValue(ledgerXml, 'AMOUNT') || '0');
     const isDeemedPositive = extractValue(ledgerXml, 'ISDEEMEDPOSITIVE') === 'Yes';
+    const costCentre = extractValue(ledgerXml, 'COSTCENTRENAME') || '';
+    const billAllocations = extractValue(ledgerXml, 'BILLALLOCATIONS') || '';
     
-    if (ledgerName) {
+    if (ledgerName && amount !== 0) {
+      entryIndex++;
       entries.push({
-        guid: `${voucherGuid}-ledger-${ledgerName}`,
+        guid: `${voucherGuid}-ledger-${entryIndex}`,
         ledger: ledgerName,
         _ledger: ledgerName,
         amount,
@@ -582,15 +595,17 @@ function extractLedgerEntries(voucherXml: string, voucherGuid: string, companyId
         is_party_ledger: ledgerName === voucherData.party_ledger_name ? 1 : 0,
         is_deemed_positive: isDeemedPositive ? 1 : 0,
         amount_cleared: 0,
-        bill_allocations: '',
+        bill_allocations: billAllocations,
         cost_category: '',
-        cost_centre: '',
+        cost_centre: costCentre,
+        alterid: 0,
         company_id: companyId,
         division_id: divisionId
       });
     }
   }
   
+  console.log(`Extracted ${entries.length} ledger entries for voucher ${voucherData.voucher_number}`);
   return entries;
 }
 
@@ -619,52 +634,47 @@ function extractInventoryEntries(voucherXml: string, voucherGuid: string, compan
   const entries: any[] = [];
   const inventoryMatches = voucherXml.match(/<ALLINVENTORYENTRIES\.LIST>[\s\S]*?<\/ALLINVENTORYENTRIES\.LIST>/g) || [];
   
+  let entryIndex = 0;
   for (const inventoryXml of inventoryMatches) {
     const stockItemName = extractValue(inventoryXml, 'STOCKITEMNAME');
     const actualQty = extractValue(inventoryXml, 'ACTUALQTY');
     const billedQty = extractValue(inventoryXml, 'BILLEDQTY');
     const amount = parseFloat(extractValue(inventoryXml, 'AMOUNT') || '0');
     const rate = parseFloat(extractValue(inventoryXml, 'RATE') || '0');
+    const godownName = extractValue(inventoryXml, 'GODOWNNAME') || '';
     
-    if (stockItemName) {
+    if (stockItemName && (amount !== 0 || rate !== 0)) {
+      entryIndex++;
       entries.push({
-        guid: `${voucherGuid}-inventory-${stockItemName}`,
-        item: stockItemName,
-        _item: stockItemName,
-        quantity: parseFloat(actualQty?.split(' ')[0] || '0'),
-        amount,
-        godown: extractValue(inventoryXml, 'GODOWNNAME') || '',
-        _godown: extractValue(inventoryXml, 'GODOWNNAME') || '',
-        name: stockItemName,
-        tracking_number: '',
-        destination_godown: '',
-        _destination_godown: '',
-        // New enhanced fields
+        guid: `${voucherGuid}-inventory-${entryIndex}`,
         voucher_guid: voucherGuid,
         voucher_type: voucherData.voucher_type,
         voucher_number: voucherData.voucher_number,
         voucher_date: voucherData.date,
+        item: stockItemName,
+        _item: stockItemName,
+        godown: godownName,
+        _godown: godownName,
+        quantity: parseFloat(actualQty?.split(' ')[0] || '0'),
         rate: rate,
-        discount_percent: 0,
-        discount_amount: 0,
+        amount,
         actual_quantity: parseFloat(actualQty?.split(' ')[0] || '0'),
         billed_quantity: parseFloat(billedQty?.split(' ')[0] || '0'),
-        additional_details: '',
-        batch_serial_number: '',
-        expiry_date: null,
-        manufactured_date: null,
+        tracking_number: extractValue(inventoryXml, 'TRACKINGNUMBER') || '',
+        order_reference: extractValue(inventoryXml, 'ORDERREF') || '',
         company_id: companyId,
         division_id: divisionId
       });
     }
   }
   
+  console.log(`Extracted ${entries.length} inventory entries for voucher ${voucherData.voucher_number}`);
   return entries;
 }
 
 async function upsertInventoryEntry(supabase: any, entry: any): Promise<ProcessResult> {
   const { data: existing } = await supabase
-    .from('trn_batch')
+    .from('trn_inventory')
     .select('*')
     .eq('guid', entry.guid)
     .maybeSingle();
@@ -672,14 +682,14 @@ async function upsertInventoryEntry(supabase: any, entry: any): Promise<ProcessR
   if (existing) {
     const changed = existing.quantity !== entry.quantity || existing.amount !== entry.amount;
     if (changed) {
-      await supabase.from('trn_batch').update(entry).eq('guid', entry.guid);
-      return { table: 'trn_batch', action: 'updated', guid: entry.guid, record_type: 'inventory' };
+      await supabase.from('trn_inventory').update(entry).eq('guid', entry.guid);
+      return { table: 'trn_inventory', action: 'updated', guid: entry.guid, record_type: 'inventory' };
     } else {
-      return { table: 'trn_batch', action: 'ignored', guid: entry.guid, record_type: 'inventory' };
+      return { table: 'trn_inventory', action: 'ignored', guid: entry.guid, record_type: 'inventory' };
     }
   } else {
-    await supabase.from('trn_batch').insert(entry);
-    return { table: 'trn_batch', action: 'inserted', guid: entry.guid, record_type: 'inventory' };
+    await supabase.from('trn_inventory').insert(entry);
+    return { table: 'trn_inventory', action: 'inserted', guid: entry.guid, record_type: 'inventory' };
   }
 }
 
@@ -899,5 +909,72 @@ async function upsertShippingDetails(supabase: any, shipping: any): Promise<Proc
   } else {
     await supabase.from('trn_shipping_details').insert(shipping);
     return { table: 'trn_shipping_details', action: 'inserted', guid: shipping.guid, record_type: 'shipping_details' };
+  }
+}
+
+// Amount calculation functions
+async function calculateVoucherAmounts(supabase: any, voucherGuid: string, ledgerEntries: any[]): Promise<any | null> {
+  if (!ledgerEntries || ledgerEntries.length === 0) {
+    return null;
+  }
+
+  // Calculate amounts from ledger entries
+  let totalAmount = 0;
+  let finalAmount = 0;
+  
+  for (const entry of ledgerEntries) {
+    const amount = Math.abs(entry.amount || 0);
+    totalAmount += amount;
+    
+    // Calculate net amount (considering debits/credits)
+    if (entry.is_deemed_positive) {
+      finalAmount += entry.amount;
+    } else {
+      finalAmount -= Math.abs(entry.amount);
+    }
+  }
+
+  return {
+    total_amount: totalAmount,
+    basic_amount: totalAmount,
+    net_amount: Math.abs(finalAmount),
+    final_amount: finalAmount
+  };
+}
+
+async function updateVoucherAmounts(supabase: any, voucherGuid: string, amounts: any): Promise<ProcessResult> {
+  try {
+    const { error } = await supabase
+      .from('tally_trn_voucher')
+      .update(amounts)
+      .eq('guid', voucherGuid);
+
+    if (error) {
+      console.error('Error updating voucher amounts:', error);
+      return {
+        table: 'tally_trn_voucher',
+        action: 'error',
+        guid: voucherGuid,
+        record_type: 'voucher',
+        error: `Failed to update amounts: ${error.message}`
+      };
+    }
+
+    return {
+      table: 'tally_trn_voucher',
+      action: 'updated',
+      guid: voucherGuid,
+      record_type: 'voucher',
+      details: { amounts_updated: amounts }
+    };
+  } catch (error) {
+    console.error('Exception updating voucher amounts:', error);
+    return {
+      table: 'tally_trn_voucher',
+      action: 'error',
+      guid: voucherGuid,
+      record_type: 'voucher',
+      error: error.message
+    };
   }
 }

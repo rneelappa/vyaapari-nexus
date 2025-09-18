@@ -134,6 +134,97 @@ async function bulkSyncToSupabase(
   return { inserted, updated, errors };
 }
 
+// Post-processing function to calculate missing voucher amounts
+async function calculateMissingVoucherAmounts(supabase: any, companyId: string, divisionId: string): Promise<void> {
+  try {
+    console.log('Calculating missing voucher amounts from accounting entries...');
+    
+    // Get vouchers with zero or missing amounts
+    const { data: vouchersToUpdate, error: vouchersError } = await supabase
+      .from('tally_trn_voucher')
+      .select('guid, voucher_number, total_amount, final_amount')
+      .eq('company_id', companyId)
+      .eq('division_id', divisionId)
+      .or('total_amount.is.null,total_amount.eq.0,final_amount.is.null,final_amount.eq.0');
+
+    if (vouchersError) {
+      console.error('Error fetching vouchers to update:', vouchersError);
+      return;
+    }
+
+    if (!vouchersToUpdate || vouchersToUpdate.length === 0) {
+      console.log('No vouchers need amount calculation');
+      return;
+    }
+
+    console.log(`Found ${vouchersToUpdate.length} vouchers needing amount calculation`);
+
+    // Process each voucher
+    for (const voucher of vouchersToUpdate) {
+      try {
+        // Get accounting entries for this voucher
+        const { data: accountingEntries, error: accountingError } = await supabase
+          .from('trn_accounting')
+          .select('amount, is_deemed_positive')
+          .eq('voucher_guid', voucher.guid)
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
+
+        if (accountingError) {
+          console.error(`Error fetching accounting entries for voucher ${voucher.voucher_number}:`, accountingError);
+          continue;
+        }
+
+        if (!accountingEntries || accountingEntries.length === 0) {
+          console.log(`No accounting entries found for voucher ${voucher.voucher_number}`);
+          continue;
+        }
+
+        // Calculate amounts
+        let totalAmount = 0;
+        let finalAmount = 0;
+
+        for (const entry of accountingEntries) {
+          const amount = Math.abs(parseFloat(entry.amount || 0));
+          totalAmount += amount;
+
+          // Calculate net amount (considering debits/credits)
+          if (entry.is_deemed_positive === 1) {
+            finalAmount += parseFloat(entry.amount || 0);
+          } else {
+            finalAmount -= amount;
+          }
+        }
+
+        // Update voucher with calculated amounts
+        const { error: updateError } = await supabase
+          .from('tally_trn_voucher')
+          .update({
+            total_amount: totalAmount,
+            basic_amount: totalAmount,
+            net_amount: Math.abs(finalAmount),
+            final_amount: finalAmount
+          })
+          .eq('guid', voucher.guid);
+
+        if (updateError) {
+          console.error(`Error updating amounts for voucher ${voucher.voucher_number}:`, updateError);
+        } else {
+          console.log(`Updated amounts for voucher ${voucher.voucher_number}: total=${totalAmount}, final=${finalAmount}`);
+        }
+
+      } catch (error) {
+        console.error(`Exception processing voucher ${voucher.voucher_number}:`, error);
+      }
+    }
+
+    console.log('Completed voucher amount calculations');
+
+  } catch (error) {
+    console.error('Error in calculateMissingVoucherAmounts:', error);
+  }
+}
+
 async function performFullSync(
   supabase: any,
   companyId: string,
@@ -259,6 +350,10 @@ async function performFullSync(
           });
       }
     }
+
+    // Post-processing: Calculate voucher amounts from accounting entries
+    console.log('Starting post-processing: calculating voucher amounts...');
+    await calculateMissingVoucherAmounts(supabase, companyId, divisionId);
 
     // Update sync job as completed
     syncResults.endTime = new Date().toISOString();
