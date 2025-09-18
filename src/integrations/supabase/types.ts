@@ -3004,6 +3004,7 @@ export type Database = {
           rate: number
           tracking_number: string | null
           updated_at: string | null
+          voucher_guid: string
         }
         Insert: {
           _godown?: string
@@ -3022,6 +3023,7 @@ export type Database = {
           rate?: number
           tracking_number?: string | null
           updated_at?: string | null
+          voucher_guid?: string
         }
         Update: {
           _godown?: string
@@ -3040,6 +3042,7 @@ export type Database = {
           rate?: number
           tracking_number?: string | null
           updated_at?: string | null
+          voucher_guid?: string
         }
         Relationships: []
       }
