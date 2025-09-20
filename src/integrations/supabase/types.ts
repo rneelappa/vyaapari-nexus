@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      bkp_tally_schema_definitions: {
+        Row: {
+          column_name: string
+          fetch_items: Json | null
+          filters: Json | null
+          id: number
+          logical_data_type: string | null
+          nature: string | null
+          schema_section: string
+          table_name: string
+          tally_collection: string | null
+          tally_field_expression: string | null
+        }
+        Insert: {
+          column_name: string
+          fetch_items?: Json | null
+          filters?: Json | null
+          id?: never
+          logical_data_type?: string | null
+          nature?: string | null
+          schema_section: string
+          table_name: string
+          tally_collection?: string | null
+          tally_field_expression?: string | null
+        }
+        Update: {
+          column_name?: string
+          fetch_items?: Json | null
+          filters?: Json | null
+          id?: never
+          logical_data_type?: string | null
+          nature?: string | null
+          schema_section?: string
+          table_name?: string
+          tally_collection?: string | null
+          tally_field_expression?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           archived: boolean
