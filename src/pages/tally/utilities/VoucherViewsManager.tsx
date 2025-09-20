@@ -92,7 +92,7 @@ export function VoucherViewsManager({ companyId, divisionId }: VoucherViewsManag
 
       // Fetch available voucher types
       const { data: voucherTypesData, error: voucherTypesError } = await supabase
-        .from('mst_vouchertype')
+        .from('bkp_mst_vouchertype')
         .select('name')
         .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
         .order('name');

@@ -132,9 +132,9 @@ export function TallySync({
       
       if (result?.success) {
         const totalRecords = result.totalRecords || 0;
-        const totalInserted = result.totalInserted || 0;
-        const totalUpdated = result.totalUpdated || 0;
-        const totalErrors = result.totalErrors || 0;
+        const totalInserted = result.recordsProcessed || 0;
+        const totalUpdated = 0; // VT sync doesn't track updates separately
+        const totalErrors = result.errors || 0;
 
         setSyncProgress(prev => ({
           ...prev,

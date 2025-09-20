@@ -137,7 +137,7 @@ export default function SalesVoucherEdit() {
     try {
       // Load voucher header
       const { data: voucherData } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('*')
         .eq('guid', voucherId)
         .single();
@@ -154,9 +154,9 @@ export default function SalesVoucherEdit() {
 
       // Load accounting entries to find sales ledger
       const { data: accountingData } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .select('*')
-        .eq('guid', voucherId);
+        .eq('voucher_guid', voucherId);
 
       if (accountingData) {
         // Find sales ledger (the one with negative amount)
@@ -169,9 +169,9 @@ export default function SalesVoucherEdit() {
 
       // Load inventory entries
       const { data: inventoryData } = await supabase
-        .from('trn_inventory')
+        .from('bkp_trn_batch')
         .select('*')
-        .eq('guid', voucherId);
+        .eq('voucher_guid', voucherId);
 
       const inventoryLines: VoucherLine[] = [];
       if (inventoryData) {
@@ -362,20 +362,20 @@ export default function SalesVoucherEdit() {
       if (voucherId) {
         // Update existing voucher
         const { error: voucherError } = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .update(voucherData)
           .eq('guid', voucherId);
 
         if (voucherError) throw voucherError;
 
         // Delete existing accounting and inventory entries
-        await supabase.from('trn_accounting').delete().eq('guid', voucherId);
-        await supabase.from('trn_inventory').delete().eq('guid', voucherId);
-        await supabase.from('trn_batch').delete().eq('guid', voucherId);
+        await supabase.from('bkp_trn_accounting').delete().eq('voucher_guid', voucherId);
+        await supabase.from('bkp_trn_batch').delete().eq('voucher_guid', voucherId);
+        await supabase.from('bkp_trn_address_details').delete().eq('voucher_guid', voucherId);
       } else {
         // Insert new voucher
         const { error: voucherError } = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .insert(voucherData);
 
         if (voucherError) throw voucherError;
@@ -408,7 +408,7 @@ export default function SalesVoucherEdit() {
       ];
 
       const { error: accountingError } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .insert(accountingEntries);
 
       if (accountingError) {
@@ -420,7 +420,7 @@ export default function SalesVoucherEdit() {
       for (const line of lines.filter(l => l.type === 'inventory')) {
         if (line.stockItem && line.quantity && line.rate) {
           const { error: inventoryError } = await supabase
-            .from('trn_inventory')
+            .from('bkp_trn_batch')
             .insert({
               guid: voucherGuid,
               item: stockItems.find(s => s.guid === line.stockItem)?.name || '',
@@ -444,7 +444,7 @@ export default function SalesVoucherEdit() {
           // Insert batch tracking if tracking number provided
           if (line.trackingNumber) {
             await supabase
-              .from('trn_batch')
+              .from('bkp_trn_batch')
               .insert({
                 guid: voucherGuid,
                 name: line.trackingNumber,

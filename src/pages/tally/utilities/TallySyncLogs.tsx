@@ -84,7 +84,7 @@ export default function TallySyncLogs() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('tally_sync_jobs')
+        .from('bkp_tally_sync_jobs')
         .select('*')
         .eq('division_id', divisionId)
         .order('created_at', { ascending: false })
@@ -110,7 +110,7 @@ export default function TallySyncLogs() {
       setDetailsLoading(true);
       // Fetch from the new tally_sync_job_details table
       const { data, error } = await supabase
-        .from('tally_sync_job_details')
+        .from('bkp_tally_sync_job_details')
         .select('*')
         .eq('job_id', jobId)
         .order('processed_at', { ascending: false });
