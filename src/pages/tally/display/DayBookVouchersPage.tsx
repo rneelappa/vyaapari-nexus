@@ -10,6 +10,7 @@ import { Search, Download, Filter, Calendar, RefreshCw, FileText, Eye, Edit, Tra
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { EnhancedVoucherDetails } from "@/components/tally/EnhancedVoucherDetails";
+import { VtMigrationTrigger } from "@/components/vt/VtMigrationTrigger";
 
 interface VoucherEntry {
   guid: string;
@@ -303,11 +304,19 @@ export default function DayBookVouchersPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* Migration Trigger */}
+      {companyId && divisionId && (
+        <VtMigrationTrigger 
+          companyId={companyId} 
+          divisionId={divisionId} 
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Vouchers Day Book</h1>
           <p className="text-muted-foreground">
-            Complete list of all vouchers with advanced filtering and search
+            Complete list of all vouchers with advanced filtering and search (VT Schema)
           </p>
         </div>
         <div className="flex gap-2">
