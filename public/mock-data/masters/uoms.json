@@ -1,0 +1,82 @@
+[
+  {
+    "id": "1",
+    "name": "Nos",
+    "formal_name": "Numbers",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "name": "Kg",
+    "formal_name": "Kilograms",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "name": "Gm",
+    "formal_name": "Grams",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "name": "Ltr",
+    "formal_name": "Liters",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "5",
+    "name": "Mtr",
+    "formal_name": "Meters",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "6",
+    "name": "Sq Mtr",
+    "formal_name": "Square Meters",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "7",
+    "name": "Cum",
+    "formal_name": "Cubic Meters",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "8",
+    "name": "Box",
+    "formal_name": "Box",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "9",
+    "name": "Pkt",
+    "formal_name": "Packet",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "10",
+    "name": "Set",
+    "formal_name": "Set",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]

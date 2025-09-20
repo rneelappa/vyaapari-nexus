@@ -1,0 +1,82 @@
+[
+  {
+    "id": "1",
+    "name": "Cash",
+    "parent": "3",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "name": "Bank Account - HDFC",
+    "parent": "4",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "name": "Bank Account - ICICI",
+    "parent": "4",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "name": "ABC Company Ltd",
+    "parent": "1",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "5",
+    "name": "XYZ Suppliers",
+    "parent": "2",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "6",
+    "name": "Sales - Product A",
+    "parent": "5",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "7",
+    "name": "Sales - Product B",
+    "parent": "5",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "8",
+    "name": "Purchase - Raw Materials",
+    "parent": "6",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "9",
+    "name": "Office Rent",
+    "parent": "8",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "10",
+    "name": "Electricity Bill",
+    "parent": "8",
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]

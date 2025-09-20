@@ -1,0 +1,458 @@
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronRight, Building2, Users, MessageCircle, FolderOpen, CheckSquare, Settings, Crown, Shield, UserCheck, Building, LogOut } from "lucide-react";
+import { NavLink, useLocation, Link } from "react-router-dom";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import TallyHierarchy from "@/components/tally/TallyHierarchy";
+import { UserProfile } from "./UserProfile";
+import { supabase } from "@/integrations/supabase/client";
+import { ErrorBoundary } from "@/components/auth/ErrorBoundary";
+
+interface CompanyData {
+  id: string;
+  name: string;
+  description?: string;
+  role: string;
+  divisions: DivisionData[];
+}
+
+interface DivisionData {
+  id: string;
+  name: string;
+  description?: string;
+  role: string;
+  company_id: string;
+  tally_enabled: boolean;
+  workspaces: WorkspaceData[];
+}
+
+interface WorkspaceData {
+  id: string;
+  name: string;
+  description?: string;
+  role: string;
+  is_default: boolean;
+}
+
+const roleIcons = {
+  "Super Admin": Crown,
+  "Company Admin": Shield,
+  "Division Admin": UserCheck,
+  "Tally Admin": Settings,
+  "Workspace Admin": Settings,
+  "User": Users,
+};
+
+interface HierarchyItemProps {
+  item: any;
+  type: "company" | "division" | "workspace";
+  level: number;
+  isExpanded?: boolean;
+  onToggle?: () => void;
+}
+
+const HierarchyItem = ({ item, type, level, isExpanded, onToggle }: HierarchyItemProps) => {
+  const location = useLocation();
+  const hasChildren = (type === "company" && item.divisions?.length > 0) || (type === "division" && item.workspaces?.length > 0);
+  const RoleIcon = roleIcons[item.role as keyof typeof roleIcons] || Users;
+
+  const getIcon = () => {
+    switch (type) {
+      case "company": return Building;
+      case "division": return Building2;
+      case "workspace": return Users;
+      default: return Users;
+    }
+  };
+
+  const Icon = getIcon();
+  const indent = level * 12;
+
+  const getNavigationPath = () => {
+    if (type === "company") return `/company/${item.id}`;
+    if (type === "division") {
+      return `/company/${item.company_id}/division/${item.id}`;
+    }
+    if (type === "workspace") return `/workspace/${item.id}`;
+    return "#";
+  };
+
+  return (
+    <div className="list-none">
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild>
+          <div
+            className={`flex items-center w-full rounded-lg transition-smooth
+              ${location.pathname.includes(item.id) ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-soft' : 'hover:bg-sidebar-accent/30 text-sidebar-foreground'}
+            `}
+            style={{ paddingLeft: `${12 + indent}px` }}
+          >
+            {hasChildren && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggle?.();
+                }}
+                className="mr-1 p-1 rounded hover:bg-sidebar-accent/20 transition-smooth text-sidebar-foreground"
+              >
+                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </button>
+            )}
+            <Link
+              to={getNavigationPath()}
+              className="flex items-center flex-1 p-2 rounded-lg transition-smooth text-sidebar-foreground"
+            >
+              <Icon size={16} className="mr-2 flex-shrink-0" />
+              <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
+                <div className="flex items-center gap-1 ml-2">
+                  <RoleIcon size={12} className="text-sidebar-foreground/60" />
+                {item.tally_enabled && (
+                  <Badge variant="outline" className="text-xs py-0 px-1 bg-green-50 text-green-700 border-green-200">
+                    Tally
+                  </Badge>
+                )}
+                {(item.role === "Company Admin" || item.role === "Division Admin" || item.role === "Workspace Admin" || item.role === "Tally Admin") ? (
+                  <Badge variant="secondary" className="text-xs py-0 px-1">Admin</Badge>
+                ) : null}
+              </div>
+            </Link>
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+
+      {hasChildren && isExpanded && (
+        <div className="mt-1 ml-6 border-l border-sidebar-border/30 pl-4">
+          {type === "company" && item.divisions?.length > 0 && item.divisions.map((division: any) => (
+            <HierarchyItemContainer key={division.id} item={division} type="division" level={level + 1} />
+          ))}
+          {type === "division" && item.workspaces?.length > 0 && item.workspaces.map((workspace: any) => (
+            <HierarchyItem key={workspace.id} item={workspace} type="workspace" level={level + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const HierarchyItemContainer = ({ item, type, level }: { item: any; type: "company" | "division"; level: number }) => {
+  const [isExpanded, setIsExpanded] = useState(level === 0); // Companies expanded by default
+  
+  return (
+    <HierarchyItem
+      item={item}
+      type={type}
+      level={level}
+      isExpanded={isExpanded}
+      onToggle={() => setIsExpanded(!isExpanded)}
+    />
+  );
+};
+
+const WorkspaceModules = ({ workspaceId }: { workspaceId?: string }) => {
+  const location = useLocation();
+  const modules = [
+    { name: "Chat", icon: MessageCircle, path: `/workspace/${workspaceId}/chat` },
+    { name: "Drive", icon: FolderOpen, path: `/workspace/${workspaceId}/drive` },
+    { name: "Tasks", icon: CheckSquare, path: `/workspace/${workspaceId}/tasks` },
+  ];
+
+  if (!workspaceId) return null;
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-xs font-semibold text-sidebar-foreground/80 px-3 uppercase tracking-wide">
+        Workspace Modules
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {modules.map((module) => (
+            <SidebarMenuItem key={module.name}>
+              <SidebarMenuButton asChild>
+                <NavLink
+                  to={module.path}
+                  className={({ isActive }) =>
+                    `flex items-center p-2 rounded-lg transition-smooth ml-6 ${
+                      isActive
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-soft"
+                        : "hover:bg-sidebar-accent/30 text-sidebar-foreground"
+                    }`
+                  }
+                >
+                  <module.icon size={16} className="mr-2" />
+                  <span className="text-sm font-medium">{module.name}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+};
+
+export function AppSidebar() {
+  return (
+    <ErrorBoundary fallback={<SidebarSkeleton />}>
+      <AppSidebarContent />
+    </ErrorBoundary>
+  );
+}
+
+function SidebarSkeleton() {
+  return (
+    <div className="w-80 border-r border-border bg-sidebar flex-shrink-0 h-full">
+      <div className="gradient-subtle h-full flex flex-col">
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-muted rounded animate-pulse" />
+            <div className="w-24 h-4 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="flex-1 p-4 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="w-full h-6 bg-muted rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppSidebarContent() {
+  const { state } = useSidebar();
+  const location = useLocation();
+  const isCollapsed = state === "collapsed";
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  
+  // Extract workspace ID from URL for module navigation
+  const workspaceMatch = location.pathname.match(/\/workspace\/([^\/]+)/);
+  const currentWorkspaceId = workspaceMatch ? workspaceMatch[1] : null;
+
+  // Circuit breaker to prevent infinite loops
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [lastFetchUserId, setLastFetchUserId] = useState<string | null>(null);
+  const MAX_FETCH_ATTEMPTS = 3;
+
+  useEffect(() => {
+    const fetchOrganizationData = async () => {
+      const currentUserId = user?.id;
+      
+      if (!currentUserId) {
+        console.log('AppSidebar: No user found, setting loading to false');
+        setLoading(false);
+        return;
+      }
+
+      // Reset attempts if user changed
+      if (lastFetchUserId !== currentUserId) {
+        setFetchAttempts(0);
+        setLastFetchUserId(currentUserId);
+        setError(null);
+      }
+
+      // Circuit breaker: stop if too many attempts
+      if (fetchAttempts >= MAX_FETCH_ATTEMPTS) {
+        console.log('AppSidebar: Max fetch attempts reached, stopping');
+        setLoading(false);
+        setError('Unable to load organization data after multiple attempts');
+        return;
+      }
+      
+      try {
+        console.log('AppSidebar: Fetching organization data for user:', currentUserId, 'attempt:', fetchAttempts + 1);
+        setLoading(true);
+        setError(null);
+        setFetchAttempts(prev => prev + 1);
+        
+        // Fetch companies
+        console.log('AppSidebar: About to fetch companies for user:', currentUserId);
+        const { data: companiesData, error: companiesError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('is_active', true);
+
+        console.log('AppSidebar: Companies fetch result:', { companiesData, companiesError, count: companiesData?.length });
+
+        if (companiesError) {
+          console.error('AppSidebar: Error fetching companies:', companiesError);
+          setLoading(false);
+          return;
+        }
+
+        console.log('AppSidebar: Companies fetched:', companiesData?.length || 0, 'companies');
+
+        // Fetch divisions
+        const { data: divisionsData, error: divisionsError } = await supabase
+          .from('divisions')
+          .select('*')
+          .eq('is_active', true);
+
+        if (divisionsError) {
+          console.error('AppSidebar: Error fetching divisions:', divisionsError);
+          setLoading(false);
+          return;
+        }
+
+        console.log('AppSidebar: Divisions fetched:', divisionsData?.length || 0, 'divisions');
+
+        // Skip workspaces fetch for now to avoid permission errors
+        const workspacesData: any[] = [];
+
+        console.log('AppSidebar: Workspaces fetched:', workspacesData?.length || 0, 'workspaces');
+
+        // Structure the data
+        const structuredCompanies: CompanyData[] = (companiesData || []).map(company => {
+          const companyDivisions = (divisionsData || [])
+            .filter(division => division.company_id === company.id)
+            .map(division => ({
+              id: division.id,
+              name: division.name,
+              description: division.description,
+              role: "Division Admin",
+              company_id: company.id,
+              tally_enabled: division.tally_enabled || false,
+              workspaces: (workspacesData || [])
+                .filter(workspace => workspace.division_id === division.id)
+                .map(workspace => ({
+                  id: workspace.id,
+                  name: workspace.name,
+                  description: workspace.description,
+                  role: "Workspace Admin",
+                  is_default: workspace.is_default || false
+                }))
+            }));
+          
+          return {
+            id: company.id,
+            name: company.name,
+            description: company.description,
+            role: "Super Admin", // For now, all roles are Super Admin since user is super admin
+            divisions: companyDivisions
+          };
+        });
+
+        console.log('AppSidebar: Structured companies:', structuredCompanies.length, 'companies with hierarchy');
+        console.log('AppSidebar: Full structured data:', JSON.stringify(structuredCompanies, null, 2));
+        setCompanies(structuredCompanies);
+        setLoading(false);
+      } catch (error) {
+        console.error('AppSidebar: Error fetching organization data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load organization data');
+        setLoading(false);
+      }
+    };
+
+    // Only fetch if user changed or we haven't fetched for this user yet
+    if (user?.id && lastFetchUserId !== user.id) {
+      fetchOrganizationData();
+    }
+  }, [user?.id, fetchAttempts, lastFetchUserId]);
+
+  if (isCollapsed) {
+    return (
+      <div className="w-16 border-r border-sidebar-border bg-sidebar flex-shrink-0">
+        <div className="p-2 h-full text-sidebar-foreground">
+          <div className="flex flex-col items-center gap-2">
+            {/* Logo in collapsed state */}
+            <div className="w-10 h-10 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center shadow-medium">
+              <Building2 size={20} />
+            </div>
+            <div className="w-8 h-px bg-sidebar-border" />
+            {companies.map((company) => (
+              <div key={company.id} className="p-2 rounded-lg hover:bg-sidebar-accent/30 cursor-pointer">
+                <Building2 size={16} className="text-sidebar-foreground" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-80 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-shrink-0 h-full">
+      <div className="h-full flex flex-col">
+        {/* Header with Logo and App Name */}
+        <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center shadow-medium">
+              <Building2 size={20} className="text-sidebar-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="font-bold text-lg text-sidebar-foreground">Vyaapari360</h2>
+              <p className="text-sm text-sidebar-foreground/70">Enterprise ERP Platform</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 p-2 overflow-y-auto bg-sidebar text-sidebar-foreground">
+          <div className="mb-4">
+            <div className="text-xs font-semibold text-sidebar-foreground/80 px-3 mb-2 uppercase tracking-wide">
+              Organization
+            </div>
+            {loading ? (
+              <div className="px-3 py-2 text-sm text-sidebar-foreground/70">Loading organization data...</div>
+            ) : error ? (
+              <div className="px-3 py-2 text-sm">
+                <p className="text-destructive text-xs mb-1">{error}</p>
+                {fetchAttempts < MAX_FETCH_ATTEMPTS && (
+                  <button 
+                    onClick={() => {
+                      setFetchAttempts(0);
+                      setError(null);
+                      if (user?.id) {
+                        setLastFetchUserId(null); // Force refetch
+                      }
+                    }}
+                    className="text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground underline"
+                  >
+                    Try again
+                  </button>
+                )}
+              </div>
+            ) : companies.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-sidebar-foreground/70">
+                No organizations found
+                {user ? '' : ' (Please log in)'}
+              </div>
+            ) : (
+              <SidebarMenu className="list-none">
+                {companies.map((company) => (
+                  <HierarchyItemContainer key={company.id} item={company} type="company" level={0} />
+                ))}
+              </SidebarMenu>
+            )}
+          </div>
+
+          <WorkspaceModules workspaceId={currentWorkspaceId} />
+
+          {/* Divider */}
+          <div className="my-4 px-3">
+            <div className="h-px bg-sidebar-border"></div>
+          </div>
+
+          <div className="text-sidebar-foreground">
+            <TallyHierarchy />
+          </div>
+        </div>
+
+        <UserProfile />
+      </div>
+    </div>
+  );
+}

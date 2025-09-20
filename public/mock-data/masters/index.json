@@ -1,0 +1,12 @@
+{
+  "mst_group": "groups.json",
+  "mst_ledger": "ledgers.json",
+  "mst_uom": "uoms.json",
+  "mst_stock_item": "stock-items.json",
+  "mst_godown": "godowns.json",
+  "mst_cost_category": "cost-categories.json",
+  "mst_cost_centre": "cost-centres.json",
+  "mst_employee": "employees.json",
+  "mst_payhead": "payheads.json",
+  "mst_vouchertype": "voucher-types.json"
+}

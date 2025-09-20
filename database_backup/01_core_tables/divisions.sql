@@ -1,0 +1,8 @@
+-- Divisions table backup
+-- Generated on: 2025-09-10
+
+INSERT INTO divisions (id, name, description, company_id, parent_division_id, manager_name, status, employee_count, budget, performance_score, tally_enabled, tally_url, tally_company_id, is_active, created_by, created_at, updated_at) VALUES
+('650e8400-e29b-41d4-a716-446655440000', 'Engineering', 'Product development and technical innovation', '550e8400-e29b-41d4-a716-446655440000', NULL, 'John Smith', 'active', 45, 2500000.00, 4.20, false, NULL, NULL, true, NULL, '2025-09-10 10:33:56.338855+00', '2025-09-10 10:33:56.338855+00'),
+('650e8400-e29b-41d4-a716-446655440001', 'Marketing', 'Brand promotion and customer acquisition', '550e8400-e29b-41d4-a716-446655440000', NULL, 'Sarah Johnson', 'active', 28, 1800000.00, 3.80, false, NULL, NULL, true, NULL, '2025-09-10 10:33:56.338855+00', '2025-09-10 10:33:56.338855+00'),
+('650e8400-e29b-41d4-a716-446655440002', 'Product', 'Product strategy and user experience', '550e8400-e29b-41d4-a716-446655440001', NULL, 'Mike Chen', 'active', 32, 2200000.00, 4.50, false, NULL, NULL, true, NULL, '2025-09-10 10:33:56.338855+00', '2025-09-10 10:33:56.338855+00'),
+('37f3cc0c-58ad-4baf-b309-360116ffc3cd', 'SKM Impex Chennai', NULL, '629f49fb-983e-4141-8c48-e1423b39e921', NULL, NULL, 'active', 0, NULL, 0.00, true, 'https://5fcc37ede06a.ngrok-free.app', 'fds', true, NULL, '2025-09-10 13:10:06.823181+00', '2025-09-10 14:09:40.219912+00');

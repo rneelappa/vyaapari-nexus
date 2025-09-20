@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Vyaapari360ERP Design System - Professional ERP Platform */
+
+@layer base {
+  :root {
+    /* Professional Blue Theme - Inspired by Tally */
+    --background: 210 20% 98%;
+    --foreground: 220 90% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 90% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 90% 15%;
+
+    --primary: 220 90% 56%;
+    --primary-foreground: 210 20% 98%;
+    --primary-hover: 220 90% 50%;
+    --primary-glow: 220 90% 70%;
+
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220 9% 15%;
+
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220 9% 15%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 220 90% 56%;
+
+    --radius: 0.75rem;
+
+    /* Professional Blue Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 90% 56%), hsl(220 90% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(220 90% 56%), hsl(225 85% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 90% 56%) 0%, hsl(225 85% 60%) 50%, hsl(230 80% 65%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(210 20% 98%) 0%, hsl(220 14.3% 95.9%) 100%);
+
+    /* Professional Shadows with Blue Tint */
+    --shadow-soft: 0 2px 8px -2px hsl(220 90% 56% / 0.1);
+    --shadow-medium: 0 4px 16px -4px hsl(220 90% 56% / 0.15);
+    --shadow-strong: 0 8px 32px -8px hsl(220 90% 56% / 0.2);
+    --shadow-glow: 0 0 40px hsl(220 90% 70% / 0.3);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease;
+
+    /* Sidebar with Blue Theme */
+    --sidebar-background: 220 90% 56%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 210 20% 98%;
+    --sidebar-primary-foreground: 220 90% 56%;
+    --sidebar-accent: 220 90% 60%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 90% 50%;
+    --sidebar-ring: 210 20% 98%;
+  }
+
+  .dark {
+    /* Dark Mode - Professional Blue Dark Theme */
+    --background: 220 90% 8%;
+    --foreground: 210 20% 98%;
+
+    --card: 220 90% 10%;
+    --card-foreground: 210 20% 98%;
+
+    --popover: 220 90% 10%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 220 90% 56%;
+    --primary-foreground: 220 90% 8%;
+    --primary-hover: 220 90% 60%;
+    --primary-glow: 220 90% 70%;
+
+    --secondary: 220 90% 15%;
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 220 90% 15%;
+    --muted-foreground: 220 50% 65%;
+
+    --accent: 220 90% 56%;
+    --accent-foreground: 220 90% 8%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 98%;
+
+    --border: 220 90% 20%;
+    --input: 220 90% 20%;
+    --ring: 220 90% 56%;
+
+    /* Dark Mode Blue Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(220 90% 8%), hsl(220 90% 15%));
+    --gradient-accent: linear-gradient(135deg, hsl(220 90% 56%), hsl(225 85% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 90% 8%) 0%, hsl(220 90% 15%) 50%, hsl(220 90% 56%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(220 90% 8%) 0%, hsl(220 90% 12%) 100%);
+
+    /* Dark Sidebar */
+    --sidebar-background: 220 90% 8%;
+    --sidebar-foreground: 210 20% 90%;
+    --sidebar-primary: 220 90% 56%;
+    --sidebar-primary-foreground: 220 90% 8%;
+    --sidebar-accent: 220 90% 15%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 220 90% 20%;
+    --sidebar-ring: 220 90% 56%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  /* Professional Component Classes */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+  
+  .gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+  
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .shadow-strong {
+    box-shadow: var(--shadow-strong);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-fast {
+    transition: var(--transition-fast);
+}
+
+/* Custom sidebar positioning to start below header */
+.sidebar-below-header [data-sidebar="sidebar"] {
+  top: 3rem !important;
+  height: calc(100vh - 3rem) !important;
+}
+.sidebar-below-header div[data-side="left"] > div:nth-child(2) {
+  top: 3rem !important;
+  height: calc(100vh - 3rem) !important;
+}
+}

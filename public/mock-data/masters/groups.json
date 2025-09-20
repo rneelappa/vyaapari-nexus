@@ -1,0 +1,82 @@
+[
+  {
+    "id": "1",
+    "name": "Sundry Debtors",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "name": "Sundry Creditors",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "name": "Cash-in-Hand",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "name": "Bank Accounts",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "5",
+    "name": "Sales Accounts",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "6",
+    "name": "Purchase Accounts",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "7",
+    "name": "Direct Expenses",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "8",
+    "name": "Indirect Expenses",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "9",
+    "name": "Fixed Assets",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "10",
+    "name": "Current Assets",
+    "parent": null,
+    "company_id": "default",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]

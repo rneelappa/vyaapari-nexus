@@ -1,0 +1,345 @@
+import { useState, useEffect, useCallback } from "react";
+import { Building, Building2, Users, ChevronRight, ChevronDown, AlertTriangle, UserCog } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/useAuth";
+import { UserProfile } from "./UserProfile";
+import { TallyHierarchyRebuilt } from "@/components/tally/TallyHierarchyRebuilt";
+import { WorkspaceModulesRebuilt } from "@/components/workspace/WorkspaceModulesRebuilt";
+import { ErrorBoundary } from "@/components/auth/ErrorBoundary";
+import { LoadingErrorState } from "@/components/common/LoadingErrorState";
+import { Skeleton } from "@/components/ui/skeleton";
+import { sidebarDataService, type CompanyData, type DivisionData, type WorkspaceData } from "@/services/sidebar-data-service";
+
+// Role icons mapping
+const roleIcons = {
+  admin: Users,
+  manager: Building2,
+  workspace_member: Building,
+  viewer: Building
+};
+
+interface HierarchyItemProps {
+  item: CompanyData | DivisionData | WorkspaceData;
+  level: number;
+  type: 'company' | 'division' | 'workspace';
+  isExpanded: boolean;
+  onToggle: () => void;
+  hasChildren: boolean;
+  children?: React.ReactNode;
+}
+
+function HierarchyItem({ item, level, type, isExpanded, onToggle, hasChildren, children }: HierarchyItemProps) {
+  const location = useLocation();
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  
+  const getIcon = () => {
+    switch (type) {
+      case 'company': return Building2;
+      case 'division': return Building;
+      case 'workspace': return Users;
+      default: return Building;
+    }
+  };
+
+  const Icon = getIcon();
+  const baseUrl = type === 'workspace' ? `/workspace/${item.id}` : 
+                  type === 'division' ? `/company/${(item as DivisionData).company_id}/division/${item.id}` : 
+                  `/company/${item.id}`;
+  
+  const isActive = location.pathname.startsWith(baseUrl);
+  const shouldShowTallyIndicator = type === 'division' && 'tally_enabled' in item && item.tally_enabled;
+
+  return (
+    <div>
+      <SidebarMenuItem>
+        <SidebarMenuButton 
+          asChild={!hasChildren}
+          className={`
+            ${isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'hover:bg-sidebar-accent/20'}
+            ${level > 0 ? `ml-${level * 4}` : ''}
+            transition-colors duration-200
+          `}
+        >
+          {hasChildren ? (
+            <button
+              onClick={onToggle}
+              className="flex items-center gap-2 w-full"
+              aria-expanded={isExpanded}
+              aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${item.name}`}
+            >
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 text-left truncate">{item.name}</span>
+                  <div className="flex items-center gap-1">
+                    {shouldShowTallyIndicator && (
+                      <div 
+                        className="w-2 h-2 rounded-full bg-green-500" 
+                        title="Tally Enabled"
+                        aria-label="Tally Enabled"
+                      />
+                    )}
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </div>
+                </>
+              )}
+            </button>
+          ) : (
+            <NavLink to={baseUrl} className="flex items-center gap-2">
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 truncate">{item.name}</span>
+                  {shouldShowTallyIndicator && (
+                    <div 
+                      className="w-2 h-2 rounded-full bg-green-500" 
+                      title="Tally Enabled"
+                      aria-label="Tally Enabled"
+                    />
+                  )}
+                </>
+              )}
+            </NavLink>
+          )}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      
+      {hasChildren && isExpanded && !collapsed && (
+        <div className="ml-2 border-l border-border/50 pl-2">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface HierarchyItemContainerProps {
+  item: CompanyData | DivisionData | WorkspaceData;
+  level: number;
+  type: 'company' | 'division' | 'workspace';
+  children?: React.ReactNode;
+}
+
+function HierarchyItemContainer({ item, level, type, children }: HierarchyItemContainerProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const location = useLocation();
+  
+  const hasChildren = (type === 'company' && 'divisions' in item && item.divisions.length > 0) ||
+                     (type === 'division' && 'workspaces' in item && item.workspaces.length > 0);
+
+  // Auto-expand if current route is within this item's hierarchy
+  useEffect(() => {
+    const baseUrl = type === 'workspace' ? `/workspace/${item.id}` : 
+                    type === 'division' ? `/company/${(item as DivisionData).company_id}/division/${item.id}` : 
+                    `/company/${item.id}`;
+    
+    if (location.pathname.startsWith(baseUrl) && hasChildren) {
+      setIsExpanded(true);
+    }
+  }, [location.pathname, item.id, type, hasChildren]);
+
+  return (
+    <HierarchyItem
+      item={item}
+      level={level}
+      type={type}
+      isExpanded={isExpanded}
+      onToggle={() => setIsExpanded(!isExpanded)}
+      hasChildren={hasChildren}
+    >
+      {children}
+    </HierarchyItem>
+  );
+}
+
+function SidebarSkeleton() {
+  return (
+    <div className="space-y-2 p-2">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="space-y-1">
+          <Skeleton className="h-8 w-full" />
+          <div className="ml-4 space-y-1">
+            <Skeleton className="h-6 w-5/6" />
+            <Skeleton className="h-6 w-4/6" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface AppSidebarContentProps {}
+
+function AppSidebarContent({}: AppSidebarContentProps) {
+  console.log('[AppSidebar] AppSidebarContent rendering');
+  const { user } = useAuth();
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const location = useLocation();
+  
+  console.log('[AppSidebar] Current user:', user?.id, 'collapsed:', collapsed, 'location:', location.pathname);
+  
+  const [companies, setCompanies] = useState<CompanyData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    console.log('[AppSidebar] fetchData called, user ID:', user?.id);
+    if (!user?.id) {
+      console.log('[AppSidebar] No user ID, returning early');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('[AppSidebar] Setting loading to true, calling service');
+      setLoading(true);
+      setError(null);
+      
+      const organizationData = await sidebarDataService.fetchOrganizationData(user.id);
+      console.log('[AppSidebar] Organization data received:', organizationData?.length || 0, 'companies');
+      setCompanies(organizationData);
+    } catch (err) {
+      console.error('[AppSidebar] Error fetching sidebar data:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load sidebar data';
+      setError(errorMessage);
+    } finally {
+      console.log('[AppSidebar] Setting loading to false');
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  // Initial data fetch
+  useEffect(() => {
+    console.log('[AppSidebar] useEffect triggered for fetchData');
+    fetchData();
+  }, [fetchData]);
+
+  // Clear cache on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup is simpler now
+    };
+  }, []);
+
+  const retry = useCallback(() => {
+    sidebarDataService.clearCache();
+    fetchData();
+  }, [fetchData]);
+
+  // Extract workspace ID from current route
+  const currentWorkspaceId = location.pathname.startsWith('/workspace/') 
+    ? location.pathname.split('/')[2] 
+    : null;
+
+  return (
+    <Sidebar collapsible="icon" className="border-r">
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Organization</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <LoadingErrorState 
+              loading={loading} 
+              error={error} 
+              onRetry={retry}
+            >
+              <SidebarMenu>
+                {companies.map((company) => (
+                  <HierarchyItemContainer
+                    key={company.id}
+                    item={company}
+                    level={0}
+                    type="company"
+                  >
+                    {company.divisions.map((division) => (
+                      <HierarchyItemContainer
+                        key={division.id}
+                        item={division}
+                        level={1}
+                        type="division"
+                      >
+                        {division.workspaces.map((workspace) => (
+                          <HierarchyItemContainer
+                            key={workspace.id}
+                            item={workspace}
+                            level={2}
+                            type="workspace"
+                          />
+                        ))}
+                      </HierarchyItemContainer>
+                    ))}
+                  </HierarchyItemContainer>
+                ))}
+              </SidebarMenu>
+            </LoadingErrorState>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {!collapsed && currentWorkspaceId && (
+          <ErrorBoundary>
+            <WorkspaceModulesRebuilt workspaceId={currentWorkspaceId} />
+          </ErrorBoundary>
+        )}
+
+        {!collapsed && (
+          <ErrorBoundary>
+            <TallyHierarchyRebuilt />
+          </ErrorBoundary>
+        )}
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink 
+                    to="/admin/users"
+                    className={({ isActive }) => `
+                      flex items-center gap-2
+                      ${isActive 
+                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' 
+                        : 'hover:bg-sidebar-accent/20'
+                      }
+                      transition-colors duration-200
+                    `}
+                  >
+                    <UserCog className="h-4 w-4 flex-shrink-0" />
+                    {!collapsed && <span className="truncate">User Management</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      
+      <UserProfile />
+    </Sidebar>
+  );
+}
+
+export function AppSidebar() {
+  return (
+    <ErrorBoundary fallback={
+      <Sidebar>
+        <SidebarContent>
+          <div className="flex items-center justify-center p-4 text-center">
+            <div className="space-y-2">
+              <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
+              <p className="text-sm text-muted-foreground">Sidebar unavailable</p>
+            </div>
+          </div>
+        </SidebarContent>
+      </Sidebar>
+    }>
+      <AppSidebarContent />
+    </ErrorBoundary>
+  );
+}

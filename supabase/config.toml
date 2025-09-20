@@ -1,0 +1,75 @@
+project_id = "hycyhnjsldiokfkpqzoz"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+enable_signup = true
+
+[functions.tally-data-ingestion]
+verify_jwt = false
+
+[functions.tally-webhook-handler]
+verify_jwt = false
+
+[functions.tally-bulk-import]
+verify_jwt = false
+
+[functions.tally-api]
+verify_jwt = false
+
+[functions.tally-api-test]
+verify_jwt = false
+
+[functions.send-voucher-to-tally]
+verify_jwt = false
+
+[functions.send-to-tally]
+verify_jwt = false
+
+[functions.get-recent-vouchers]
+verify_jwt = false
+
+[functions.tally-health-check]
+verify_jwt = false
+
+[functions.tally-voucher-sync]
+verify_jwt = true
+
+[functions.tally-api-diagnostics]
+verify_jwt = false
+
+[functions.tally-full-sync]
+verify_jwt = true
+
+[functions.tally-railway-sync]
+verify_jwt = true
+
+[functions.vt-tally-sync]
+verify_jwt = false
+
+[functions.vt-sync-validation]
+verify_jwt = false
