@@ -82,7 +82,7 @@ export default function CostCategoriesPage() {
       setError(null);
       
       const { data, error } = await supabase
-        .from('mst_cost_category')
+        .from('bkp_mst_cost_category')
         .select('*')
         .order('name');
       
@@ -113,7 +113,7 @@ export default function CostCategoriesPage() {
   const handleAddCategory = async (data: CostCategoryFormData) => {
     try {
       const { error } = await supabase
-        .from('mst_cost_category')
+        .from('bkp_mst_cost_category')
         .insert({
           name: data.name,
           allocate_revenue: data.allocate_revenue ? 1 : 0,
@@ -145,7 +145,7 @@ export default function CostCategoriesPage() {
 
     try {
       const { error } = await supabase
-        .from('mst_cost_category')
+        .from('bkp_mst_cost_category')
         .update({
           name: data.name,
           allocate_revenue: data.allocate_revenue ? 1 : 0,
@@ -176,7 +176,7 @@ export default function CostCategoriesPage() {
   const handleDeleteCategory = async (category: CostCategory) => {
     try {
       const { error } = await supabase
-        .from('mst_cost_category')
+        .from('bkp_mst_cost_category')
         .delete()
         .eq('guid', category.guid);
 

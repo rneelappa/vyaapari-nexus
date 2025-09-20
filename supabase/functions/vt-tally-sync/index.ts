@@ -334,9 +334,9 @@ async function syncDivisions(supabase: any, batchSize: number): Promise<SyncResu
 
 // Groups sync function  
 async function syncGroups(supabase: any, batchSize: number, filterCompanyId?: string, filterDivisionId?: string): Promise<SyncResult> {
-  console.log('Syncing groups from mst_group');
+  console.log('Syncing groups from tally schema');
   
-  let query = supabase.from('mst_group').select('*');
+  let query = supabase.from('tally.group_table').select('*');
   
   if (filterCompanyId) {
     query = query.eq('company_id', filterCompanyId);
@@ -416,9 +416,9 @@ async function syncGroups(supabase: any, batchSize: number, filterCompanyId?: st
 
 // Ledgers sync function
 async function syncLedgers(supabase: any, batchSize: number, filterCompanyId?: string, filterDivisionId?: string): Promise<SyncResult> {
-  console.log('Syncing ledgers from mst_ledger');
+  console.log('Syncing ledgers from tally schema');
   
-  let query = supabase.from('mst_ledger').select('*');
+  let query = supabase.from('tally.ledger').select('*');
   
   if (filterCompanyId) {
     query = query.eq('company_id', filterCompanyId);

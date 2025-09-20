@@ -41,7 +41,7 @@ export default function VoucherTypesPage() {
       setError(null);
       
       const { data, error } = await supabase
-        .from('mst_vouchertype')
+        .from('bkp_mst_vouchertype')
         .select('*')
         .order('name');
       

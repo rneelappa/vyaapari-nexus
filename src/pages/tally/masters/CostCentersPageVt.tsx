@@ -1,84 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Plus, Edit, Trash2, Warehouse, MapPin, RefreshCw, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Search, Plus, Edit, Trash2, Target, Building, RefreshCw, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useVtCostCenters } from "@/hooks/useVtData";
 
-interface Godown {
-  guid: string;
-  name: string;
-  parent: string;
-  address: string;
-}
-
-export default function GodownsPage() {
+export default function CostCentersPageVt() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [godowns, setGodowns] = useState<Godown[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: costCenters, loading, error, refetch } = useVtCostCenters();
 
-  useEffect(() => {
-    if (user) {
-      fetchGodowns();
-    }
-  }, [user]);
-
-  const fetchGodowns = async () => {
-    if (!user) {
-      setError('Authentication required');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch from backup godowns table
-      const { data, error } = await supabase
-        .from('bkp_mst_godown')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        throw error;
-      }
-      
-      // Transform data to match Godown interface
-      const transformedGodowns: Godown[] = (data || []).map(item => ({
-        guid: item.guid,
-        name: item.name,
-        parent: item.parent,
-        address: item.address,
-      }));
-      
-      setGodowns(transformedGodowns);
-    } catch (err) {
-      console.error('Error fetching godowns:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch godowns');
-      setGodowns([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredGodowns = godowns.filter(godown =>
-    godown.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    godown.parent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    godown.address.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCostCenters = costCenters.filter(center =>
+    center.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (center.parent_name && center.parent_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (center.category_name && center.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (!user) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">
-          <p className="text-muted-foreground">Please log in to view godowns.</p>
+          <p className="text-muted-foreground">Please log in to view cost centers.</p>
         </div>
       </div>
     );
@@ -88,28 +34,28 @@ export default function GodownsPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Godowns</h1>
+          <h1 className="text-3xl font-bold">Cost Centers (VT Schema)</h1>
           <p className="text-muted-foreground">
-            Manage warehouse locations and storage facilities
+            Manage cost centers for expense allocation and tracking
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchGodowns} disabled={loading}>
+          <Button variant="outline" onClick={refetch} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            Add Godown
+            Add Cost Center
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Warehouse Locations</CardTitle>
+          <CardTitle>Cost Center Management (VT Schema)</CardTitle>
           <CardDescription>
-            Physical storage locations with stock information
+            Organizational units for cost allocation and budget tracking
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -117,7 +63,7 @@ export default function GodownsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search godowns..."
+                placeholder="Search cost centers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
@@ -127,17 +73,17 @@ export default function GodownsPage() {
 
           <Tabs defaultValue="all" className="w-full">
             <TabsList>
-              <TabsTrigger value="all">All Godowns</TabsTrigger>
-              <TabsTrigger value="primary">Primary</TabsTrigger>
-              <TabsTrigger value="secondary">Secondary</TabsTrigger>
-              <TabsTrigger value="high-value">High Value</TabsTrigger>
+              <TabsTrigger value="all">All Centers</TabsTrigger>
+              <TabsTrigger value="manufacturing">Manufacturing</TabsTrigger>
+              <TabsTrigger value="administration">Administration</TabsTrigger>
+              <TabsTrigger value="support">Support</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
               {loading ? (
                 <div className="text-center py-8">
                   <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-                  <p className="text-muted-foreground">Loading godowns...</p>
+                  <p className="text-muted-foreground">Loading cost centers...</p>
                 </div>
               ) : error ? (
                 <div className="text-center py-8">
@@ -148,38 +94,38 @@ export default function GodownsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Godown Name</TableHead>
+                      <TableHead>Cost Center</TableHead>
                       <TableHead>Parent</TableHead>
-                      <TableHead>Address</TableHead>
+                      <TableHead>Category</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredGodowns.length === 0 ? (
+                    {filteredCostCenters.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-8">
-                          <p className="text-muted-foreground">No godowns found. Data may need to be synchronized from Tally.</p>
+                          <p className="text-muted-foreground">No cost centers found in VT schema. Run VT sync to populate data.</p>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredGodowns.map((godown) => (
-                        <TableRow key={godown.guid}>
+                      filteredCostCenters.map((center) => (
+                        <TableRow key={center.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center space-x-2">
-                              <Warehouse className="h-4 w-4 text-muted-foreground" />
-                              {godown.name}
+                              <Target className="h-4 w-4 text-muted-foreground" />
+                              {center.name}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{godown.parent}</Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-1">
-                              <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm max-w-48 truncate">
-                                {godown.address}
-                              </span>
+                              <Building className="h-3 w-3 text-muted-foreground" />
+                              <Badge variant="outline">{center.parent_name || 'None'}</Badge>
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {center.category_name || 'General'}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">

@@ -1,146 +1,90 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-interface VtDataOptions {
-  companyId?: string;
-  divisionId?: string;
-  limit?: number;
-  offset?: number;
-  orderBy?: string;
-  orderDirection?: 'asc' | 'desc';
-  filters?: Record<string, any>;
+interface VtCostCategory {
+  id: string;
+  company_id: string;
+  division_id: string;
+  name: string;
+  allows_allocation_revenue: boolean;
+  allows_allocation_non_revenue: boolean;
 }
 
-interface VtDataResult<T> {
-  data: T[];
-  loading: boolean;
-  error: string | null;
-  total: number;
-  hasMore: boolean;
-  refresh: () => void;
-  loadMore: () => void;
+interface VtCostCenter {
+  id: string;
+  company_id: string;
+  division_id: string;
+  name: string;
+  parent_name?: string;
+  category_name?: string;
 }
 
-export const useVtData = <T = any>(
-  tableName: string,
-  options: VtDataOptions = {}
-): VtDataResult<T> => {
-  const [data, setData] = useState<T[]>([]);
+// Custom hooks for each VT table
+export const useVtCostCategories = () => {
+  const [data, setData] = useState<VtCostCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
+  const { toast } = useToast();
 
-  const {
-    companyId,
-    divisionId,
-    limit = 50,
-    orderBy = 'created_at',
-    orderDirection = 'desc',
-    filters = {}
-  } = options;
-
-  const fetchData = useCallback(async (isLoadMore = false) => {
+  const fetch = async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const currentOffset = isLoadMore ? offset + limit : 0;
       
-      // Build query
-      let query = supabase
-        .from(`vt.${tableName}` as any)
-        .select('*', { count: 'exact' });
-
-      // Apply company/division filters if provided
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      }
-      if (divisionId) {
-        query = query.eq('division_id', divisionId);
-      }
-
-      // Apply additional filters
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          query = query.eq(key, value);
-        }
-      });
-
-      // Apply pagination and ordering
-      query = query
-        .order(orderBy, { ascending: orderDirection === 'asc' })
-        .range(currentOffset, currentOffset + limit - 1);
-
-      const { data: result, error: queryError, count } = await query;
-
-      if (queryError) throw queryError;
-
-      if (isLoadMore) {
-        setData(prev => [...prev, ...(result as T[] || [])]);
-        setOffset(currentOffset);
-      } else {
-        setData(result as T[] || []);
-        setOffset(0);
-      }
+      const { data: result, error } = await supabase
+        .from('vt.cost_categories')
+        .select('*')
+        .order('name');
       
-      setTotal(count || 0);
-    } catch (err: any) {
-      console.error(`Error fetching ${tableName}:`, err);
-      setError(err.message || 'Failed to fetch data');
+      if (error) throw error;
+      setData(result || []);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch cost categories';
+      setError(errorMsg);
+      console.error('VT Cost Categories fetch error:', err);
     } finally {
       setLoading(false);
     }
-  }, [tableName, companyId, divisionId, limit, orderBy, orderDirection, filters, offset]);
-
-  const refresh = useCallback(() => {
-    fetchData(false);
-  }, [fetchData]);
-
-  const loadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      fetchData(true);
-    }
-  }, [fetchData, loading]);
-
-  const hasMore = offset + limit < total;
+  };
 
   useEffect(() => {
-    fetchData(false);
-  }, [tableName, companyId, divisionId, limit, orderBy, orderDirection, JSON.stringify(filters)]);
+    fetch();
+  }, []);
 
-  return {
-    data,
-    loading,
-    error,
-    total,
-    hasMore,
-    refresh,
-    loadMore
-  };
+  return { data, loading, error, refetch: fetch };
 };
 
-// Specific hooks for common VT tables
-export const useVtCompanies = (options?: Omit<VtDataOptions, 'companyId' | 'divisionId'>) => 
-  useVtData('companies', options);
+export const useVtCostCenters = () => {
+  const [data, setData] = useState<VtCostCenter[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-export const useVtDivisions = (companyId?: string, options?: Omit<VtDataOptions, 'companyId'>) => 
-  useVtData('divisions', { ...options, companyId });
+  const fetch = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data: result, error } = await supabase
+        .from('vt.cost_centers')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setData(result || []);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to fetch cost centers';
+      setError(errorMsg);
+      console.error('VT Cost Centers fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-export const useVtGroups = (companyId?: string, divisionId?: string, options?: Omit<VtDataOptions, 'companyId' | 'divisionId'>) => 
-  useVtData('groups', { ...options, companyId, divisionId });
+  useEffect(() => {
+    fetch();
+  }, []);
 
-export const useVtLedgers = (companyId?: string, divisionId?: string, options?: Omit<VtDataOptions, 'companyId' | 'divisionId'>) => 
-  useVtData('ledgers', { ...options, companyId, divisionId });
-
-export const useVtStockItems = (companyId?: string, divisionId?: string, options?: Omit<VtDataOptions, 'companyId' | 'divisionId'>) => 
-  useVtData('stock_items', { ...options, companyId, divisionId });
-
-export const useVtVouchers = (companyId?: string, divisionId?: string, options?: Omit<VtDataOptions, 'companyId' | 'divisionId'>) => 
-  useVtData('vouchers', { ...options, companyId, divisionId });
-
-export const useVtLedgerEntries = (companyId?: string, divisionId?: string, options?: Omit<VtDataOptions, 'companyId' | 'divisionId'>) => 
-  useVtData('ledger_entries', { ...options, companyId, divisionId });
-
-export const useVtInventoryEntries = (companyId?: string, divisionId?: string, options?: Omit<VtDataOptions, 'companyId' | 'divisionId'>) => 
-  useVtData('inventory_entries', { ...options, companyId, divisionId });
+  return { data, loading, error, refetch: fetch };
+};

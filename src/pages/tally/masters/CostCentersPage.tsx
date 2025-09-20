@@ -106,9 +106,9 @@ export default function CostCentersPage() {
       
       console.log('Fetching cost centers from Supabase...');
       
-      // Fetch from Supabase mst_cost_centre table
+      // Fetch from backup cost centres table
       const { data, error } = await supabase
-        .from('mst_cost_centre')
+        .from('bkp_mst_cost_centre')
         .select('*')
         .order('name');
       
