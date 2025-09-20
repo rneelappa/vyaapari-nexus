@@ -4,10 +4,10 @@
 -- This script migrates all Tally data from various sources to standardized public schema tables
 -- Sources: VT tables, existing public tables, backup tables
 
--- Drop existing public schema Tally tables if they exist
-DROP TABLE IF EXISTS public.tally_trn_voucher CASCADE;
+-- Drop existing public schema Tally tables if they exist (with CASCADE to handle dependencies)
 DROP TABLE IF EXISTS public.tally_trn_accounting CASCADE;
 DROP TABLE IF EXISTS public.tally_trn_inventory CASCADE;
+DROP TABLE IF EXISTS public.tally_trn_voucher CASCADE;
 DROP TABLE IF EXISTS public.tally_mst_ledger CASCADE;
 DROP TABLE IF EXISTS public.tally_mst_group CASCADE;
 DROP TABLE IF EXISTS public.tally_mst_stock_item CASCADE;
@@ -16,6 +16,24 @@ DROP TABLE IF EXISTS public.tally_mst_company CASCADE;
 DROP TABLE IF EXISTS public.tally_mst_godown CASCADE;
 DROP TABLE IF EXISTS public.tally_mst_cost_centre CASCADE;
 DROP TABLE IF EXISTS public.tally_mst_employee CASCADE;
+
+-- Also drop any existing indexes that might cause conflicts
+DROP INDEX IF EXISTS idx_tally_voucher_date;
+DROP INDEX IF EXISTS idx_tally_voucher_type;
+DROP INDEX IF EXISTS idx_tally_voucher_company;
+DROP INDEX IF EXISTS idx_tally_voucher_division;
+DROP INDEX IF EXISTS idx_tally_voucher_party;
+DROP INDEX IF EXISTS idx_tally_ledger_name;
+DROP INDEX IF EXISTS idx_tally_ledger_parent;
+DROP INDEX IF EXISTS idx_tally_ledger_company;
+DROP INDEX IF EXISTS idx_tally_group_name;
+DROP INDEX IF EXISTS idx_tally_group_parent;
+DROP INDEX IF EXISTS idx_tally_accounting_voucher;
+DROP INDEX IF EXISTS idx_tally_accounting_ledger;
+DROP INDEX IF EXISTS idx_tally_accounting_date;
+DROP INDEX IF EXISTS idx_tally_inventory_voucher;
+DROP INDEX IF EXISTS idx_tally_inventory_item;
+DROP INDEX IF EXISTS idx_tally_inventory_date;
 
 -- ============================================
 -- 1. VOUCHERS TABLE (Primary Transaction Data)
