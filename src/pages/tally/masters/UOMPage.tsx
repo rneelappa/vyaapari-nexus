@@ -91,7 +91,7 @@ export default function UOMPage() {
       setError(null);
       
       const { data, error } = await supabase
-        .from('mst_uom')
+        .from('bkp_mst_uom')
         .select('*')
         .order('name');
       
@@ -125,7 +125,7 @@ export default function UOMPage() {
   const handleAddUom = async (data: UomFormData) => {
     try {
       const { error } = await supabase
-        .from('mst_uom')
+        .from('bkp_mst_uom')
         .insert({
           name: data.name,
           formalname: data.formalname || '',
@@ -160,7 +160,7 @@ export default function UOMPage() {
 
     try {
       const { error } = await supabase
-        .from('mst_uom')
+        .from('bkp_mst_uom')
         .update({
           name: data.name,
           formalname: data.formalname || '',
@@ -194,7 +194,7 @@ export default function UOMPage() {
   const handleDeleteUom = async (uom: UOM) => {
     try {
       const { error } = await supabase
-        .from('mst_uom')
+        .from('bkp_mst_uom')
         .delete()
         .eq('guid', uom.guid);
 

@@ -141,7 +141,7 @@ export default function EmployeesPage() {
       setError(null);
       
       const { data, error } = await supabase
-        .from('mst_employee')
+        .from('bkp_mst_employee')
         .select('*')
         .order('name');
       
@@ -162,7 +162,7 @@ export default function EmployeesPage() {
   const handleAddEmployee = async (data: EmployeeFormData) => {
     try {
       const { error } = await supabase
-        .from('mst_employee')
+        .from('bkp_mst_employee')
         .insert({
           name: data.name,
           parent: data.parent || '',
@@ -215,7 +215,7 @@ export default function EmployeesPage() {
 
     try {
       const { error } = await supabase
-        .from('mst_employee')
+        .from('bkp_mst_employee')
         .update({
           name: data.name,
           parent: data.parent || '',
@@ -264,7 +264,7 @@ export default function EmployeesPage() {
   const handleDeleteEmployee = async (employee: Employee) => {
     try {
       const { error } = await supabase
-        .from('mst_employee')
+        .from('bkp_mst_employee')
         .delete()
         .eq('guid', employee.guid);
 

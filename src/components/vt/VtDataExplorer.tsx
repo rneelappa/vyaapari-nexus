@@ -44,15 +44,12 @@ export const VtDataExplorer: React.FC = () => {
     return result;
   }, [filterColumn, filterValue]);
 
-  const { data, loading, error, total, hasMore, refresh, loadMore } = useVtData(
-    selectedTable,
-    {
-      companyId,
-      divisionId,
-      filters,
-      limit: 50
-    }
-  );
+  const vtData = useVtData();
+  const { data = [], loading, error } = vtData.costCategories;
+  const total = data.length;
+  const hasMore = false;
+  const refresh = vtData.costCategories.refetch;
+  const loadMore = () => {};
 
   const filteredData = React.useMemo(() => {
     if (!searchTerm) return data;

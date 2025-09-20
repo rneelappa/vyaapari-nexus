@@ -102,7 +102,7 @@ export default function SalesVoucherCreate() {
     try {
       // Load ledgers (party and sales accounts)
       const { data: ledgerData } = await supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select('guid, name, parent, closing_balance, is_deemedpositive')
         .order('name');
       
@@ -110,7 +110,7 @@ export default function SalesVoucherCreate() {
 
       // Load stock items
       const { data: stockData } = await supabase
-        .from('mst_stock_item')
+        .from('bkp_mst_stock_item')
         .select('guid, name, parent, uom, closing_rate, closing_balance')
         .order('name');
       
@@ -118,7 +118,7 @@ export default function SalesVoucherCreate() {
 
       // Load godowns
       const { data: godownData } = await supabase
-        .from('mst_godown')
+        .from('bkp_mst_godown')
         .select('guid, name, parent, address')
         .order('name');
       
@@ -126,7 +126,7 @@ export default function SalesVoucherCreate() {
 
       // Load voucher types
       const { data: voucherTypeData } = await supabase
-        .from('mst_vouchertype')
+        .from('bkp_mst_vouchertype')
         .select('guid, name, parent')
         .eq('parent', 'Sales')
         .order('name');
@@ -152,7 +152,7 @@ export default function SalesVoucherCreate() {
       
       // Get last voucher number for current period
       const { data } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('voucher_number')
         .like('voucher_number', `%/${year}%`)
         .order('voucher_number', { ascending: false })
@@ -306,7 +306,7 @@ export default function SalesVoucherCreate() {
       // Insert main voucher with all required fields
       const voucherGuid = `voucher-${Date.now()}`;
       const { data: voucherInsertData, error: voucherError } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .insert({
           guid: voucherGuid,
           voucher_number: voucherNumber,
@@ -360,7 +360,7 @@ export default function SalesVoucherCreate() {
       ];
 
       const { error: accountingError } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .insert(accountingEntries);
 
       if (accountingError) {
@@ -372,7 +372,7 @@ export default function SalesVoucherCreate() {
       for (const line of lines.filter(l => l.type === 'inventory')) {
         if (line.stockItem && line.quantity && line.rate) {
           const { error: inventoryError } = await supabase
-            .from('trn_inventory')
+            .from('bkp_trn_inventory')
             .insert({
               guid: voucherGuid,
               item: stockItems.find(s => s.guid === line.stockItem)?.name || '',
@@ -396,7 +396,7 @@ export default function SalesVoucherCreate() {
           // Insert batch tracking if tracking number provided
           if (line.trackingNumber) {
             await supabase
-              .from('trn_batch')
+              .from('bkp_trn_batch')
               .insert({
                 guid: voucherGuid,
                 name: line.trackingNumber,

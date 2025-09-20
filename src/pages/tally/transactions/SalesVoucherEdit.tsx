@@ -97,7 +97,7 @@ export default function SalesVoucherEdit() {
     try {
       // Load ledgers (party and sales accounts)
       const { data: ledgerData } = await supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select('guid, name, parent, closing_balance, is_deemedpositive')
         .order('name');
       
@@ -105,7 +105,7 @@ export default function SalesVoucherEdit() {
 
       // Load stock items
       const { data: stockData } = await supabase
-        .from('mst_stock_item')
+        .from('bkp_mst_stock_item')
         .select('guid, name, parent, uom, closing_rate, closing_balance')
         .order('name');
       
@@ -113,7 +113,7 @@ export default function SalesVoucherEdit() {
 
       // Load godowns
       const { data: godownData } = await supabase
-        .from('mst_godown')
+        .from('bkp_mst_godown')
         .select('guid, name, parent, address')
         .order('name');
       

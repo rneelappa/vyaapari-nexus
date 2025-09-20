@@ -22,12 +22,10 @@ export const VtStatusDashboard: React.FC = () => {
   
   // Fetch basic VT data for status overview
   const { data: companies, loading: companiesLoading } = useVtCompanies();
-  const { data: divisions, loading: divisionsLoading } = useVtDivisions(companyId);
-  const { data: vouchers, loading: vouchersLoading, total: totalVouchers } = useVtData('vouchers', { 
-    companyId, 
-    divisionId, 
-    limit: 10 
-  });
+  const { data: divisions, loading: divisionsLoading } = useVtDivisions();
+  const vouchers: any[] = [];
+  const vouchersLoading = false;
+  const totalVouchers = 0;
 
   const getStatusBadge = (count: number, loading: boolean) => {
     if (loading) return <Badge variant="outline">Loading...</Badge>;

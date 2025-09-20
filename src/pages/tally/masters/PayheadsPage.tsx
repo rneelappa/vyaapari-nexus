@@ -133,7 +133,7 @@ export default function PayheadsPage() {
       setError(null);
       
       const { data, error } = await supabase
-        .from('mst_payhead')
+        .from('bkp_mst_payhead')
         .select('*')
         .order('name');
       
@@ -154,7 +154,7 @@ export default function PayheadsPage() {
   const handleAddPayhead = async (data: PayheadFormData) => {
     try {
       const { error } = await supabase
-        .from('mst_payhead')
+        .from('bkp_mst_payhead')
         .insert({
           name: data.name,
           parent: data.parent || '',
@@ -192,7 +192,7 @@ export default function PayheadsPage() {
 
     try {
       const { error } = await supabase
-        .from('mst_payhead')
+        .from('bkp_mst_payhead')
         .update({
           name: data.name,
           parent: data.parent || '',
@@ -229,7 +229,7 @@ export default function PayheadsPage() {
   const handleDeletePayhead = async (payhead: Payhead) => {
     try {
       const { error } = await supabase
-        .from('mst_payhead')
+        .from('bkp_mst_payhead')
         .delete()
         .eq('guid', payhead.guid);
 

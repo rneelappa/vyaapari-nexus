@@ -16,8 +16,8 @@ export default function CostCentersPageVt() {
 
   const filteredCostCenters = costCenters.filter(center =>
     center.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (center.parent_name && center.parent_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (center.category_name && center.category_name.toLowerCase().includes(searchTerm.toLowerCase()))
+    (center.parent && center.parent.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (center.category && center.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (!user) {
@@ -109,7 +109,7 @@ export default function CostCentersPageVt() {
                       </TableRow>
                     ) : (
                       filteredCostCenters.map((center) => (
-                        <TableRow key={center.id}>
+                        <TableRow key={center.guid}>
                           <TableCell className="font-medium">
                             <div className="flex items-center space-x-2">
                               <Target className="h-4 w-4 text-muted-foreground" />
@@ -119,12 +119,12 @@ export default function CostCentersPageVt() {
                           <TableCell>
                             <div className="flex items-center space-x-1">
                               <Building className="h-3 w-3 text-muted-foreground" />
-                              <Badge variant="outline">{center.parent_name || 'None'}</Badge>
+                              <Badge variant="outline">{center.parent || 'None'}</Badge>
                             </div>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {center.category_name || 'General'}
+                              {center.category || 'General'}
                             </Badge>
                           </TableCell>
                           <TableCell>

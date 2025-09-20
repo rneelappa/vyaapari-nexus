@@ -109,7 +109,7 @@ export default function StockItemsPage() {
       
       console.log('StockItemsPage: Fetching stock items for authenticated user:', user.id);
       const { data, error } = await supabase
-        .from('mst_stock_item')
+        .from('bkp_mst_stock_item')
         .select('*')
         .order('name');
       
