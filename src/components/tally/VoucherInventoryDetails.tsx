@@ -114,7 +114,7 @@ export const VoucherInventoryDetails: React.FC<VoucherInventoryDetailsProps> = (
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 2
     }).format(amount);
   };
 
@@ -228,169 +228,13 @@ export const VoucherInventoryDetails: React.FC<VoucherInventoryDetailsProps> = (
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {inventoryItems.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p className="text-lg font-medium">No Inventory Items</p>
-              <p className="text-sm">This voucher does not contain any inventory transactions.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Godown</TableHead>
-                    <TableHead>UOM</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Rate</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Stock Level</TableHead>
-                    <TableHead>Tracking #</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {inventoryItems.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{item.item}</div>
-                          {item.alias && (
-                            <div className="text-sm text-muted-foreground">{item.alias}</div>
-                          )}
-                          {item.partNumber && (
-                            <div className="text-xs text-muted-foreground">
-                              Part: {item.partNumber}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="text-sm">{item.category}</div>
-                          {item.itemCategory && (
-                            <div className="text-xs text-muted-foreground">{item.itemCategory}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{item.godown || 'N/A'}</TableCell>
-                      <TableCell>{item.uom || 'N/A'}</TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatQuantity(item.quantity, item.uom)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatCurrency(item.rate)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatCurrency(item.amount)}
-                      </TableCell>
-                      <TableCell>{getStockLevelBadge(item)}</TableCell>
-                      <TableCell>
-                        {item.trackingNumber && (
-                          <code className="text-xs bg-muted px-2 py-1 rounded">
-                            {item.trackingNumber}
-                          </code>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
+            <p className="text-lg font-medium">No Inventory Items</p>
+            <p className="text-sm">This voucher does not contain any inventory transactions.</p>
+          </div>
         </CardContent>
       </Card>
-
-      {/* Godowns Section */}
-      {godowns.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Associated Godowns</CardTitle>
-            <CardDescription>
-              Storage locations referenced in this voucher
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {godowns.map((godown) => (
-                <Card key={godown.guid} className="border-2">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{godown.name}</h4>
-                        <p className="text-sm text-muted-foreground">{godown.address}</p>
-                        {godown.capacity && (
-                          <div className="mt-2 text-xs">
-                            <span className="font-medium">Capacity:</span>{' '}
-                            {godown.capacity} {godown.capacityUnit}
-                          </div>
-                        )}
-                        {godown.storageType && (
-                          <div className="text-xs">
-                            <span className="font-medium">Type:</span> {godown.storageType}
-                          </div>
-                        )}
-                      </div>
-                      <Warehouse className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Units of Measure */}
-      {uoms.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Scale className="h-4 w-4" />
-              Units of Measure ({uoms.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {uoms.map((uom) => (
-                <Card key={uom.guid} className="border">
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">{uom.name}</div>
-                        <Badge variant={uom.is_simple_unit === 1 ? "default" : "secondary"}>
-                          {uom.is_simple_unit === 1 ? "Simple" : "Compound"}
-                        </Badge>
-                      </div>
-                      {uom.formalname && uom.formalname !== uom.name && (
-                        <div className="text-sm text-muted-foreground">
-                          Formal: {uom.formalname}
-                        </div>
-                      )}
-                      {uom.conversion && uom.conversion !== 1 && (
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Conversion:</span> {uom.conversion}
-                        </div>
-                      )}
-                      {uom.base_units && (
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Base:</span> {uom.base_units}
-                        </div>
-                      )}
-                      {uom.additional_units && (
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Additional:</span> {uom.additional_units}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
-}
+};
