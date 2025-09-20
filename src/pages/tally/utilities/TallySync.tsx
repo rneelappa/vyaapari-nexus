@@ -17,7 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
-import { useRailwayTallySync } from '@/hooks/useRailwayTallySync';
+import { useVtSync } from '@/hooks/useVtSync';
 import { useDatabaseDiagnosis } from '@/hooks/useDatabaseDiagnosis';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -71,7 +71,12 @@ export function TallySync({
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [syncResults, setSyncResults] = useState<any>(null);
 
-  const { performRailwaySync, isProcessing: railwayProcessing, lastSyncResult } = useRailwayTallySync();
+  const { 
+    performSync: performVtSync, 
+    isSyncing: vtProcessing, 
+    syncProgress: vtSyncProgress,
+    lastSyncResult 
+  } = useVtSync();
   const { diagnosisData, isLoading: diagnosisLoading, runDiagnosis } = useDatabaseDiagnosis(companyId, divisionId);
   const { toast } = useToast();
 
@@ -102,16 +107,28 @@ export function TallySync({
         endTime: null
       });
 
-      addDebugLog('info', `Starting Tally sync for company: ${companyId}, division: ${divisionId}`);
+      addDebugLog('info', `Starting VT migration for company: ${companyId}, division: ${divisionId}`);
       
       setSyncProgress(prev => ({
         ...prev,
-        currentStep: 'Connecting to Railway API...',
-        progress: 10
+        currentStep: 'Initializing VT schema migration...',
+        progress: 5
       }));
 
-      // Perform Railway sync with integrated relationship linking and amount calculation
-      const result = await performRailwaySync(companyId, divisionId);
+      addDebugLog('info', 'Step 1: Schema validation and preparation');
+      setSyncProgress(prev => ({ ...prev, currentStep: 'Validating VT schema...', progress: 10 }));
+
+      addDebugLog('info', 'Step 2: Extracting data from Tally backup tables');
+      setSyncProgress(prev => ({ ...prev, currentStep: 'Extracting source data...', progress: 20 }));
+
+      addDebugLog('info', 'Step 3: Data transformation and validation');
+      setSyncProgress(prev => ({ ...prev, currentStep: 'Transforming data structures...', progress: 40 }));
+
+      addDebugLog('info', 'Step 4: Inserting into VT schema tables');
+      setSyncProgress(prev => ({ ...prev, currentStep: 'Migrating to VT schema...', progress: 60 }));
+
+      // Perform VT schema migration
+      const result = await performVtSync(companyId, divisionId);
       
       if (result?.success) {
         const totalRecords = result.totalRecords || 0;
@@ -134,18 +151,18 @@ export function TallySync({
 
         setSyncResults(result);
         
-        addDebugLog('success', `Tally sync completed successfully!`, {
+        addDebugLog('success', `VT migration completed successfully!`, {
           totalRecords,
-          inserted: totalInserted,
-          updated: totalUpdated,
+          recordsProcessed: result.recordsProcessed,
+          recordsSkipped: result.recordsSkipped,
           errors: totalErrors,
           duration: result.duration,
-          tablesProcessed: result.tablesProcessed
+          tableResults: result.tableResults
         });
 
         toast({
-          title: "Tally Sync Complete",
-          description: `Successfully processed ${totalRecords} records (${totalInserted} new, ${totalUpdated} updated)`,
+          title: "VT Migration Complete", 
+          description: `Successfully migrated ${totalInserted + totalUpdated} records to VT schema`,
         });
 
         // Run diagnosis after sync
@@ -157,7 +174,7 @@ export function TallySync({
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      addDebugLog('error', 'Tally sync failed:', {
+      addDebugLog('error', 'VT migration failed:', {
         name: error instanceof Error ? error.name : 'Unknown',
         message: errorMessage,
         stack: error instanceof Error ? error.stack : undefined
@@ -172,8 +189,8 @@ export function TallySync({
       }));
 
       toast({
-        title: "Tally Sync Failed",
-        description: `Sync failed: ${errorMessage}`,
+        title: "VT Migration Failed",
+        description: `Migration failed: ${errorMessage}`,
         variant: "destructive"
       });
     }
@@ -190,9 +207,9 @@ export function TallySync({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Tally Sync</h1>
+          <h1 className="text-2xl font-bold">VT Schema Migration</h1>
           <p className="text-muted-foreground">
-            Synchronize data from Tally with integrated relationship linking and amount calculations
+            Migrate Tally data to VT schema with advanced data transformation and validation
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -213,9 +230,9 @@ export function TallySync({
             {syncProgress.status === 'syncing' ? (
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
             ) : (
-              <Zap className="h-4 w-4 mr-2" />
+              <Database className="h-4 w-4 mr-2" />
             )}
-            {syncProgress.status === 'syncing' ? 'Syncing...' : 'Tally Sync'}
+            {syncProgress.status === 'syncing' ? 'Migrating...' : 'VT Migration'}
           </Button>
         </div>
       </div>
@@ -225,27 +242,27 @@ export function TallySync({
         <CardHeader>
           <CardTitle className="flex items-center">
             <Database className="h-5 w-5 mr-2" />
-            Sync Configuration
+            Migration Configuration
           </CardTitle>
           <CardDescription>
-            Default sync period: April 1, 2025 to {format(defaultToDate, 'MMMM dd, yyyy')}
+            VT schema migration from backup tables with data validation and transformation
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-3 border rounded-lg">
-              <div className="text-sm font-medium text-muted-foreground">From Date</div>
-              <div className="text-lg font-semibold">{format(defaultFromDate, 'MMM dd, yyyy')}</div>
+              <div className="text-sm font-medium text-muted-foreground">Source Schema</div>
+              <div className="text-lg font-semibold">Backup Tables</div>
             </div>
             <div className="text-center p-3 border rounded-lg">
-              <div className="text-sm font-medium text-muted-foreground">To Date</div>
-              <div className="text-lg font-semibold">{format(defaultToDate, 'MMM dd, yyyy')}</div>
+              <div className="text-sm font-medium text-muted-foreground">Target Schema</div>
+              <div className="text-lg font-semibold">VT Schema</div>
             </div>
             <div className="text-center p-3 border rounded-lg">
               <div className="text-sm font-medium text-muted-foreground">Features</div>
               <div className="text-sm">
-                <Badge variant="secondary" className="text-xs">Relationship Linking</Badge>
-                <Badge variant="secondary" className="text-xs ml-1">Amount Calculation</Badge>
+                <Badge variant="secondary" className="text-xs">Data Validation</Badge>
+                <Badge variant="secondary" className="text-xs ml-1">Schema Migration</Badge>
               </div>
             </div>
           </div>
@@ -285,7 +302,7 @@ export function TallySync({
               </div>
             </CardTitle>
             <CardDescription>
-              Real-time sync debugging and API interaction logs
+              Real-time VT migration logs with detailed transformation steps
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -293,7 +310,7 @@ export function TallySync({
               <div className="space-y-2">
                 {debugLogs.length === 0 ? (
                   <p className="text-muted-foreground text-center py-8">
-                    No debug logs yet. Start a sync to see detailed logs.
+                    No debug logs yet. Start a VT migration to see detailed logs.
                   </p>
                 ) : (
                   debugLogs.map((log, index) => (
