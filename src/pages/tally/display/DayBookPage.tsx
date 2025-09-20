@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,16 +30,20 @@ interface VoucherEntry {
 }
 
 export default function DayBookPage() {
+  const { companyId, divisionId } = useParams<{
+    companyId: string;
+    divisionId: string;
+  }>();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  // Use VT data hooks - fetch all VT data
+  // Use VT data hooks with company and division filters
   const { 
     vouchers, 
     ledgers,
     loading, 
     error
-  } = useVtTallyData();
+  } = useVtTallyData(companyId, divisionId);
 
   // Transform VT vouchers to day book entries
   const vtDayBookEntries = useMemo(() => {
