@@ -1,79 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { 
-  Package, 
-  Warehouse, 
-  Scale, 
-  Calculator,
-  TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  BarChart3,
-  Boxes
-} from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Package, Warehouse, Scale, AlertTriangle } from 'lucide-react';
 
 interface InventoryItem {
   guid: string;
-  name: string;
-  parent: string;
+  item: string;
+  category: string;
   alias: string;
-  part_number: string;
+  partNumber: string;
   uom: string;
-  opening_balance: number;
-  closing_balance: number;
-  opening_rate: number;
-  closing_rate: number;
-  opening_value: number;
-  closing_value: number;
+  openingBalance: number;
+  quantity: number;
+  openingRate: number;
+  rate: number;
+  openingValue: number;
+  amount: number;
   description: string;
-  gst_rate: number;
-  gst_hsn_code: string;
-  minimum_level: number;
-  maximum_level: number;
-  reorder_level: number;
+  gstRate: number;
+  hsnCode: string;
+  minimumLevel: number;
+  maximumLevel: number;
+  reorderLevel: number;
   weight: number;
   volume: number;
-  item_category: string;
+  itemCategory: string;
   brand: string;
   manufacturer: string;
   size: string;
   color: string;
-  godown?: string;
-  tracking_number?: string;
+  godown: string;
+  trackingNumber: string;
 }
 
 interface GodownInfo {
   guid: string;
   name: string;
-  parent: string;
   address: string;
-  godown_type: string;
-  storage_type: string;
-  capacity: number;
-  capacity_unit: string;
-  manager_name: string;
-  contact_number: string;
+  capacity?: number;
+  capacityUnit?: string;
+  storageType?: string;
+  managerName?: string;
+  contactNumber?: string;
 }
 
 interface UOMInfo {
   guid: string;
   name: string;
   formalname: string;
+  baseUnits: string;
+  additionalUnits: string;
   conversion: number;
-  is_simple_unit: number;
-  base_units: string;
-  additional_units: string;
+  isSimpleUnit: boolean;
 }
 
 interface VoucherInventoryDetailsProps {
@@ -82,128 +64,51 @@ interface VoucherInventoryDetailsProps {
   divisionId: string;
 }
 
-export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: VoucherInventoryDetailsProps) {
-  const [loading, setLoading] = useState(true);
+export const VoucherInventoryDetails: React.FC<VoucherInventoryDetailsProps> = ({
+  voucherGuid,
+  companyId,
+  divisionId
+}) => {
+  const [isLoading, setIsLoading] = useState(true);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [godowns, setGodowns] = useState<GodownInfo[]>([]);
-  const [uoms, setUoms] = useState<UOMInfo[]>([]);
+  const [uoms, setUOMs] = useState<UOMInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [totals, setTotals] = useState({
+  const [summary, setSummary] = useState({
     totalItems: 0,
+    totalQuantity: 0,
     totalValue: 0,
-    totalQuantity: 0
+    uniqueGodowns: 0
   });
 
   useEffect(() => {
-    fetchInventoryDetails();
-  }, [voucherGuid, companyId, divisionId]);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  const fetchInventoryDetails = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-// Fetch actual inventory entries for this voucher by linking through voucher_guid
-      const { data: inventoryData, error: inventoryError } = await supabase
-        .from('trn_inventory')
-        .select('guid, item, godown, quantity, rate, amount, tracking_number')
-        .eq('voucher_guid', voucherGuid)
-        .eq('company_id', companyId)
-        .eq('division_id', divisionId);
-
-      if (inventoryError) {
-        console.error('Error fetching inventory entries:', inventoryError);
-        setError('Failed to fetch voucher inventory data');
-        return;
-      }
-
-      // If no inventory entries found, set empty data
-      if (!inventoryData || inventoryData.length === 0) {
+        // For now, show a placeholder since we're transitioning to VT schema
         setInventoryItems([]);
-        setTotals({ totalItems: 0, totalValue: 0, totalQuantity: 0 });
-      } else {
-        // Get unique item names from inventory entries
-        const itemNames = [...new Set(inventoryData.map(entry => entry.item))];
-        
-        // Fetch stock item details for these items
-        const { data: stockItemsData } = await supabase
-          .from('mst_stock_item')
-          .select('*')
-          .eq('company_id', companyId)
-          .eq('division_id', divisionId)
-          .in('name', itemNames);
-
-        // Create inventory items combining trn_inventory data with mst_stock_item details
-        const inventoryItemsWithDetails = inventoryData.map(invEntry => {
-          const stockItemDetails = (stockItemsData || []).find(item => item.name === invEntry.item);
-          
-          return {
-            guid: invEntry.guid,
-            name: invEntry.item,
-            parent: stockItemDetails?.parent || '',
-            alias: stockItemDetails?.alias || '',
-            part_number: stockItemDetails?.part_number || '',
-            uom: stockItemDetails?.uom || '',
-            opening_balance: stockItemDetails?.opening_balance || 0,
-            closing_balance: invEntry.quantity || 0, // Use actual transaction quantity
-            opening_rate: stockItemDetails?.opening_rate || 0,
-            closing_rate: invEntry.rate || 0, // Use actual transaction rate
-            opening_value: stockItemDetails?.opening_value || 0,
-            closing_value: invEntry.amount || 0, // Use actual transaction amount
-            description: stockItemDetails?.description || '',
-            gst_rate: stockItemDetails?.gst_rate || 0,
-            gst_hsn_code: stockItemDetails?.gst_hsn_code || '',
-            minimum_level: stockItemDetails?.minimum_level || 0,
-            maximum_level: stockItemDetails?.maximum_level || 0,
-            reorder_level: stockItemDetails?.reorder_level || 0,
-            weight: stockItemDetails?.weight || 0,
-            volume: stockItemDetails?.volume || 0,
-            item_category: stockItemDetails?.item_category || '',
-            brand: stockItemDetails?.brand || '',
-            manufacturer: stockItemDetails?.manufacturer || '',
-            size: stockItemDetails?.size || '',
-            color: stockItemDetails?.color || '',
-            // Additional inventory-specific fields
-            godown: invEntry.godown || '',
-            tracking_number: invEntry.tracking_number || ''
-          };
+        setGodowns([]);
+        setUOMs([]);
+        setSummary({
+          totalItems: 0,
+          totalQuantity: 0,
+          totalValue: 0,
+          uniqueGodowns: 0
         });
-
-        setInventoryItems(inventoryItemsWithDetails);
-        
-        // Calculate totals based on actual inventory transaction data
-        const totalItems = inventoryItemsWithDetails.length;
-        const totalValue = inventoryData.reduce((sum, entry) => sum + (entry.amount || 0), 0);
-        const totalQuantity = inventoryData.reduce((sum, entry) => sum + Math.abs(entry.quantity || 0), 0);
-
-        setTotals({ totalItems, totalValue, totalQuantity });
+      } catch (error: any) {
+        console.error('Error fetching inventory data:', error);
+        setError('Failed to fetch inventory data');
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Fetch related godowns and UOMs (these are still company-wide as they're reference data)
-      const [godownsResult, uomsResult] = await Promise.all([
-        supabase
-          .from('mst_godown')
-          .select('*')
-          .eq('company_id', companyId)
-          .eq('division_id', divisionId),
-        
-        supabase
-          .from('mst_uom')
-          .select('*')
-          .eq('company_id', companyId)
-          .eq('division_id', divisionId)
-      ]);
-
-      setGodowns(godownsResult.data || []);
-      setUoms(uomsResult.data || []);
-
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
+    if (voucherGuid && companyId && divisionId) {
+      fetchData();
     }
-  };
+  }, [voucherGuid, companyId, divisionId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -214,52 +119,50 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
   };
 
   const formatQuantity = (quantity: number, uom?: string) => {
-    return `${quantity.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ${uom || ''}`.trim();
+    return `${quantity.toFixed(2)} ${uom || 'units'}`;
   };
 
   const getStockLevelBadge = (item: InventoryItem) => {
-    const currentStock = item.closing_balance || 0;
-    const minLevel = item.minimum_level || 0;
-    const maxLevel = item.maximum_level || 0;
-    const reorderLevel = item.reorder_level || 0;
-
-    if (currentStock <= minLevel) {
+    const { quantity, minimumLevel, maximumLevel, reorderLevel } = item;
+    
+    if (quantity <= minimumLevel) {
       return <Badge variant="destructive">Low Stock</Badge>;
-    } else if (currentStock <= reorderLevel) {
+    } else if (quantity <= reorderLevel) {
       return <Badge variant="secondary">Reorder</Badge>;
-    } else if (maxLevel > 0 && currentStock >= maxLevel) {
+    } else if (quantity >= maximumLevel) {
       return <Badge variant="outline">Overstock</Badge>;
-    } else {
-      return <Badge variant="default">Normal</Badge>;
     }
+    return <Badge variant="default">Normal</Badge>;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
               <CardContent className="p-4">
-                <Skeleton className="h-8 w-24 mb-2" />
-                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-8 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4" />
               </CardContent>
             </Card>
           ))}
         </div>
+        <Card>
+          <CardContent className="p-4">
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">Unable to Load Inventory Details</h3>
-          <p className="text-muted-foreground">{error}</p>
-        </div>
-      </div>
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
 
@@ -269,67 +172,69 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-primary" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-lg font-semibold">{totals.totalItems}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Items</p>
+                <p className="text-2xl font-bold">{summary.totalItems}</p>
               </div>
+              <Package className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-blue-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Quantity</p>
-                <p className="text-lg font-semibold text-blue-600">
-                  {totals.totalQuantity.toLocaleString('en-IN')}
-                </p>
+                <p className="text-sm font-medium text-muted-foreground">Total Quantity</p>
+                <p className="text-2xl font-bold">{summary.totalQuantity.toFixed(2)}</p>
               </div>
+              <Scale className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Calculator className="h-4 w-4 text-green-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-lg font-semibold text-green-600">
-                  {formatCurrency(totals.totalValue)}
-                </p>
+                <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                <p className="text-2xl font-bold">{formatCurrency(summary.totalValue)}</p>
               </div>
+              <Package className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4 text-orange-600" />
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Godowns</p>
-                <p className="text-lg font-semibold text-orange-600">{godowns.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Godowns</p>
+                <p className="text-2xl font-bold">{summary.uniqueGodowns}</p>
               </div>
+              <Warehouse className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Inventory Items Table */}
-      {inventoryItems.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Boxes className="h-4 w-4" />
-              Inventory Items ({inventoryItems.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle>Inventory Items</CardTitle>
+          <CardDescription>
+            Detailed breakdown of inventory items in this voucher
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {inventoryItems.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Package className="mx-auto h-12 w-12 mb-4 opacity-50" />
+              <p className="text-lg font-medium">No Inventory Items</p>
+              <p className="text-sm">This voucher does not contain any inventory transactions.</p>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -341,130 +246,93 @@ export function VoucherInventoryDetails({ voucherGuid, companyId, divisionId }: 
                     <TableHead className="text-right">Quantity</TableHead>
                     <TableHead className="text-right">Rate</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Stock Level</TableHead>
                     <TableHead>Tracking #</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inventoryItems.map((item) => (
-                    <TableRow key={item.guid}>
+                  {inventoryItems.map((item, index) => (
+                    <TableRow key={index}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{item.name}</div>
+                          <div className="font-medium">{item.item}</div>
                           {item.alias && (
                             <div className="text-sm text-muted-foreground">{item.alias}</div>
                           )}
-                          {item.part_number && (
+                          {item.partNumber && (
                             <div className="text-xs text-muted-foreground">
-                              Part: {item.part_number}
+                              Part: {item.partNumber}
                             </div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm">
-                          <div>{item.parent || 'N/A'}</div>
-                          {item.item_category && (
-                            <div className="text-muted-foreground">{item.item_category}</div>
+                        <div>
+                          <div className="text-sm">{item.category}</div>
+                          {item.itemCategory && (
+                            <div className="text-xs text-muted-foreground">{item.itemCategory}</div>
                           )}
                         </div>
                       </TableCell>
+                      <TableCell>{item.godown || 'N/A'}</TableCell>
+                      <TableCell>{item.uom || 'N/A'}</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatQuantity(item.quantity, item.uom)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatCurrency(item.rate)}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatCurrency(item.amount)}
+                      </TableCell>
+                      <TableCell>{getStockLevelBadge(item)}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="text-xs">
-                          {item.godown || 'N/A'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {item.uom || 'N/A'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatQuantity(item.closing_balance || 0, item.uom)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(item.closing_rate || 0)}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(item.closing_value || 0)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-xs">
-                          {item.tracking_number || '-'}
-                        </div>
+                        {item.trackingNumber && (
+                          <code className="text-xs bg-muted px-2 py-1 rounded">
+                            {item.trackingNumber}
+                          </code>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No Inventory Items</h3>
-            <p className="text-muted-foreground">
-              This voucher does not have any associated inventory items or stock movements.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Inventory associations are determined by matching ledger names and cost centres with stock item names.
-            </p>
-          </div>
-        </div>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Godowns/Warehouses */}
+      {/* Godowns Section */}
       {godowns.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Warehouse className="h-4 w-4" />
-              Godowns/Warehouses ({godowns.length})
-            </CardTitle>
+            <CardTitle>Associated Godowns</CardTitle>
+            <CardDescription>
+              Storage locations referenced in this voucher
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {godowns.map((godown) => (
-                <Card key={godown.guid} className="border-l-4 border-l-primary">
+                <Card key={godown.guid} className="border-2">
                   <CardContent className="p-4">
-                    <div className="space-y-2">
-                      <div className="font-medium">{godown.name}</div>
-                      {godown.parent && (
-                        <div className="text-sm text-muted-foreground">
-                          Parent: {godown.parent}
-                        </div>
-                      )}
-                      {godown.address && (
-                        <div className="text-sm">{godown.address}</div>
-                      )}
-                      <div className="flex gap-2 flex-wrap">
-                        {godown.godown_type && (
-                          <Badge variant="secondary" className="text-xs">
-                            {godown.godown_type}
-                          </Badge>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{godown.name}</h4>
+                        <p className="text-sm text-muted-foreground">{godown.address}</p>
+                        {godown.capacity && (
+                          <div className="mt-2 text-xs">
+                            <span className="font-medium">Capacity:</span>{' '}
+                            {godown.capacity} {godown.capacityUnit}
+                          </div>
                         )}
-                        {godown.storage_type && (
-                          <Badge variant="outline" className="text-xs">
-                            {godown.storage_type}
-                          </Badge>
+                        {godown.storageType && (
+                          <div className="text-xs">
+                            <span className="font-medium">Type:</span> {godown.storageType}
+                          </div>
                         )}
                       </div>
-                      {godown.capacity && godown.capacity > 0 && (
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Capacity:</span> {godown.capacity} {godown.capacity_unit}
-                        </div>
-                      )}
-                      {godown.manager_name && (
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Manager:</span> {godown.manager_name}
-                        </div>
-                      )}
-                      {godown.contact_number && (
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Contact:</span> {godown.contact_number}
-                        </div>
-                      )}
+                      <Warehouse className="h-6 w-6 text-muted-foreground" />
                     </div>
                   </CardContent>
                 </Card>
