@@ -280,10 +280,13 @@ function AppSidebarContent() {
         setFetchAttempts(prev => prev + 1);
         
         // Fetch companies
+        console.log('AppSidebar: About to fetch companies for user:', currentUserId);
         const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
           .select('*')
           .eq('is_active', true);
+
+        console.log('AppSidebar: Companies fetch result:', { companiesData, companiesError, count: companiesData?.length });
 
         if (companiesError) {
           console.error('AppSidebar: Error fetching companies:', companiesError);

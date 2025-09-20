@@ -25,19 +25,25 @@ export default function Index() {
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
+        console.log('Index: Starting to fetch companies...');
         const { data: companiesData, error: companiesError } = await supabase
           .from('companies')
           .select('*')
           .eq('archived', false);
+
+        console.log('Index: Companies query result:', { companiesData, companiesError });
 
         if (companiesError) {
           console.error('Error fetching companies:', companiesError);
           return;
         }
 
+        console.log('Index: Starting to fetch divisions...');
         const { data: divisionsData, error: divisionsError } = await supabase
           .from('divisions')
           .select('company_id');
+
+        console.log('Index: Divisions query result:', { divisionsData, divisionsError });
 
         if (divisionsError) {
           console.error('Error fetching divisions:', divisionsError);
@@ -51,6 +57,7 @@ export default function Index() {
           }
         }));
 
+        console.log('Index: Final companies with counts:', companiesWithCounts);
         setCompanies(companiesWithCounts);
       } catch (error) {
         console.error('Error fetching data:', error);
