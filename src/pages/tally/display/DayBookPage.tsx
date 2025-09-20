@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Download, Filter, Calendar, FileText, Calculator, Package, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useVtTallyData } from "@/hooks/useVtTallyData";
 
 interface DayBookEntry {
   guid: string;
@@ -30,78 +30,63 @@ interface VoucherEntry {
 
 export default function DayBookPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [accountingEntries, setAccountingEntries] = useState<DayBookEntry[]>([]);
-  const [voucherEntries, setVoucherEntries] = useState<VoucherEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => {
-    fetchDayBookData();
-  }, [selectedDate]);
+  // Use VT data hooks - fetch all VT data
+  const { 
+    vouchers, 
+    ledgers,
+    loading, 
+    error
+  } = useVtTallyData();
 
-  const fetchDayBookData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch accounting entries - use backup table
-      const { data: accountingData, error: accountingError } = await supabase
-        .from('bkp_trn_accounting')
-        .select('*')
-        .order('guid')
-        .limit(50);
+  // Transform VT vouchers to day book entries
+  const vtDayBookEntries = useMemo(() => {
+    if (!vouchers.data) return [];
+    
+    return vouchers.data.map((voucher): DayBookEntry => ({
+      guid: voucher.guid,
+      date: voucher.date,
+      ledger: voucher.party_ledger_name || voucher.voucher_type || 'Unknown',
+      amount: voucher.total_amount || voucher.net_amount || 0,
+      amount_forex: voucher.total_amount || 0,
+      currency: 'INR', // VT vouchers may not have currency field
+      company_id: voucher.company_id,
+      division_id: voucher.division_id,
+    }));
+  }, [vouchers.data]);
 
-      if (accountingError) throw accountingError;
+  // Transform VT vouchers to voucher entries
+  const vtVoucherEntries = useMemo(() => {
+    if (!vouchers.data) return [];
+    
+    return vouchers.data.map((voucher): VoucherEntry => ({
+      guid: voucher.guid,
+      date: voucher.date,
+      voucher_type: voucher.voucher_type,
+      voucher_number: voucher.voucher_number,
+      narration: voucher.narration,
+    }));
+  }, [vouchers.data]);
 
-      // Fetch voucher entries for additional context - use backup table
-      const { data: voucherData, error: voucherError } = await supabase
-        .from('bkp_tally_trn_voucher')
-        .select('*')
-        .order('date', { ascending: false })
-        .limit(50);
+  const filteredAccountingEntries = useMemo(() => {
+    if (!searchTerm) return vtDayBookEntries;
+    
+    return vtDayBookEntries.filter(entry =>
+      entry.ledger.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.currency.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [vtDayBookEntries, searchTerm]);
 
-      if (voucherError) throw voucherError;
-
-      const transformedAccounting: DayBookEntry[] = (accountingData || []).map((item: any) => ({
-        guid: item.guid,
-        date: null, // trn_accounting doesn't have date field
-        ledger: item.ledger,
-        amount: item.amount || 0,
-        amount_forex: item.amount_forex || 0,
-        currency: item.currency || 'INR',
-        company_id: item.company_id,
-        division_id: item.division_id,
-      }));
-
-      const transformedVouchers: VoucherEntry[] = (voucherData || []).map((item: any) => ({
-        guid: item.guid,
-        date: item.date,
-        voucher_type: item.voucher_type,
-        voucher_number: item.voucher_number,
-        narration: item.narration,
-      }));
-
-      setAccountingEntries(transformedAccounting);
-      setVoucherEntries(transformedVouchers);
-    } catch (err) {
-      console.error('Error fetching day book data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch day book data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredAccountingEntries = accountingEntries.filter(entry =>
-    entry.ledger.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.currency.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredVoucherEntries = voucherEntries.filter(entry =>
-    (entry.voucher_type && entry.voucher_type.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (entry.voucher_number && entry.voucher_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (entry.narration && entry.narration.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredVoucherEntries = useMemo(() => {
+    if (!searchTerm) return vtVoucherEntries;
+    
+    return vtVoucherEntries.filter(entry =>
+      (entry.voucher_type && entry.voucher_type.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (entry.voucher_number && entry.voucher_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (entry.narration && entry.narration.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [vtVoucherEntries, searchTerm]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -125,17 +110,25 @@ export default function DayBookPage() {
 
   const { totalDebits, totalCredits } = calculateTotals();
 
+  const handleRefresh = () => {
+    vouchers.refetch();
+    toast({
+      title: "Data refreshed",
+      description: "VT data has been refreshed successfully.",
+    });
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Day Book</h1>
+          <h1 className="text-3xl font-bold">Day Book (VT)</h1>
           <p className="text-muted-foreground">
-            Daily transaction summary and accounting entries
+            Daily transaction summary and accounting entries from VT tables
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchDayBookData} disabled={loading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -151,7 +144,20 @@ export default function DayBookPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Vouchers</CardTitle>
+            <FileText className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{vouchers.data?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              VT voucher records
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Debits</CardTitle>
@@ -196,9 +202,9 @@ export default function DayBookPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Transaction Entries</CardTitle>
+          <CardTitle>VT Transaction Entries</CardTitle>
           <CardDescription>
-            Detailed view of all accounting and voucher entries
+            Detailed view of all VT voucher and accounting entries
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -234,7 +240,7 @@ export default function DayBookPage() {
               ) : error ? (
                 <div className="text-center py-8">
                   <div className="text-destructive mb-2">Error: {error}</div>
-                  <Button onClick={fetchDayBookData} variant="outline">
+                  <Button onClick={handleRefresh} variant="outline">
                     Try Again
                   </Button>
                 </div>
@@ -254,7 +260,7 @@ export default function DayBookPage() {
                       {filteredAccountingEntries.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                            No accounting entries found
+                            No VT accounting entries found
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -304,41 +310,48 @@ export default function DayBookPage() {
                       <TableHead>Voucher Type</TableHead>
                       <TableHead>Voucher Number</TableHead>
                       <TableHead>Narration</TableHead>
+                      <TableHead>Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredVoucherEntries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                          No voucher entries found
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                          No VT voucher entries found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredVoucherEntries.map((entry) => (
-                        <TableRow key={entry.guid}>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm">
-                                {entry.date ? new Date(entry.date).toLocaleDateString() : '-'}
+                      filteredVoucherEntries.map((entry) => {
+                        const voucherData = vouchers.data?.find(v => v.guid === entry.guid);
+                        return (
+                          <TableRow key={entry.guid}>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">
+                                  {entry.date ? new Date(entry.date).toLocaleDateString() : '-'}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {entry.voucher_type || 'Unknown'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {entry.voucher_number || '-'}
+                            </TableCell>
+                            <TableCell className="max-w-md">
+                              <span className="text-sm text-muted-foreground line-clamp-2">
+                                {entry.narration || 'No narration'}
                               </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {entry.voucher_type || 'Unknown'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {entry.voucher_number || '-'}
-                          </TableCell>
-                          <TableCell className="max-w-md">
-                            <span className="text-sm text-muted-foreground line-clamp-2">
-                              {entry.narration || 'No narration'}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            </TableCell>
+                            <TableCell className="font-medium text-blue-600">
+                              {voucherData ? formatCurrency(voucherData.total_amount || voucherData.net_amount || 0) : '-'}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
