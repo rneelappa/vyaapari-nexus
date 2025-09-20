@@ -118,7 +118,7 @@ export function TallySync({
       addDebugLog('info', 'Step 1: Schema validation and preparation');
       setSyncProgress(prev => ({ ...prev, currentStep: 'Validating VT schema...', progress: 10 }));
 
-      addDebugLog('info', 'Step 2: Extracting data from Tally backup tables');
+      addDebugLog('info', 'Step 2: Extracting data from Tally schema tables');
       setSyncProgress(prev => ({ ...prev, currentStep: 'Extracting source data...', progress: 20 }));
 
       addDebugLog('info', 'Step 3: Data transformation and validation');
@@ -245,14 +245,14 @@ export function TallySync({
             Migration Configuration
           </CardTitle>
           <CardDescription>
-            VT schema migration from backup tables with data validation and transformation
+            VT schema migration from tally schema with data validation and transformation
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-3 border rounded-lg">
               <div className="text-sm font-medium text-muted-foreground">Source Schema</div>
-              <div className="text-lg font-semibold">Backup Tables</div>
+              <div className="text-lg font-semibold">Tally Schema</div>
             </div>
             <div className="text-center p-3 border rounded-lg">
               <div className="text-sm font-medium text-muted-foreground">Target Schema</div>
