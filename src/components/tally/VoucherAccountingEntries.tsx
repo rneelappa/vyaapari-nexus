@@ -59,7 +59,7 @@ export function VoucherAccountingEntries({ voucherGuid, companyId, divisionId }:
     
     try {
       const { data, error } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .select('*')
         .eq('voucher_guid', voucherGuid)
         .eq('company_id', companyId)

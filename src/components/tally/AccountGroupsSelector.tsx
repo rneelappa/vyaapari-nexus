@@ -46,9 +46,9 @@ export const AccountGroupsSelector: React.FC<AccountGroupsSelectorProps> = ({
   const fetchAccountGroups = async () => {
     setLoading(true);
     try {
-      // Fetch groups with voucher counts
+      // Fetch groups with voucher counts from backup tables
       const { data: groupsData, error: groupsError } = await supabase
-        .from('mst_group')
+        .from('bkp_mst_group')
         .select('guid, name, parent, primary_group')
         .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
         .order('name');
@@ -57,7 +57,7 @@ export const AccountGroupsSelector: React.FC<AccountGroupsSelectorProps> = ({
 
       // Get voucher counts by executing the query directly
       const { data: voucherCounts, error: countsError } = await supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select(`
           parent,
           tally_trn_voucher!inner(guid)

@@ -54,7 +54,7 @@ export function VoucherAddressDetails({ voucherGuid, companyId, divisionId }: Vo
     
     try {
       const { data, error } = await supabase
-        .from('trn_address_details')
+        .from('bkp_trn_address_details')
         .select('*')
         .eq('voucher_guid', voucherGuid)
         .eq('company_id', companyId)

@@ -134,7 +134,7 @@ export function TallyVoucherSync({
     try {
       const [{ data: divisionRow }, { data: companyRow }] = await Promise.all([
         supabase.from('divisions').select('tally_url, tally_company_id').eq('id', divisionId).single(),
-        supabase.from('mst_company').select('company_name').eq('vyaapari_company_id', companyId).single()
+        supabase.from('bkp_mst_company').select('company_name').eq('vyaapari_company_id', companyId).single()
       ]);
 
       if (divisionRow?.tally_url) {

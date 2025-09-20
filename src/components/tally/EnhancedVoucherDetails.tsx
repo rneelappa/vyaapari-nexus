@@ -172,9 +172,9 @@ export function EnhancedVoucherDetails({
   const fetchVoucherDetails = async () => {
     setLoading(true);
     try {
-      // Fetch main voucher details
+      // Fetch main voucher details from backup tables
       const { data: voucherData, error: voucherError } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('*')
         .eq('guid', voucherGuid)
         .single();
@@ -182,9 +182,9 @@ export function EnhancedVoucherDetails({
       if (voucherError) throw voucherError;
       setVoucher(voucherData);
 
-      // Fetch accounting entries
+      // Fetch accounting entries from backup tables
       const { data: accountingData, error: accountingError } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .select('*')
         .eq('voucher_guid', voucherGuid)
         .order('amount', { ascending: false });
@@ -206,9 +206,9 @@ export function EnhancedVoucherDetails({
         }
       }
 
-      // Fetch address details
+      // Fetch address details from backup tables
       const { data: addressData, error: addressError } = await supabase
-        .from('trn_address_details')
+        .from('bkp_trn_address_details')
         .select('*')
         .eq('voucher_guid', voucherGuid);
 
@@ -218,10 +218,10 @@ export function EnhancedVoucherDetails({
         setAddressDetails(addressData || []);
       }
 
-      // Fetch voucher type details
+      // Fetch voucher type details from backup tables
       if (voucherData?.voucher_type) {
         const { data: typeData, error: typeError } = await supabase
-          .from('mst_vouchertype')
+          .from('bkp_mst_vouchertype')
           .select('*')
           .eq('name', voucherData.voucher_type)
           .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
@@ -237,7 +237,7 @@ export function EnhancedVoucherDetails({
       // Fetch party ledger details
       if (voucherData?.party_ledger_name) {
         const { data: ledgerData, error: ledgerError } = await supabase
-          .from('mst_ledger')
+          .from('bkp_mst_ledger')
           .select('*')
           .eq('name', voucherData.party_ledger_name)
           .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
@@ -256,7 +256,7 @@ export function EnhancedVoucherDetails({
         
         if (ledgerNames.length > 0) {
           const { data: relatedLedgersData, error: relatedLedgersError } = await supabase
-            .from('mst_ledger')
+            .from('bkp_mst_ledger')
             .select('*')
             .in('name', ledgerNames)
             .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
@@ -275,7 +275,7 @@ export function EnhancedVoucherDetails({
         
         // Try to get inventory data from trn_batch table (which links vouchers to inventory)
         const { data: batchData, error: batchError } = await supabase
-          .from('trn_batch')
+          .from('bkp_trn_batch')
           .select('*')
           .eq('voucher_guid', voucherGuid)
           .eq('company_id', companyId)
@@ -305,7 +305,7 @@ export function EnhancedVoucherDetails({
         if (voucherData?.voucher_type === 'SALES' && voucherData?.party_ledger_name === 'MABEL ENGINEERS PVT LTD.') {
           // Look for the specific steel item mentioned in the original Tally data
           const { data: stockItem, error: stockError } = await supabase
-            .from('mst_stock_item')
+            .from('bkp_mst_stock_item')
             .select('*')
             .eq('name', '100 X 2000 X 12000 X 516GR70 X JINDAL-A')
             .eq('company_id', companyId)
@@ -393,7 +393,7 @@ export function EnhancedVoucherDetails({
     const getMainAccountName = async (voucherType: string): Promise<string> => {
       try {
         let ledgerQuery = supabase
-          .from('mst_ledger')
+          .from('bkp_mst_ledger')
           .select('name, parent')
           .or(`company_id.eq.${companyId},company_id.is.null`)
           .or(`division_id.eq.${divisionId},division_id.is.null`);

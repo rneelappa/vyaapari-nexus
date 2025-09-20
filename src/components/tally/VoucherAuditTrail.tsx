@@ -74,7 +74,7 @@ export function VoucherAuditTrail({ voucherGuid, companyId, divisionId }: Vouche
       // Fetch voucher details with audit info
       const [voucherResult, syncJobsResult, syncDetailsResult] = await Promise.all([
         supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('guid, voucher_number, voucher_type, date, created_at, altered_by, altered_on, persistedview, is_cancelled, is_optional')
           .eq('guid', voucherGuid)
           .eq('company_id', companyId)
@@ -83,7 +83,7 @@ export function VoucherAuditTrail({ voucherGuid, companyId, divisionId }: Vouche
         
         // Fetch sync jobs for this company/division
         supabase
-          .from('tally_sync_jobs')
+          .from('bkp_tally_sync_jobs')
           .select('*')
           .eq('company_id', companyId)
           .eq('division_id', divisionId)
@@ -92,7 +92,7 @@ export function VoucherAuditTrail({ voucherGuid, companyId, divisionId }: Vouche
         
         // Fetch sync job details for this specific voucher
         supabase
-          .from('tally_sync_job_details')
+          .from('bkp_tally_sync_job_details')
           .select('*')
           .eq('record_guid', voucherGuid)
           .order('processed_at', { ascending: false })

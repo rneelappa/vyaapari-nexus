@@ -36,7 +36,7 @@ export function LedgerSelect({ label, value, onChange }: LedgerSelectProps) {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select('name, parent, opening_balance, closing_balance')
         .or(`company_id.eq.${companyId},company_id.is.null`)
         .or(`division_id.eq.${divisionId},division_id.is.null`)

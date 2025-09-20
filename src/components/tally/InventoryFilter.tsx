@@ -45,7 +45,7 @@ export function InventoryFilter({
     try {
       // First get stock items from master data
       const { data: stockItemsData, error: stockItemsError } = await supabase
-        .from('mst_stock_item')
+        .from('bkp_mst_stock_item')
         .select('name, parent, uom, closing_balance, closing_rate, closing_value, item_category, brand')
         .or(`company_id.eq.${companyId},company_id.is.null`)
         .or(`division_id.eq.${divisionId},division_id.is.null`)
@@ -58,7 +58,7 @@ export function InventoryFilter({
 
       // Get stock-affecting voucher types
       const { data: stockVoucherTypes, error: stockTypesError } = await supabase
-        .from('mst_vouchertype')
+        .from('bkp_mst_vouchertype')
         .select('name')
         .eq('affects_stock', 1)
         .or(`company_id.eq.${companyId},company_id.is.null`)
@@ -73,7 +73,7 @@ export function InventoryFilter({
 
       // Get vouchers that affect stock/inventory
       const { data: stockVouchers, error: stockVouchersError } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('voucher_type, party_ledger_name, narration')
         .in('voucher_type', stockTypeNames.length > 0 ? stockTypeNames : ['Sales', 'Purchase', 'Stock Journal', 'Physical Stock'])
         .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);

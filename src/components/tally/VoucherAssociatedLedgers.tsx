@@ -76,7 +76,7 @@ export function VoucherAssociatedLedgers({ voucherGuid, companyId, divisionId }:
     try {
       // First, get all unique ledgers from accounting entries
       const { data: accountingData, error: accountingError } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .select('ledger, amount, is_party_ledger')
         .eq('voucher_guid', voucherGuid)
         .eq('company_id', companyId)
@@ -105,7 +105,7 @@ export function VoucherAssociatedLedgers({ voucherGuid, companyId, divisionId }:
 
       // Fetch detailed ledger information
       const { data: ledgerData, error: ledgerError } = await supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select('*')
         .in('name', ledgerNames)
         .eq('company_id', companyId)

@@ -43,7 +43,7 @@ export function GodownsFilter({
     try {
       // First get godowns from master data
       const { data: godownsData, error: godownsError } = await supabase
-        .from('mst_godown')
+        .from('bkp_mst_godown')
         .select('name, parent, address, godown_type, capacity, capacity_unit')
         .or(`company_id.eq.${companyId},company_id.is.null`)
         .or(`division_id.eq.${divisionId},division_id.is.null`)
@@ -56,7 +56,7 @@ export function GodownsFilter({
 
       // Get stock-affecting voucher types
       const { data: stockVoucherTypes, error: stockTypesError } = await supabase
-        .from('mst_vouchertype')
+        .from('bkp_mst_vouchertype')
         .select('name')
         .eq('affects_stock', 1)
         .or(`company_id.eq.${companyId},company_id.is.null`)
@@ -71,7 +71,7 @@ export function GodownsFilter({
 
       // Get vouchers that affect stock/inventory
       const { data: stockVouchers, error: stockVouchersError } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('voucher_type, party_ledger_name')
         .in('voucher_type', stockTypeNames.length > 0 ? stockTypeNames : ['Sales', 'Purchase', 'Stock Journal', 'Physical Stock'])
         .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`);
