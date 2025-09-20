@@ -32,8 +32,9 @@ export const useLedgerVouchers = () => {
 
       // First, try to find vouchers through accounting entries (trn_accounting table)
       // This is the correct way to find vouchers that affected a specific ledger
+      // Use backup table temporarily 
       const { data: accountingData, error: accountingError } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .select(`
           voucher_guid,
           voucher_number,
@@ -54,7 +55,7 @@ export const useLedgerVouchers = () => {
       let finalAccountingData = accountingData || [];
       if (finalAccountingData.length === 0) {
         const { data: fallbackData, error: fallbackError } = await supabase
-          .from('trn_accounting')
+          .from('bkp_trn_accounting')
           .select(`
             voucher_guid,
             voucher_number,
@@ -77,7 +78,7 @@ export const useLedgerVouchers = () => {
       
       if (voucherGuids.length > 0) {
         const { data: voucherData, error: voucherError } = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name')
           .in('guid', voucherGuids)
           .order('date', { ascending: false });
@@ -101,7 +102,7 @@ export const useLedgerVouchers = () => {
       if (formattedVouchers.length === 0) {
         console.log('No vouchers found via accounting entries, trying direct voucher search...');
         const { data: directVoucherData, error: directVoucherError } = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name')
           .ilike('party_ledger_name', `%${ledgerName}%`)
           .order('date', { ascending: false });
@@ -141,9 +142,9 @@ export const useLedgerVouchers = () => {
 
       console.log('Fetching vouchers for voucher type:', voucherTypeName, { companyId, divisionId });
 
-      // First try exact match on voucher_type with company/division
+      // First try exact match on voucher_type with company/division - use backup table
       const { data: voucherData, error: voucherError } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
         .eq('voucher_type', voucherTypeName)
         .eq('company_id', companyId)
@@ -160,7 +161,7 @@ export const useLedgerVouchers = () => {
       // If none, try partial match (ILIKE) with company/division
       if (finalVoucherData.length === 0) {
         const partialResp = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
           .ilike('voucher_type', `%${voucherTypeName}%`)
           .eq('company_id', companyId)
@@ -174,7 +175,7 @@ export const useLedgerVouchers = () => {
       // If still none, try without company/division filters
       if (finalVoucherData.length === 0) {
         const fallbackResp = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
           .eq('voucher_type', voucherTypeName)
           .order('date', { ascending: false });
@@ -186,7 +187,7 @@ export const useLedgerVouchers = () => {
       // If still none, try partial without filters
       if (finalVoucherData.length === 0) {
         const fallbackPartial = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('guid, voucher_number, voucher_type, date, total_amount, narration, party_ledger_name, company_id, division_id')
           .ilike('voucher_type', `%${voucherTypeName}%`)
           .order('date', { ascending: false });

@@ -43,9 +43,9 @@ export const useAccountingLedgers = () => {
 
       console.log('Fetching ledgers for:', { companyId, divisionId });
 
-      // Fetch ALL ledgers (remove limit)
+      // Fetch ALL ledgers (remove limit) - use backup table
       const { data: allLedgers, error: ledgersError } = await supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select('guid, name, parent, opening_balance, closing_balance, company_id, division_id');
 
       if (ledgersError) {
@@ -90,9 +90,9 @@ export const useAccountingLedgers = () => {
       // Fetch transaction data for each ledger with latest voucher date
       const ledgersWithTransactions = await Promise.all(
         companyDivisionLedgers.map(async (ledger) => {
-          // Get voucher count, transaction totals, and latest voucher date
+          // Get voucher count, transaction totals, and latest voucher date - use backup table
           const { data: transactions, error: transError } = await supabase
-            .from('trn_accounting')
+            .from('bkp_trn_accounting')
             .select('amount, is_deemed_positive, voucher_date')
             .ilike('ledger', `%${ledger.name}%`)
             .eq('company_id', companyId)

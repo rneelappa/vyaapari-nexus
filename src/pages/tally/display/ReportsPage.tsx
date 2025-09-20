@@ -67,16 +67,16 @@ export default function ReportsPage() {
         { data: recentAccounting },
         { data: recentInventory }
       ] = await Promise.all([
-        supabase.from('mst_ledger').select('*', { count: 'exact', head: true }),
-        supabase.from('mst_stock_item').select('*', { count: 'exact', head: true }),
-        supabase.from('mst_employee').select('*', { count: 'exact', head: true }),
-        supabase.from('mst_godown').select('*', { count: 'exact', head: true }),
-        supabase.from('mst_vouchertype').select('*', { count: 'exact', head: true }),
-        supabase.from('trn_accounting').select('*', { count: 'exact', head: true }),
-        supabase.from('trn_batch').select('*', { count: 'exact', head: true }),
-        supabase.from('tally_trn_voucher').select('*', { count: 'exact', head: true }),
-        supabase.from('trn_accounting').select('*').limit(1),
-        supabase.from('trn_batch').select('*').limit(1)
+        supabase.from('bkp_mst_ledger').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_mst_stock_item').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_mst_employee').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_mst_godown').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_mst_vouchertype').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_trn_accounting').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_trn_batch').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_tally_trn_voucher').select('*', { count: 'exact', head: true }),
+        supabase.from('bkp_trn_accounting').select('*').limit(1),
+        supabase.from('bkp_trn_batch').select('*').limit(1)
       ]);
 
       const currentDate = new Date().toISOString();

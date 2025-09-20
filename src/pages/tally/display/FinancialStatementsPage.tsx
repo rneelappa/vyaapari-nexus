@@ -51,7 +51,7 @@ export default function FinancialStatementsPage() {
 
       // Fetch accounting data and group by ledger
       const { data: accountingData, error: accountingError } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .select('ledger, amount')
         .order('ledger');
 
@@ -59,7 +59,7 @@ export default function FinancialStatementsPage() {
 
       // Fetch ledger master data for classification
       const { data: ledgerData, error: ledgerError } = await supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select('name, is_revenue, is_deemedpositive, parent')
         .order('name');
 

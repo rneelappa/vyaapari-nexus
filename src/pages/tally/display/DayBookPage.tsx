@@ -45,25 +45,25 @@ export default function DayBookPage() {
       setLoading(true);
       setError(null);
       
-      // Fetch accounting entries
+      // Fetch accounting entries - use backup table
       const { data: accountingData, error: accountingError } = await supabase
-        .from('trn_accounting')
+        .from('bkp_trn_accounting')
         .select('*')
         .order('guid')
         .limit(50);
 
       if (accountingError) throw accountingError;
 
-      // Fetch voucher entries for additional context
+      // Fetch voucher entries for additional context - use backup table
       const { data: voucherData, error: voucherError } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('*')
         .order('date', { ascending: false })
         .limit(50);
 
       if (voucherError) throw voucherError;
 
-      const transformedAccounting: DayBookEntry[] = (accountingData || []).map(item => ({
+      const transformedAccounting: DayBookEntry[] = (accountingData || []).map((item: any) => ({
         guid: item.guid,
         date: null, // trn_accounting doesn't have date field
         ledger: item.ledger,
@@ -74,7 +74,7 @@ export default function DayBookPage() {
         division_id: item.division_id,
       }));
 
-      const transformedVouchers: VoucherEntry[] = (voucherData || []).map(item => ({
+      const transformedVouchers: VoucherEntry[] = (voucherData || []).map((item: any) => ({
         guid: item.guid,
         date: item.date,
         voucher_type: item.voucher_type,

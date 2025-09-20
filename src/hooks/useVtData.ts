@@ -77,10 +77,10 @@ export const useVtData = <T = any>(
       if (queryError) throw queryError;
 
       if (isLoadMore) {
-        setData(prev => [...prev, ...(result || [])]);
+        setData(prev => [...prev, ...(result as T[] || [])]);
         setOffset(currentOffset);
       } else {
-        setData(result || []);
+        setData(result as T[] || []);
         setOffset(0);
       }
       

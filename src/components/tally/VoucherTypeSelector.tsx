@@ -14,7 +14,7 @@ interface VoucherType {
   parent: string;
   affects_stock: number;
   is_deemedpositive: number;
-  numbering_method: string;
+  numbering_method?: string;
   children?: VoucherType[];
 }
 
@@ -47,10 +47,12 @@ export function VoucherTypeSelector({
   const fetchVoucherTypes = async () => {
     setLoading(true);
     try {
+      // Use backup table temporarily until VT schema is fully populated
       const { data, error } = await supabase
-        .from('mst_vouchertype')
-        .select('guid, name, parent, affects_stock, is_deemedpositive, numbering_method')
-        .or(`and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`)
+        .from('bkp_mst_vouchertype')
+        .select('guid, name, parent, affects_stock, is_deemedpositive')
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
         .order('name');
 
       if (error) {

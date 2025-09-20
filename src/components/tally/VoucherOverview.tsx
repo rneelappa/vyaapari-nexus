@@ -58,8 +58,9 @@ export function VoucherOverview({ voucherGuid, companyId, divisionId }: VoucherO
     setError(null);
     
     try {
+      // Use backup table temporarily until VT schema is fully populated
       const { data, error } = await supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('*')
         .eq('guid', voucherGuid)
         .eq('company_id', companyId)

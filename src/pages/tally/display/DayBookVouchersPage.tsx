@@ -115,7 +115,7 @@ export default function DayBookVouchersPage() {
       const to = from + pageSize - 1;
 
       let query = supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('*', { count: 'exact' });
 
       query = applyCommonFilters(query);
@@ -132,7 +132,7 @@ export default function DayBookVouchersPage() {
       const { data, error: fetchError, count } = await query;
       if (fetchError) throw fetchError;
 
-      setVouchers(data || []);
+      setVouchers((data as any) || []);
       setTotalCount(count || 0);
     } catch (err) {
       console.error('Error fetching vouchers:', err);
@@ -150,7 +150,7 @@ export default function DayBookVouchersPage() {
   const fetchTotals = async () => {
     try {
       let totalQuery = supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('total_amount.sum()');
 
       totalQuery = applyCommonFilters(totalQuery);

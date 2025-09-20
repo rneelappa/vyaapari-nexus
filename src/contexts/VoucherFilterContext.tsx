@@ -96,11 +96,11 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
     setLoading(true);
     try {
       // Build base query conditions
-      const companyCondition = `and(company_id.eq.${companyId},division_id.eq.${divisionId}),and(company_id.is.null,division_id.is.null)`;
+      console.log('Fetching options for:', { companyId, divisionId });
       
-      // Fetch ledgers based on selected group
+      // Fetch ledgers based on selected group - use backup table
       let ledgerQuery = supabase
-        .from('mst_ledger')
+        .from('bkp_mst_ledger')
         .select('name, parent, opening_balance, closing_balance');
       
       if (filters.selectedGroup) {
@@ -108,15 +108,17 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
       }
       
       const { data: ledgersData } = await ledgerQuery
-        .or(companyCondition)
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId)
         .order('name');
 
       // Get voucher counts for ledgers
       const ledgerNames = (ledgersData || []).map(l => l.name);
       let voucherCountsQuery = supabase
-        .from('tally_trn_voucher')
+        .from('bkp_tally_trn_voucher')
         .select('party_ledger_name, voucher_type, guid')
-        .or(companyCondition);
+        .eq('company_id', companyId)
+        .eq('division_id', divisionId);
 
       if (ledgerNames.length > 0) {
         voucherCountsQuery = voucherCountsQuery.in('party_ledger_name', ledgerNames);
@@ -145,20 +147,22 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
       let voucherTypesData: any[] = [];
       if (filters.selectedLedger) {
         const { data } = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('voucher_type')
           .eq('party_ledger_name', filters.selectedLedger)
-          .or(companyCondition);
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
         
         const uniqueTypes = Array.from(new Set((data || []).map(v => v.voucher_type))).filter(Boolean);
         
         // Get master data for these types
         if (uniqueTypes.length > 0) {
           const { data: masterTypes } = await supabase
-            .from('mst_vouchertype')
+            .from('bkp_mst_vouchertype')
             .select('name, parent, affects_stock, is_deemedpositive')
             .in('name', uniqueTypes)
-            .or(companyCondition);
+            .eq('company_id', companyId)
+            .eq('division_id', divisionId);
 
           voucherTypesData = (masterTypes || []).map(type => ({
             name: type.name,
@@ -173,19 +177,21 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
         const groupLedgerNames = ledgersWithCounts.map(l => l.name);
         if (groupLedgerNames.length > 0) {
           const { data } = await supabase
-            .from('tally_trn_voucher')
+            .from('bkp_tally_trn_voucher')
             .select('voucher_type')
             .in('party_ledger_name', groupLedgerNames)
-            .or(companyCondition);
+            .eq('company_id', companyId)
+            .eq('division_id', divisionId);
 
           const uniqueTypes = Array.from(new Set((data || []).map(v => v.voucher_type))).filter(Boolean);
           
           if (uniqueTypes.length > 0) {
             const { data: masterTypes } = await supabase
-              .from('mst_vouchertype')
+              .from('bkp_mst_vouchertype')
               .select('name, parent, affects_stock, is_deemedpositive')
               .in('name', uniqueTypes)
-              .or(companyCondition);
+              .eq('company_id', companyId)
+              .eq('division_id', divisionId);
 
             voucherTypesData = (masterTypes || []).map(type => ({
               name: type.name,
@@ -199,14 +205,16 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
       } else {
         // Get all voucher types
         const { data: allTypes } = await supabase
-          .from('mst_vouchertype')
+          .from('bkp_mst_vouchertype')
           .select('name, parent, affects_stock, is_deemedpositive')
-          .or(companyCondition);
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
 
         const { data: allVouchers } = await supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('voucher_type')
-          .or(companyCondition);
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
 
         const typeCounts = (allVouchers || []).reduce((acc, voucher) => {
           const type = voucher.voucher_type;
@@ -230,9 +238,10 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
       if (filters.selectedVoucherType || filters.selectedLedger || filters.selectedGroup) {
         // Get stock-affecting vouchers only
         let stockVoucherQuery = supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('party_ledger_name, voucher_type, narration')
-          .or(companyCondition);
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
 
         if (filters.selectedVoucherType) {
           stockVoucherQuery = stockVoucherQuery.eq('voucher_type', filters.selectedVoucherType);
@@ -245,9 +254,10 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
         
         // Get all godowns and match with voucher data
         const { data: allGodowns } = await supabase
-          .from('mst_godown')
+          .from('bkp_mst_godown')
           .select('name, parent, address, godown_type')
-          .or(companyCondition);
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
 
         godownsData = (allGodowns || []).map(godown => ({
           name: godown.name,
@@ -264,14 +274,16 @@ export function VoucherFilterProvider({ children, companyId, divisionId }: Vouch
       if (filters.selectedVoucherType || filters.selectedLedger || filters.selectedGroup) {
         // Similar logic for inventory items
         const { data: allItems } = await supabase
-          .from('mst_stock_item')
+          .from('bkp_mst_stock_item')
           .select('name, parent, uom, item_category')
-          .or(companyCondition);
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
 
         let itemVoucherQuery = supabase
-          .from('tally_trn_voucher')
+          .from('bkp_tally_trn_voucher')
           .select('party_ledger_name, voucher_type, narration')
-          .or(companyCondition);
+          .eq('company_id', companyId)
+          .eq('division_id', divisionId);
 
         if (filters.selectedVoucherType) {
           itemVoucherQuery = itemVoucherQuery.eq('voucher_type', filters.selectedVoucherType);
