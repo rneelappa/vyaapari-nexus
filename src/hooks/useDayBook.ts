@@ -50,7 +50,7 @@ export const useDayBook = (
     selectedVoucherType = 'all',
     dateFrom = '',
     dateTo = '',
-    sortBy = 'date',
+    sortBy = 'voucher_date',
     sortOrder = 'desc',
     page = 1,
     pageSize = 200
@@ -75,12 +75,12 @@ export const useDayBook = (
       query = query.eq('voucher_type', selectedVoucherType);
     }
 
-    // Date range filter - use the actual date column
+    // Date range filter - use voucher_date column
     if (dateFrom) {
-      query = query.gte('date', dateFrom);
+      query = query.gte('voucher_date', dateFrom);
     }
     if (dateTo) {
-      query = query.lte('date', dateTo);
+      query = query.lte('voucher_date', dateTo);
     }
 
     // Search filter across key fields
@@ -109,11 +109,11 @@ export const useDayBook = (
 
       query = applyCommonFilters(query);
 
-      // Sorting - use date column since voucher_date may not exist
-      const sortColumn = ['date', 'ledger', 'amount', 'voucher_type'].includes(sortBy)
+      // Sorting - default to voucher_date
+      const sortColumn = ['voucher_date', 'ledger', 'amount', 'voucher_type'].includes(sortBy)
         ? sortBy
-        : 'date';
-      query = query.order(sortColumn, { ascending: sortOrder === 'asc', nullsFirst: false });
+        : 'voucher_date';
+      query = query.order(sortColumn as any, { ascending: sortOrder === 'asc', nullsFirst: false });
 
       // Pagination
       query = query.range(from, to);
@@ -137,20 +137,10 @@ export const useDayBook = (
   };
 
   const fetchTotals = async () => {
+    // Aggregates are disabled on PostgREST for this table; let UI use page sum
     try {
-      let totalQuery = supabase
-        .from('bkp_trn_accounting')
-        .select('amount.sum()');
-
-      totalQuery = applyCommonFilters(totalQuery);
-
-      const { data, error } = await totalQuery;
-      if (error) throw error;
-      
-      const sum = (data && data[0] && (data[0] as any).sum) ? Number((data[0] as any).sum) : 0;
-      setAggregatedAmount(sum);
+      setAggregatedAmount(null);
     } catch (e) {
-      console.warn('Failed to fetch totals:', e);
       setAggregatedAmount(null);
     }
   };

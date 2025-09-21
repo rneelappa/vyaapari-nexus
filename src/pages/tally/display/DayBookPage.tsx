@@ -13,7 +13,7 @@ import { useDayBook } from "@/hooks/useDayBook";
 
 interface DayBookEntry {
   guid: string;
-  date: string | null;
+  voucher_date: string | null;
   ledger: string | null;
   voucher_type: string | null;
   voucher_number: string | null;
@@ -41,7 +41,7 @@ export default function DayBookPage() {
   const [selectedVoucherType, setSelectedVoucherType] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
-  const [sortBy, setSortBy] = useState<string>("date");
+  const [sortBy, setSortBy] = useState<string>("voucher_date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   
   // Pagination
@@ -236,8 +236,8 @@ export default function DayBookPage() {
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="date-desc">Date (Newest)</SelectItem>
-                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
+                <SelectItem value="voucher_date-desc">Voucher Date (Newest)</SelectItem>
+                <SelectItem value="voucher_date-asc">Voucher Date (Oldest)</SelectItem>
                 <SelectItem value="ledger-asc">Ledger (A-Z)</SelectItem>
                 <SelectItem value="ledger-desc">Ledger (Z-A)</SelectItem>
                 <SelectItem value="amount-desc">Amount (High-Low)</SelectItem>
@@ -321,7 +321,7 @@ export default function DayBookPage() {
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">
-                              {formatDate(entry.date)}
+                              {formatDate(entry.voucher_date)}
                             </span>
                           </div>
                         </TableCell>

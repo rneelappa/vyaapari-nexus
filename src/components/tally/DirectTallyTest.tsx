@@ -3,47 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Play, CheckCircle, XCircle, RefreshCw, AlertCircle, Copy } from 'lucide-react';
-
+import { supabase } from '@/integrations/supabase/client';
 export default function DirectTallyTest() {
   const [isPosting, setIsPosting] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const generateTestXML = () => {
+  const generateTestVoucherData = () => {
     const voucherNumber = `TEST-${Date.now()}`;
-    const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    
-    return `<ENVELOPE>
-<HEADER>
-<VERSION>1</VERSION>
-<TALLYREQUEST>Import</TALLYREQUEST>
-<TYPE>Data</TYPE>
-<ID>Vouchers</ID>
-</HEADER>
-<BODY>
-<DESC></DESC>
-<DATA>
-<TALLYMESSAGE>
-<VOUCHER>
-<DATE>${date}</DATE>
-<NARRATION>Direct test payment from vyaapari-nexus</NARRATION>
-<VOUCHERTYPENAME>Payment</VOUCHERTYPENAME>
-<VOUCHERNUMBER>${voucherNumber}</VOUCHERNUMBER>
-<ALLLEDGERENTRIES.LIST>
-<LEDGERNAME>Cash</LEDGERNAME>
-<ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
-<AMOUNT>1000</AMOUNT>
-</ALLLEDGERENTRIES.LIST>
-<ALLLEDGERENTRIES.LIST>
-<LEDGERNAME>Bank</LEDGERNAME>
-<ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
-<AMOUNT>1000</AMOUNT>
-</ALLLEDGERENTRIES.LIST>
-</VOUCHER>
-</TALLYMESSAGE>
-</DATA>
-</BODY>
-</ENVELOPE>`;
+    const dateIso = new Date().toISOString().slice(0,10);
+    return {
+      date: dateIso,
+      voucherNumber,
+      partyLedger: { name: 'Cash' },
+      salesLedger: { name: 'Bank' },
+      totalAmount: 1000,
+      narration: 'Direct test payment from Vyaapari360',
+      lines: []
+    } as const;
   };
 
   const handlePostToTally = async () => {
@@ -52,22 +29,22 @@ export default function DirectTallyTest() {
     setResult(null);
 
     try {
-      const xml = generateTestXML();
-      const response = await fetch('http://localhost:9000', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/xml' },
-        body: xml,
+      const voucherData = generateTestVoucherData();
+      const { data, error: fnError } = await supabase.functions.invoke('send-to-tally', {
+        body: { voucherData }
       });
 
-      const responseText = await response.text();
-      
-      if (response.ok) {
-        setResult({ success: true, status: response.status, response: responseText, xml });
-      } else {
-        setError(`HTTP ${response.status}: ${responseText}`);
+      if (fnError) {
+        throw fnError;
       }
-    } catch (err) {
-      setError(err.message);
+
+      if (data?.success) {
+        setResult({ success: true, status: 200, response: data?.tallyResponse || data?.response, xml: data?.xmlSent });
+      } else {
+        setError(data?.error || 'Failed to send to Tally');
+      }
+    } catch (err: any) {
+      setError(err.message || String(err));
     } finally {
       setIsPosting(false);
     }
@@ -83,7 +60,7 @@ export default function DirectTallyTest() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p>Posts XML directly to Tally ERP on localhost:9000</p>
+          <p>Posts XML via Supabase Edge Function (no localhost dependency)</p>
         </CardContent>
       </Card>
 
