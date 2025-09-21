@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Download, Filter, Calendar, RefreshCw, FileText, Eye, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { VoucherDetailModal } from '@/components/tally/VoucherDetailModal';
+import { VtVoucherDetailView } from "@/components/tally/VtVoucherDetailView";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { VtMigrationTrigger } from "@/components/vt/VtMigrationTrigger";
 
 interface VoucherEntry {
@@ -27,6 +28,7 @@ interface VoucherEntry {
   created_at: string | null;
   altered_on: string | null;
 }
+
 
 export default function DayBookVouchersPage() {
   const { companyId, divisionId } = useParams<{
@@ -285,7 +287,7 @@ export default function DayBookVouchersPage() {
   // If showing voucher details, render the detail view
   if (showVoucherDetails && selectedVoucherGuid && companyId && divisionId) {
     return (
-      <VoucherDetailModal
+      <VtVoucherDetailView
         voucherGuid={selectedVoucherGuid}
         companyId={companyId}
         divisionId={divisionId}
