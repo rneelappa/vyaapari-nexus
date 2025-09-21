@@ -476,3 +476,4 @@ if (generatedCount === tablesToGenerate.length) {
 console.log(`\nFiles created in:`);
 console.log(`- Services: ${servicesDir}`);
 console.log(`- Hooks: ${hooksDir}`);
+

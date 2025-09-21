@@ -203,3 +203,4 @@ export class VtCurrenciesService extends VtBaseService<VtCurrency> {
     return this.getDistinctValues('symbol');
   }
 }
+

@@ -329,3 +329,4 @@ console.log(`📊 Progress: ${existingServices.length + generatedCount}/101 VT t
 console.log(`\nFiles created in:`);
 console.log(`- Services: ${servicesDir}`);
 console.log(`- Hooks: ${hooksDir}`);
+
