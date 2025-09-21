@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Download, Filter, Calendar, RefreshCw, FileText, Eye, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-// import { EnhancedVoucherDetails } from '@/components/tally/EnhancedVoucherDetails';
+import { VoucherDetailModal } from '@/components/tally/VoucherDetailModal';
 import { VtMigrationTrigger } from "@/components/vt/VtMigrationTrigger";
 
 interface VoucherEntry {
@@ -285,20 +285,12 @@ export default function DayBookVouchersPage() {
   // If showing voucher details, render the detail view
   if (showVoucherDetails && selectedVoucherGuid && companyId && divisionId) {
     return (
-      <div className="h-full">
-        <div className="flex items-center justify-between p-4 border-b">
-          <Button variant="ghost" onClick={handleBackToList} className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Vouchers List
-          </Button>
-        </div>
-        <div className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">Voucher Details</h3>
-            <p className="text-muted-foreground">Voucher GUID: {selectedVoucherGuid}</p>
-          </div>
-        </div>
-      </div>
+      <VoucherDetailModal
+        voucherGuid={selectedVoucherGuid}
+        companyId={companyId}
+        divisionId={divisionId}
+        onBack={handleBackToList}
+      />
     );
   }
 
