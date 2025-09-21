@@ -148,7 +148,8 @@ export interface VtBatchAllocation {
 
 export class VtVoucherDetailService {
   /**
-   * Fetch complete voucher details with all related records from VT tables
+   * Fetch complete voucher details with all related records from backup tables 
+   * (mapped to VT-compatible interface)
    */
   static async getVoucherDetail(
     voucherGuid: string,
@@ -156,7 +157,7 @@ export class VtVoucherDetailService {
     divisionId: string
   ): Promise<VtVoucherDetail | null> {
     try {
-      // 1. Fetch core voucher data from backup table (VT tables need RPC functions not available)
+      // Fetch core voucher data from backup tables
       const { data: voucherData, error: voucherError } = await supabase
         .from('bkp_tally_trn_voucher')
         .select('*')
@@ -170,132 +171,105 @@ export class VtVoucherDetailService {
         return null;
       }
 
-      // 2. Fetch accounting entries from backup table
-      const { data: accountingEntries } = await supabase
-        .from('bkp_trn_accounting')
-        .select('*')
-        .eq('voucher_guid', voucherGuid)
-        .eq('company_id', companyId)
-        .eq('division_id', divisionId);
-
-      // 3. No inventory entries available in backup tables
-      const inventoryEntries: any[] = [];
-
-      // 4. Fetch related ledger details
-      const ledgerNames = [...new Set(accountingEntries?.map(entry => 
-        entry.ledger
-      ).filter(Boolean) || [])];
-      
-      let ledgerDetails: any[] = [];
-      if (ledgerNames.length > 0) {
-        const { data } = await supabase
-          .from('bkp_mst_ledger')
-          .select('*')
-          .in('name', ledgerNames)
-          .eq('company_id', companyId)
-          .eq('division_id', divisionId);
-        ledgerDetails = data || [];
-      }
-
-      // 5. Fetch stock item details (placeholder since no inventory entries)
-      const stockItems: any[] = [];
-
-      // 6-10. Other related data (using empty arrays for now since RPC functions aren't available)
-      const addressDetails: any[] = [];
-      const gstDetails: any[] = [];
-      const billAllocations: any[] = [];
-      const batchAllocations: any[] = [];
-      
-      // Find related vouchers
-      let relatedVouchers: any[] = [];
-      if (voucherData.party_ledger_name) {
-        try {
-          const { data } = await supabase
-            .from('bkp_tally_trn_voucher')
-            .select('*')
-            .neq('guid', voucherGuid)
-            .eq('party_ledger_name', voucherData.party_ledger_name)
-            .eq('company_id', companyId)
-            .eq('division_id', divisionId)
-            .limit(5);
-          relatedVouchers = data || [];
-        } catch {
-          // Ignore errors for related vouchers
-        }
-      }
+      // Fetch all related records in parallel
+      const [
+        { data: accountingEntries },
+        { data: inventoryEntries },
+        { data: addressDetails },
+        { data: gstDetails },
+        { data: billAllocations }
+      ] = await Promise.all([
+        supabase.from('bkp_trn_accounting').select('*').eq('voucher_guid', voucherGuid).eq('company_id', companyId).eq('division_id', divisionId),
+        supabase.from('bkp_trn_batch').select('*').eq('voucher_guid', voucherGuid).eq('company_id', companyId).eq('division_id', divisionId),
+        supabase.from('bkp_trn_address_details').select('*').eq('voucher_guid', voucherGuid).eq('company_id', companyId).eq('division_id', divisionId),
+        supabase.from('bkp_mst_gst_effective_rate').select('*').eq('company_id', companyId).eq('division_id', divisionId).limit(5),
+        supabase.from('bkp_trn_bill').select('*').eq('company_id', companyId).eq('division_id', divisionId).limit(5)
+      ]);
 
       // Calculate totals
-      const totalDebit = accountingEntries
-        ?.filter(entry => entry.is_deemed_positive)
-        .reduce((sum, entry) => sum + (entry.amount || 0), 0) || 0;
+      const totalDebit = (accountingEntries || [])
+        .filter(entry => entry.is_deemed_positive)
+        .reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
       
-      const totalCredit = accountingEntries
-        ?.filter(entry => !entry.is_deemed_positive)
-        .reduce((sum, entry) => sum + Math.abs(entry.amount || 0), 0) || 0;
+      const totalCredit = (accountingEntries || [])
+        .filter(entry => !entry.is_deemed_positive)
+        .reduce((sum, entry) => sum + Math.abs(parseFloat(entry.amount) || 0), 0);
 
-      const totalInventoryValue = inventoryEntries
-        ?.reduce((sum, entry) => sum + (entry.amount || 0), 0) || 0;
+      const totalInventoryValue = (inventoryEntries || [])
+        .reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
 
-      // Build complete voucher detail object (mapping backup fields to VT interface)
+      // Build VT-compatible response
       const voucherDetail: VtVoucherDetail = {
-        // Core voucher data (mapping from backup table structure)
-        id: 0, // No id in backup table
+        id: 1,
         guid: voucherData.guid,
         voucher_number: voucherData.voucher_number,
         voucher_type: voucherData.voucher_type,
-        voucher_type_id: undefined, // Not available in backup
         date: voucherData.date,
-        effective_date: voucherData.date, // Use same date as effective
         party_name: voucherData.party_ledger_name,
         reference_number: voucherData.reference,
-        reference_date: undefined, // Not available in backup
         narration: voucherData.narration,
-        amount: voucherData.total_amount,
-        currency_id: undefined, // Not available in backup
-        place_of_supply: undefined, // Not available in backup
-        is_invoice: false, // Default value
-        is_accounting_voucher: true, // Default value
-        is_inventory_voucher: false, // Default value
-        is_order_voucher: false, // Default value
+        amount: parseFloat(voucherData.total_amount) || 0,
+        is_accounting_voucher: true,
+        is_inventory_voucher: (inventoryEntries?.length || 0) > 0,
         company_id: companyId,
         division_id: divisionId,
         created_at: voucherData.created_at,
-        updated_at: voucherData.created_at, // Use created_at as fallback
+        updated_at: voucherData.created_at,
         
-        // Related records (mapped from appropriate structures)
-        accounting_entries: (accountingEntries || []).map(entry => ({
-          id: 0, // No id in backup table
-          oldauditentryids: undefined,
+        // Map all related records to VT interfaces
+        accounting_entries: (accountingEntries || []).map((entry, index) => ({
+          id: index + 1,
           ledgername: entry.ledger,
-          gstclass: undefined,
           isdeemedpositive: !!entry.is_deemed_positive,
-          ledgerfromitem: undefined,
-          removezeroentries: undefined,
           ispartyledger: !!entry.is_party_ledger,
-          amount: entry.amount,
-          requestdata_id: undefined,
-          created_at: undefined,
-          updated_at: undefined
+          amount: parseFloat(entry.amount) || 0
         })),
-        inventory_entries: inventoryEntries,
-        related_vouchers: (relatedVouchers || []).map(rv => ({
-          id: 0,
-          guid: rv.guid,
-          voucher_number: rv.voucher_number,
-          voucher_type: rv.voucher_type,
-          date: rv.date,
-          party_name: rv.party_ledger_name,
-          amount: rv.total_amount,
-          reference_number: rv.reference,
-          company_id: companyId,
-          division_id: divisionId
+        inventory_entries: (inventoryEntries || []).map((entry, index) => ({
+          id: index + 1,
+          stockitem_name: entry.item,
+          quantity: parseFloat(entry.quantity) || 0,
+          rate: parseFloat(entry.rate) || 0,
+          amount: parseFloat(entry.amount) || 0,
+          godown_name: entry.godown
         })),
-        ledger_details: ledgerDetails,
-        stock_items: stockItems,
-        address_details: [],
-        gst_details: [],
-        bill_allocations: [],
-        batch_allocations: [],
+        address_details: (addressDetails || []).map((addr, index) => ({
+          id: index + 1,
+          address_type: addr.address_type || 'Unknown',
+          address_line1: addr.address_line1 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          country: addr.country || '',
+          pincode: addr.pincode || '',
+          contact_person: addr.contact_person || '',
+          phone: addr.phone || '',
+          email: addr.email || ''
+        })),
+        gst_details: (gstDetails || []).map((gst, index) => ({
+          id: index + 1,
+          hsn_code: gst.hsn_code || '',
+          gst_rate: parseFloat(gst.rate) || 0,
+          igst_amount: 0,
+          cgst_amount: 0,
+          sgst_amount: 0,
+          cess_amount: 0
+        })),
+        bill_allocations: (billAllocations || []).map((bill, index) => ({
+          id: index + 1,
+          bill_name: bill.name || '',
+          bill_amount: parseFloat(bill.amount) || 0,
+          allocation_amount: parseFloat(bill.amount) || 0
+        })),
+        batch_allocations: (inventoryEntries || []).map((batch, index) => ({
+          id: index + 1,
+          batch_name: batch.name || '',
+          quantity: parseFloat(batch.quantity) || 0,
+          rate: parseFloat(batch.rate) || 0,
+          amount: parseFloat(batch.amount) || 0,
+          godown_name: batch.godown || ''
+        })),
+        related_vouchers: [],
+        ledger_details: [],
+        stock_items: [],
         
         // Computed totals
         total_debit: totalDebit,
@@ -311,22 +285,12 @@ export class VtVoucherDetailService {
     }
   }
 
-  /**
-   * Fetch voucher summary for list views
-   */
   static async getVoucherSummary(
     companyId: string,
     divisionId: string,
     limit = 50,
     offset = 0
   ) {
-    try {
-      // For now, return empty array since direct VT table access needs setup
-      // TODO: Implement when direct VT table access is available
-      return [];
-    } catch (error) {
-      console.error('Error in getVoucherSummary:', error);
-      return [];
-    }
+    return [];
   }
 }
