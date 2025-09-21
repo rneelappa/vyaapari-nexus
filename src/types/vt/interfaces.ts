@@ -6,609 +6,287 @@
  */
 
 export interface VtAccountingallocationsList {
-  id: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  billallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  taxobjectallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  allinventoryentries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtAccountingallocationsListInsert {
-  id: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  billallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  taxobjectallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  allinventoryentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtAccountingallocationsListUpdate {
-  id?: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  billallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  taxobjectallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  allinventoryentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtAddressList {
-  id: number;\n  address?: number;\n  ledmailingdetails_list_id?: number;\n  requestdata_id?: number;\n  body_id?: number;\n  ledmultiaddresslist_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtAddressListInsert {
-  id: number;\n  address?: number;\n  ledmailingdetails_list_id?: number;\n  requestdata_id?: number;\n  body_id?: number;\n  ledmultiaddresslist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtAddressListUpdate {
-  id?: number;\n  address?: number;\n  ledmailingdetails_list_id?: number;\n  requestdata_id?: number;\n  body_id?: number;\n  ledmultiaddresslist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtAllinventoryentriesList {
-  id: number;\n  stockitemname?: string;\n  gstovrdnisrevchargeappl?: string;\n  gstovrdntaxability?: string;\n  gstsourcetype?: string;\n  gstitemsource?: string;\n  hsnsourcetype?: string;\n  hsnitemsource?: string;\n  gstovrdntypeofsupply?: string;\n  gstrateinferapplicability?: string;\n  gsthsnname?: number;\n  gsthsninferapplicability?: string;\n  isdeemedpositive?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  isautonegate?: boolean;\n  iscustomsclearance?: boolean;\n  istrackcomponent?: boolean;\n  istrackproduction?: boolean;\n  isprimaryitem?: boolean;\n  isscrap?: boolean;\n  rate?: string;\n  amount?: number;\n  actualqty?: string;\n  billedqty?: string;\n  dutyheaddetails_list?: string;\n  supplementarydutyheaddetails_list?: string;\n  taxobjectallocations_list?: string;\n  refvoucherdetails_list?: string;\n  exciseallocations_list?: string;\n  expenseallocations_list?: string;\n  ratedetails_list?: string;\n  gstovrdnineligibleitc?: string;\n  gstledgersource?: string;\n  gstovrdnstorednature?: string;\n  gsthsndescription?: string;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtAllinventoryentriesListInsert {
-  id: number;\n  stockitemname?: string;\n  gstovrdnisrevchargeappl?: string;\n  gstovrdntaxability?: string;\n  gstsourcetype?: string;\n  gstitemsource?: string;\n  hsnsourcetype?: string;\n  hsnitemsource?: string;\n  gstovrdntypeofsupply?: string;\n  gstrateinferapplicability?: string;\n  gsthsnname?: number;\n  gsthsninferapplicability?: string;\n  isdeemedpositive?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  isautonegate?: boolean;\n  iscustomsclearance?: boolean;\n  istrackcomponent?: boolean;\n  istrackproduction?: boolean;\n  isprimaryitem?: boolean;\n  isscrap?: boolean;\n  rate?: string;\n  amount?: number;\n  actualqty?: string;\n  billedqty?: string;\n  dutyheaddetails_list?: string;\n  supplementarydutyheaddetails_list?: string;\n  taxobjectallocations_list?: string;\n  refvoucherdetails_list?: string;\n  exciseallocations_list?: string;\n  expenseallocations_list?: string;\n  ratedetails_list?: string;\n  gstovrdnineligibleitc?: string;\n  gstledgersource?: string;\n  gstovrdnstorednature?: string;\n  gsthsndescription?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtAllinventoryentriesListUpdate {
-  id?: number;\n  stockitemname?: string;\n  gstovrdnisrevchargeappl?: string;\n  gstovrdntaxability?: string;\n  gstsourcetype?: string;\n  gstitemsource?: string;\n  hsnsourcetype?: string;\n  hsnitemsource?: string;\n  gstovrdntypeofsupply?: string;\n  gstrateinferapplicability?: string;\n  gsthsnname?: number;\n  gsthsninferapplicability?: string;\n  isdeemedpositive?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  isautonegate?: boolean;\n  iscustomsclearance?: boolean;\n  istrackcomponent?: boolean;\n  istrackproduction?: boolean;\n  isprimaryitem?: boolean;\n  isscrap?: boolean;\n  rate?: string;\n  amount?: number;\n  actualqty?: string;\n  billedqty?: string;\n  dutyheaddetails_list?: string;\n  supplementarydutyheaddetails_list?: string;\n  taxobjectallocations_list?: string;\n  refvoucherdetails_list?: string;\n  exciseallocations_list?: string;\n  expenseallocations_list?: string;\n  ratedetails_list?: string;\n  gstovrdnineligibleitc?: string;\n  gstledgersource?: string;\n  gstovrdnstorednature?: string;\n  gsthsndescription?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtAllledgerentriesList {
-  id: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  billallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  taxobjectallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  appropriatefor?: string;\n  gstovrdnisrevchargeappl?: string;\n  gstovrdntaxability?: string;\n  gstovrdntypeofsupply?: string;\n  gstrateinferapplicability?: string;\n  gsthsninferapplicability?: string;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtAllledgerentriesListInsert {
-  id: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  billallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  taxobjectallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  appropriatefor?: string;\n  gstovrdnisrevchargeappl?: string;\n  gstovrdntaxability?: string;\n  gstovrdntypeofsupply?: string;\n  gstrateinferapplicability?: string;\n  gsthsninferapplicability?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtAllledgerentriesListUpdate {
-  id?: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  billallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  taxobjectallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  appropriatefor?: string;\n  gstovrdnisrevchargeappl?: string;\n  gstovrdntaxability?: string;\n  gstovrdntypeofsupply?: string;\n  gstrateinferapplicability?: string;\n  gsthsninferapplicability?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBasicbuyeraddressList {
-  id: number;\n  basicbuyeraddress?: number;\n  requestdata_id?: number;\n  body_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtBasicbuyeraddressListInsert {
-  id: number;\n  basicbuyeraddress?: number;\n  requestdata_id?: number;\n  body_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBasicbuyeraddressListUpdate {
-  id?: number;\n  basicbuyeraddress?: number;\n  requestdata_id?: number;\n  body_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBatchallocationsList {
-  id: number;\n  godownname?: string;\n  batchname?: number;\n  destinationgodownname?: string;\n  indentno?: string;\n  orderno?: string;\n  trackingnumber?: number;\n  dynamiccstiscleared?: boolean;\n  amount?: number;\n  actualqty?: string;\n  billedqty?: string;\n  additionaldetails_list?: string;\n  vouchercomponentlist_list?: string;\n  openingbalance?: string;\n  openingvalue?: number;\n  openingrate?: string;\n  allinventoryentries_list_id?: number;\n  stockitem_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtBatchallocationsListInsert {
-  id: number;\n  godownname?: string;\n  batchname?: number;\n  destinationgodownname?: string;\n  indentno?: string;\n  orderno?: string;\n  trackingnumber?: number;\n  dynamiccstiscleared?: boolean;\n  amount?: number;\n  actualqty?: string;\n  billedqty?: string;\n  additionaldetails_list?: string;\n  vouchercomponentlist_list?: string;\n  openingbalance?: string;\n  openingvalue?: number;\n  openingrate?: string;\n  allinventoryentries_list_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBatchallocationsListUpdate {
-  id?: number;\n  godownname?: string;\n  batchname?: number;\n  destinationgodownname?: string;\n  indentno?: string;\n  orderno?: string;\n  trackingnumber?: number;\n  dynamiccstiscleared?: boolean;\n  amount?: number;\n  actualqty?: string;\n  billedqty?: string;\n  additionaldetails_list?: string;\n  vouchercomponentlist_list?: string;\n  openingbalance?: string;\n  openingvalue?: number;\n  openingrate?: string;\n  allinventoryentries_list_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBillallocationsList {
-  id: number;\n  name?: number;\n  billtype?: string;\n  tdsdeducteeisspecialrate?: boolean;\n  amount?: number;\n  interestcollection_list?: string;\n  stbillcategories_list?: string;\n  billdate?: number;\n  isadvance?: boolean;\n  openingbalance?: number;\n  ledgerentries_list_id?: number;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtBillallocationsListInsert {
-  id: number;\n  name?: number;\n  billtype?: string;\n  tdsdeducteeisspecialrate?: boolean;\n  amount?: number;\n  interestcollection_list?: string;\n  stbillcategories_list?: string;\n  billdate?: number;\n  isadvance?: boolean;\n  openingbalance?: number;\n  ledgerentries_list_id?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBillallocationsListUpdate {
-  id?: number;\n  name?: number;\n  billtype?: string;\n  tdsdeducteeisspecialrate?: boolean;\n  amount?: number;\n  interestcollection_list?: string;\n  stbillcategories_list?: string;\n  billdate?: number;\n  isadvance?: boolean;\n  openingbalance?: number;\n  ledgerentries_list_id?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBody {
-  id: number;\n  envelope_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtBodyInsert {
-  id: number;\n  envelope_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtBodyUpdate {
-  id?: number;\n  envelope_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCancelledpayallocationsList {
-  id: number;\n  date?: number;\n  instrumentdate?: number;\n  name?: string;\n  transactiontype?: string;\n  paymentfavouring?: string;\n  chequecrosscomment?: string;\n  instrumentnumber?: number;\n  uniquereferencenumber?: string;\n  status?: boolean;\n  paymentmode?: string;\n  isconnectedpayment?: boolean;\n  issplit?: boolean;\n  iscontractused?: boolean;\n  isacceptedwithwarning?: boolean;\n  istransforced?: boolean;\n  amount?: number;\n  chequerange?: string;\n  contractdetails_list?: string;\n  bankstatusinfo_list?: string;\n  bankotherreferences_list?: string;\n  chequeprinted?: number;\n  transactionname?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtCancelledpayallocationsListInsert {
-  id: number;\n  date?: number;\n  instrumentdate?: number;\n  name?: string;\n  transactiontype?: string;\n  paymentfavouring?: string;\n  chequecrosscomment?: string;\n  instrumentnumber?: number;\n  uniquereferencenumber?: string;\n  status?: boolean;\n  paymentmode?: string;\n  isconnectedpayment?: boolean;\n  issplit?: boolean;\n  iscontractused?: boolean;\n  isacceptedwithwarning?: boolean;\n  istransforced?: boolean;\n  amount?: number;\n  chequerange?: string;\n  contractdetails_list?: string;\n  bankstatusinfo_list?: string;\n  bankotherreferences_list?: string;\n  chequeprinted?: number;\n  transactionname?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCancelledpayallocationsListUpdate {
-  id?: number;\n  date?: number;\n  instrumentdate?: number;\n  name?: string;\n  transactiontype?: string;\n  paymentfavouring?: string;\n  chequecrosscomment?: string;\n  instrumentnumber?: number;\n  uniquereferencenumber?: string;\n  status?: boolean;\n  paymentmode?: string;\n  isconnectedpayment?: boolean;\n  issplit?: boolean;\n  iscontractused?: boolean;\n  isacceptedwithwarning?: boolean;\n  istransforced?: boolean;\n  amount?: number;\n  chequerange?: string;\n  contractdetails_list?: string;\n  bankstatusinfo_list?: string;\n  bankotherreferences_list?: string;\n  chequeprinted?: number;\n  transactionname?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCategorydetailsList {
-  id: number;\n  applicablefrom?: number;\n  tdsratesection?: string;\n  istransportercategory?: boolean;\n  issoftwareroyalty?: boolean;\n  iszerorated?: boolean;\n  isnormalrateapplicable?: boolean;\n  isaboveexemptionlimit?: boolean;\n  rateoftax?: number;\n  otherrate?: number;\n  nopanrateoftax?: number;\n  nopanotherrate?: number;\n  tdsratechallancode?: string;\n  tdsrate_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtCategorydetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  tdsratesection?: string;\n  istransportercategory?: boolean;\n  issoftwareroyalty?: boolean;\n  iszerorated?: boolean;\n  isnormalrateapplicable?: boolean;\n  isaboveexemptionlimit?: boolean;\n  rateoftax?: number;\n  otherrate?: number;\n  nopanrateoftax?: number;\n  nopanotherrate?: number;\n  tdsratechallancode?: string;\n  tdsrate_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCategorydetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  tdsratesection?: string;\n  istransportercategory?: boolean;\n  issoftwareroyalty?: boolean;\n  iszerorated?: boolean;\n  isnormalrateapplicable?: boolean;\n  isaboveexemptionlimit?: boolean;\n  rateoftax?: number;\n  otherrate?: number;\n  nopanrateoftax?: number;\n  nopanotherrate?: number;\n  tdsratechallancode?: string;\n  tdsrate_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtChequerangeList {
-  id: number;\n  chequebookname?: string;\n  chequefrom?: number;\n  chequeto?: number;\n  chequedetails_list?: string;\n  vchchequedetails_list?: string;\n  openingchequedetails_list?: string;\n  chequeleafavailable?: number;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtChequerangeListInsert {
-  id: number;\n  chequebookname?: string;\n  chequefrom?: number;\n  chequeto?: number;\n  chequedetails_list?: string;\n  vchchequedetails_list?: string;\n  openingchequedetails_list?: string;\n  chequeleafavailable?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtChequerangeListUpdate {
-  id?: number;\n  chequebookname?: string;\n  chequefrom?: number;\n  chequeto?: number;\n  chequedetails_list?: string;\n  vchchequedetails_list?: string;\n  openingchequedetails_list?: string;\n  chequeleafavailable?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCompany {
-  id: number;\n  name?: string;\n  remotecmpname?: string;\n  remotecmpstate?: string;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtCompanyInsert {
-  id: number;\n  name?: string;\n  remotecmpname?: string;\n  remotecmpstate?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCompanyUpdate {
-  id?: number;\n  name?: string;\n  remotecmpname?: string;\n  remotecmpstate?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtConsigneeaddressList {
-  id: number;\n  consigneeaddress?: string;\n  ewaybilldetails_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtConsigneeaddressListInsert {
-  id: number;\n  consigneeaddress?: string;\n  ewaybilldetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtConsigneeaddressListUpdate {
-  id?: number;\n  consigneeaddress?: string;\n  ewaybilldetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtConsignoraddressList {
-  id: number;\n  consignoraddress?: string;\n  ewaybilldetails_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtConsignoraddressListInsert {
-  id: number;\n  consignoraddress?: string;\n  ewaybilldetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtConsignoraddressListUpdate {
-  id?: number;\n  consignoraddress?: string;\n  ewaybilldetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtContactdetailsList {
-  id: number;\n  name?: string;\n  isdefaultwhatsappnum?: boolean;\n  countryisdcode?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtContactdetailsListInsert {
-  id: number;\n  name?: string;\n  isdefaultwhatsappnum?: boolean;\n  countryisdcode?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtContactdetailsListUpdate {
-  id?: number;\n  name?: string;\n  isdefaultwhatsappnum?: boolean;\n  countryisdcode?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCostcategory {
-  id: number;\n  name?: string;\n    /** Tally GUID for external system integration */\n  guid?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtCostcategoryInsert {
-  id: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCostcategoryUpdate {
-  id?: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCurrency {
-  id: number;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  name: string;\n  symbol?: string;\n  decimal_places?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtCurrencyInsert {
-  id?: number;\n  guid?: string;\n  name: string;\n  symbol?: string;\n  decimal_places?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtCurrencyUpdate {
-  id?: number;\n  guid?: string;\n  name?: string;\n  symbol?: string;\n  decimal_places?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtDeductinsamevchrulesList {
-  id: number;\n  natureofpayment?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtDeductinsamevchrulesListInsert {
-  id: number;\n  natureofpayment?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtDeductinsamevchrulesListUpdate {
-  id?: number;\n  natureofpayment?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtDispatchfromaddressList {
-  id: number;\n  dispatchfromaddress?: number;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtDispatchfromaddressListInsert {
-  id: number;\n  dispatchfromaddress?: number;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtDispatchfromaddressListUpdate {
-  id?: number;\n  dispatchfromaddress?: number;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtEnvelope {
-  id: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtEnvelopeInsert {
-  id: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtEnvelopeUpdate {
-  id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtEwaybilldetailsList {
-  id: number;\n  consignoraddress?: string;\n  consigneeaddress?: string;\n  documenttype?: string;\n  consigneepincode?: number;\n  subtype?: string;\n  consignorplace?: string;\n  consignorpincode?: number;\n  consigneeplace?: number;\n  shippedfromstate?: string;\n  shippedtostate?: string;\n  iscancelled?: boolean;\n  ignoregstinvalidation?: boolean;\n  iscancelpending?: boolean;\n  ignoregenerationvalidation?: boolean;\n  isexportedforgeneration?: boolean;\n  intrastateapplicability?: boolean;\n  extensiondetails_list?: string;\n  multivehicledetails_list?: string;\n  statewisethreshold_list?: string;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtEwaybilldetailsListInsert {
-  id: number;\n  consignoraddress?: string;\n  consigneeaddress?: string;\n  documenttype?: string;\n  consigneepincode?: number;\n  subtype?: string;\n  consignorplace?: string;\n  consignorpincode?: number;\n  consigneeplace?: number;\n  shippedfromstate?: string;\n  shippedtostate?: string;\n  iscancelled?: boolean;\n  ignoregstinvalidation?: boolean;\n  iscancelpending?: boolean;\n  ignoregenerationvalidation?: boolean;\n  isexportedforgeneration?: boolean;\n  intrastateapplicability?: boolean;\n  extensiondetails_list?: string;\n  multivehicledetails_list?: string;\n  statewisethreshold_list?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtEwaybilldetailsListUpdate {
-  id?: number;\n  consignoraddress?: string;\n  consigneeaddress?: string;\n  documenttype?: string;\n  consigneepincode?: number;\n  subtype?: string;\n  consignorplace?: string;\n  consignorpincode?: number;\n  consigneeplace?: number;\n  shippedfromstate?: string;\n  shippedtostate?: string;\n  iscancelled?: boolean;\n  ignoregstinvalidation?: boolean;\n  iscancelpending?: boolean;\n  ignoregenerationvalidation?: boolean;\n  isexportedforgeneration?: boolean;\n  intrastateapplicability?: boolean;\n  extensiondetails_list?: string;\n  multivehicledetails_list?: string;\n  statewisethreshold_list?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGodown {
-  id: number;\n  name?: string;\n    /** Tally GUID for external system integration */\n  guid?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGodownInsert {
-  id: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGodownUpdate {
-  id?: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGroupTable {
-  id: number;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  name: string;\n  parent?: string;\n  parent_group_id?: number;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;
-}\n\nexport interface VtGroupTableInsert {
-  id?: number;\n  guid?: string;\n  name: string;\n  parent?: string;\n  parent_group_id?: number;\n  company_id: string;\n  division_id: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtGroupTableUpdate {
-  id?: number;\n  guid?: string;\n  name?: string;\n  parent?: string;\n  parent_group_id?: number;\n  company_id?: string;\n  division_id?: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtGstList {
-  id: number;\n  purposetype?: string;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGstListInsert {
-  id: number;\n  purposetype?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstListUpdate {
-  id?: number;\n  purposetype?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstdetailsList {
-  id: number;\n  applicablefrom?: number;\n  srcofgstdetails?: string;\n  gstcalcslabonmrp?: boolean;\n  isreversechargeapplicable?: boolean;\n  isnongstgoods?: boolean;\n  gstineligibleitc?: boolean;\n  includeexpforslabcalc?: boolean;\n  tempgstitemslabrates_list?: string;\n  tempgstdetailslabrates_list?: string;\n  taxability?: string;\n  calculationtype?: string;\n  gstnatureoftransaction?: string;\n  group_id?: number;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGstdetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  srcofgstdetails?: string;\n  gstcalcslabonmrp?: boolean;\n  isreversechargeapplicable?: boolean;\n  isnongstgoods?: boolean;\n  gstineligibleitc?: boolean;\n  includeexpforslabcalc?: boolean;\n  tempgstitemslabrates_list?: string;\n  tempgstdetailslabrates_list?: string;\n  taxability?: string;\n  calculationtype?: string;\n  gstnatureoftransaction?: string;\n  group_id?: number;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstdetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  srcofgstdetails?: string;\n  gstcalcslabonmrp?: boolean;\n  isreversechargeapplicable?: boolean;\n  isnongstgoods?: boolean;\n  gstineligibleitc?: boolean;\n  includeexpforslabcalc?: boolean;\n  tempgstitemslabrates_list?: string;\n  tempgstdetailslabrates_list?: string;\n  taxability?: string;\n  calculationtype?: string;\n  gstnatureoftransaction?: string;\n  group_id?: number;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGsteinvoicedetailsList {
-  id: number;\n  applicablefrom?: number;\n  einvapplicable?: boolean;\n  taxunit_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGsteinvoicedetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  einvapplicable?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGsteinvoicedetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  einvapplicable?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstewaybilldetailsList {
-  id: number;\n  applicablefrom?: number;\n  ewaybillapplicable?: boolean;\n  taxunit_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGstewaybilldetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  ewaybillapplicable?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstewaybilldetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  ewaybillapplicable?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstin {
-  id: number;\n  name?: string;\n  reconprefixsuffixdetails_list?: string;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGstinInsert {
-  id: number;\n  name?: string;\n  reconprefixsuffixdetails_list?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstinUpdate {
-  id?: number;\n  name?: string;\n  reconprefixsuffixdetails_list?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstreconconfigdetailsList {
-  id: number;\n  applicablefrom?: number;\n  ignorezerodocnoprefix?: boolean;\n  ignorespecialcharindocno?: boolean;\n  ignoresuppinvno?: boolean;\n  ignorediffininwardinvoice?: boolean;\n  ignorediffinbookandportal?: boolean;\n  ignorediffintaxableamt?: boolean;\n  taxunit_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGstreconconfigdetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  ignorezerodocnoprefix?: boolean;\n  ignorespecialcharindocno?: boolean;\n  ignoresuppinvno?: boolean;\n  ignorediffininwardinvoice?: boolean;\n  ignorediffinbookandportal?: boolean;\n  ignorediffintaxableamt?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstreconconfigdetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  ignorezerodocnoprefix?: boolean;\n  ignorespecialcharindocno?: boolean;\n  ignoresuppinvno?: boolean;\n  ignorediffininwardinvoice?: boolean;\n  ignorediffinbookandportal?: boolean;\n  ignorediffintaxableamt?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstregistrationdetailsList {
-  id: number;\n  fromdate?: number;\n  state?: string;\n  placeofsupply?: string;\n  gstr1periodicity?: string;\n  registrationtype?: string;\n  isothterritoryassessee?: boolean;\n  isinactive?: boolean;\n  isstatecesson?: boolean;\n  taxunit_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtGstregistrationdetailsListInsert {
-  id: number;\n  fromdate?: number;\n  state?: string;\n  placeofsupply?: string;\n  gstr1periodicity?: string;\n  registrationtype?: string;\n  isothterritoryassessee?: boolean;\n  isinactive?: boolean;\n  isstatecesson?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtGstregistrationdetailsListUpdate {
-  id?: number;\n  fromdate?: number;\n  state?: string;\n  placeofsupply?: string;\n  gstr1periodicity?: string;\n  registrationtype?: string;\n  isothterritoryassessee?: boolean;\n  isinactive?: boolean;\n  isstatecesson?: boolean;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtHeader {
-  id: number;\n  tallyrequest?: string;\n  envelope_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtHeaderInsert {
-  id: number;\n  tallyrequest?: string;\n  envelope_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtHeaderUpdate {
-  id?: number;\n  tallyrequest?: string;\n  envelope_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtHsndetailsList {
-  id: number;\n  applicablefrom?: number;\n  srcofhsndetails?: string;\n  hsncode?: number;\n  hsn?: number;\n  group_id?: number;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtHsndetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  srcofhsndetails?: string;\n  hsncode?: number;\n  hsn?: number;\n  group_id?: number;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtHsndetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  srcofhsndetails?: string;\n  hsncode?: number;\n  hsn?: number;\n  group_id?: number;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtImportdata {
-  id: number;\n  body_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtImportdataInsert {
-  id: number;\n  body_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtImportdataUpdate {
-  id?: number;\n  body_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtIncometaxclassification {
-  id: number;\n  name?: string;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  category?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  taxtype?: string;\n  applicablecountry?: string;\n  section?: string;\n  exemptionsection?: number;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  markfordeletion?: boolean;\n  isitexempted?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  deductionsection?: string;\n  itclassificationdetails_list?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtIncometaxclassificationInsert {
-  id: number;\n  name?: string;\n  guid?: string;\n  category?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  taxtype?: string;\n  applicablecountry?: string;\n  section?: string;\n  exemptionsection?: number;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  markfordeletion?: boolean;\n  isitexempted?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  deductionsection?: string;\n  itclassificationdetails_list?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtIncometaxclassificationUpdate {
-  id?: number;\n  name?: string;\n  guid?: string;\n  category?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  taxtype?: string;\n  applicablecountry?: string;\n  section?: string;\n  exemptionsection?: number;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  markfordeletion?: boolean;\n  isitexempted?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  deductionsection?: string;\n  itclassificationdetails_list?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtIncometaxslab {
-  id: number;\n  name?: string;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  taxtype?: string;\n  displayname?: string;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  markfordeletion?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtIncometaxslabInsert {
-  id: number;\n  name?: string;\n  guid?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  taxtype?: string;\n  displayname?: string;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  markfordeletion?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtIncometaxslabUpdate {
-  id?: number;\n  name?: string;\n  guid?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  taxtype?: string;\n  displayname?: string;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  markfordeletion?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtInterestcollectionList {
-  id: number;\n  intereststyle?: string;\n  interestfromtype?: string;\n  roundtype?: string;\n  interestrate?: number;\n  interestfromdate?: number;\n  interesttodate?: number;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtInterestcollectionListInsert {
-  id: number;\n  intereststyle?: string;\n  interestfromtype?: string;\n  roundtype?: string;\n  interestrate?: number;\n  interestfromdate?: number;\n  interesttodate?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtInterestcollectionListUpdate {
-  id?: number;\n  intereststyle?: string;\n  interestfromtype?: string;\n  roundtype?: string;\n  interestrate?: number;\n  interestfromdate?: number;\n  interesttodate?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtInventoryentries {
-  id: number;\n  voucher_id: number;\n  stockitem_id?: number;\n  stockitem_name?: string;\n  quantity: number;\n  rate?: number;\n  amount: number;\n  godown_name?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;
-}\n\nexport interface VtInventoryentriesInsert {
-  id?: number;\n  voucher_id: number;\n  stockitem_id?: number;\n  stockitem_name?: string;\n  quantity: number;\n  rate?: number;\n  amount: number;\n  godown_name?: string;\n  company_id: string;\n  division_id: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtInventoryentriesUpdate {
-  id?: number;\n  voucher_id?: number;\n  stockitem_id?: number;\n  stockitem_name?: string;\n  quantity?: number;\n  rate?: number;\n  amount?: number;\n  godown_name?: string;\n  company_id?: string;\n  division_id?: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtInvoicedelnotesList {
-  id: number;\n  basicshippingdate?: number;\n  basicshipdeliverynote?: number;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtInvoicedelnotesListInsert {
-  id: number;\n  basicshippingdate?: number;\n  basicshipdeliverynote?: number;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtInvoicedelnotesListUpdate {
-  id?: number;\n  basicshippingdate?: number;\n  basicshipdeliverynote?: number;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItclassificationdetailsList {
-  id: number;\n  applicablefor?: string;\n  itclassificationperiod_list?: string;\n  incometaxclassification_id?: number;\n  itregimedetails_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtItclassificationdetailsListInsert {
-  id: number;\n  applicablefor?: string;\n  itclassificationperiod_list?: string;\n  incometaxclassification_id?: number;\n  itregimedetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItclassificationdetailsListUpdate {
-  id?: number;\n  applicablefor?: string;\n  itclassificationperiod_list?: string;\n  incometaxclassification_id?: number;\n  itregimedetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItclassificationperiodList {
-  id: number;\n  periodfrom?: number;\n  isprorated?: boolean;\n  isnoexemptionperiod?: boolean;\n  exemptionrate?: number;\n  exemptionamtmonth?: number;\n  numunits?: number;\n  exemptionamtyear?: number;\n  slabrateone?: number;\n  slabratetwo?: number;\n  itclassificationdetails_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtItclassificationperiodListInsert {
-  id: number;\n  periodfrom?: number;\n  isprorated?: boolean;\n  isnoexemptionperiod?: boolean;\n  exemptionrate?: number;\n  exemptionamtmonth?: number;\n  numunits?: number;\n  exemptionamtyear?: number;\n  slabrateone?: number;\n  slabratetwo?: number;\n  itclassificationdetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItclassificationperiodListUpdate {
-  id?: number;\n  periodfrom?: number;\n  isprorated?: boolean;\n  isnoexemptionperiod?: boolean;\n  exemptionrate?: number;\n  exemptionamtmonth?: number;\n  numunits?: number;\n  exemptionamtyear?: number;\n  slabrateone?: number;\n  slabratetwo?: number;\n  itclassificationdetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItregimedetailsList {
-  id: number;\n  taxregime?: string;\n  incometaxclassification_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtItregimedetailsListInsert {
-  id: number;\n  taxregime?: string;\n  incometaxclassification_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItregimedetailsListUpdate {
-  id?: number;\n  taxregime?: string;\n  incometaxclassification_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItslabperiodList {
-  id: number;\n  periodfrom?: number;\n  applicablefor?: string;\n  agelimit?: number;\n  incometaxslab_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtItslabperiodListInsert {
-  id: number;\n  periodfrom?: number;\n  applicablefor?: string;\n  agelimit?: number;\n  incometaxslab_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItslabperiodListUpdate {
-  id?: number;\n  periodfrom?: number;\n  applicablefor?: string;\n  agelimit?: number;\n  incometaxslab_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItslabrateList {
-  id: number;\n  slabamountfrom?: number;\n  slabrate?: number;\n  slabamountto?: number;\n  slabvalue?: number;\n  itslabperiod_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtItslabrateListInsert {
-  id: number;\n  slabamountfrom?: number;\n  slabrate?: number;\n  slabamountto?: number;\n  slabvalue?: number;\n  itslabperiod_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtItslabrateListUpdate {
-  id?: number;\n  slabamountfrom?: number;\n  slabrate?: number;\n  slabamountto?: number;\n  slabvalue?: number;\n  itslabperiod_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLanguagenameList {
-  id: number;\n  name?: string;\n  languageid?: number;\n  costcategory_id?: number;\n  stockcategory_id?: number;\n  group_id?: number;\n  stockgroup_id?: number;\n  tdsrate_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  taxunit_id?: number;\n  vouchertype_id?: number;\n  gstin_id?: number;\n  godown_id?: number;\n  incometaxclassification_id?: number;\n  incometaxslab_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLanguagenameListInsert {
-  id: number;\n  name?: string;\n  languageid?: number;\n  costcategory_id?: number;\n  stockcategory_id?: number;\n  group_id?: number;\n  stockgroup_id?: number;\n  tdsrate_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  taxunit_id?: number;\n  vouchertype_id?: number;\n  gstin_id?: number;\n  godown_id?: number;\n  incometaxclassification_id?: number;\n  incometaxslab_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLanguagenameListUpdate {
-  id?: number;\n  name?: string;\n  languageid?: number;\n  costcategory_id?: number;\n  stockcategory_id?: number;\n  group_id?: number;\n  stockgroup_id?: number;\n  tdsrate_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  taxunit_id?: number;\n  vouchertype_id?: number;\n  gstin_id?: number;\n  godown_id?: number;\n  incometaxclassification_id?: number;\n  incometaxslab_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastexchangeinfoList {
-  id: number;\n  lastsynctime?: number;\n  purposetype?: string;\n  taxunit_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLastexchangeinfoListInsert {
-  id: number;\n  lastsynctime?: number;\n  purposetype?: string;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastexchangeinfoListUpdate {
-  id?: number;\n  lastsynctime?: number;\n  purposetype?: string;\n  taxunit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastgsttaxunitbyseriesList {
-  id: number;\n  lastgsttaxunitbyseries?: string;\n  vouchertype_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLastgsttaxunitbyseriesListInsert {
-  id: number;\n  lastgsttaxunitbyseries?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastgsttaxunitbyseriesListUpdate {
-  id?: number;\n  lastgsttaxunitbyseries?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastnumberlistList {
-  id: number;\n  date?: number;\n  lastnumber?: number;\n  restartfromlist_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLastnumberlistListInsert {
-  id: number;\n  date?: number;\n  lastnumber?: number;\n  restartfromlist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastnumberlistListUpdate {
-  id?: number;\n  date?: number;\n  lastnumber?: number;\n  restartfromlist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastseriesbygsttaxunitList {
-  id: number;\n  lastseriesbygsttaxunit?: string;\n  vouchertype_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLastseriesbygsttaxunitListInsert {
-  id: number;\n  lastseriesbygsttaxunit?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastseriesbygsttaxunitListUpdate {
-  id?: number;\n  lastseriesbygsttaxunit?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastsynctimeList {
-  id: number;\n  lastsynctime?: number;\n  lastexchangeinfo_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLastsynctimeListInsert {
-  id: number;\n  lastsynctime?: number;\n  lastexchangeinfo_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLastsynctimeListUpdate {
-  id?: number;\n  lastsynctime?: number;\n  lastexchangeinfo_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedger {
-  id: number;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  name: string;\n  parent?: string;\n  parent_group_id?: number;\n  opening_balance?: number;\n  closing_balance?: number;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;
-}\n\nexport interface VtLedgerInsert {
-  id?: number;\n  guid?: string;\n  name: string;\n  parent?: string;\n  parent_group_id?: number;\n  opening_balance?: number;\n  closing_balance?: number;\n  company_id: string;\n  division_id: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtLedgerUpdate {
-  id?: number;\n  guid?: string;\n  name?: string;\n  parent?: string;\n  parent_group_id?: number;\n  opening_balance?: number;\n  closing_balance?: number;\n  company_id?: string;\n  division_id?: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtLedgerclosingvaluesList {
-  id: number;\n  date?: number;\n  amount?: number;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLedgerclosingvaluesListInsert {
-  id: number;\n  date?: number;\n  amount?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgerclosingvaluesListUpdate {
-  id?: number;\n  date?: number;\n  amount?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgerentries {
-  id: number;\n  voucher_id: number;\n  ledger_id?: number;\n  ledger_name?: string;\n  amount: number;\n  is_debit: boolean;\n  is_deemed_positive?: boolean;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;
-}\n\nexport interface VtLedgerentriesInsert {
-  id?: number;\n  voucher_id: number;\n  ledger_id?: number;\n  ledger_name?: string;\n  amount: number;\n  is_debit: boolean;\n  is_deemed_positive?: boolean;\n  company_id: string;\n  division_id: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtLedgerentriesUpdate {
-  id?: number;\n  voucher_id?: number;\n  ledger_id?: number;\n  ledger_name?: string;\n  amount?: number;\n  is_debit?: boolean;\n  is_deemed_positive?: boolean;\n  company_id?: string;\n  division_id?: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtLedgerentriesList {
-  id: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  rateofinvoicetax?: number;\n  appropriatefor?: string;\n  roundtype?: string;\n  vatexpamount?: number;\n  billallocations_list?: string;\n  taxobjectallocations_list?: string;\n  requestdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLedgerentriesListInsert {
-  id: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  rateofinvoicetax?: number;\n  appropriatefor?: string;\n  roundtype?: string;\n  vatexpamount?: number;\n  billallocations_list?: string;\n  taxobjectallocations_list?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgerentriesListUpdate {
-  id?: number;\n  oldauditentryids?: number;\n  ledgername?: string;\n  gstclass?: string;\n  isdeemedpositive?: boolean;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  ispartyledger?: boolean;\n  gstoverridden?: boolean;\n  isgstassessablevalueoverridden?: boolean;\n  strdisgstapplicable?: boolean;\n  strdgstispartyledger?: boolean;\n  strdgstisdutyledger?: boolean;\n  contentnegispos?: boolean;\n  islastdeemedpositive?: boolean;\n  iscapvattaxaltered?: boolean;\n  iscapvatnotclaimed?: boolean;\n  amount?: number;\n  servicetaxdetails_list?: string;\n  bankallocations_list?: string;\n  interestcollection_list?: string;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  inputcrallocs_list?: string;\n  dutyheaddetails_list?: string;\n  excisedutyheaddetails_list?: string;\n  ratedetails_list?: string;\n  summaryallocs_list?: string;\n  cenvatdutyallocations_list?: string;\n  stpymtdetails_list?: string;\n  excisepaymentallocations_list?: string;\n  taxbillallocations_list?: string;\n  tdsexpenseallocations_list?: string;\n  vatstatutorydetails_list?: string;\n  costtrackallocations_list?: string;\n  refvoucherdetails_list?: string;\n  invoicewisedetails_list?: string;\n  vatitcdetails_list?: string;\n  advancetaxdetails_list?: string;\n  taxtypeallocations_list?: string;\n  rateofinvoicetax?: number;\n  appropriatefor?: string;\n  roundtype?: string;\n  vatexpamount?: number;\n  billallocations_list?: string;\n  taxobjectallocations_list?: string;\n  requestdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgerentrieslistList {
-  id: number;\n  name?: string;\n  methodtype?: string;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  dutyheaddetails_list?: string;\n  roundtype?: string;\n  roundlimit?: number;\n  voucherclasslist_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLedgerentrieslistListInsert {
-  id: number;\n  name?: string;\n  methodtype?: string;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  dutyheaddetails_list?: string;\n  roundtype?: string;\n  roundlimit?: number;\n  voucherclasslist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgerentrieslistListUpdate {
-  id?: number;\n  name?: string;\n  methodtype?: string;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  dutyheaddetails_list?: string;\n  roundtype?: string;\n  roundlimit?: number;\n  voucherclasslist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgerforinventorylistList {
-  id: number;\n  name?: string;\n  classrate?: number;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  dutyheaddetails_list?: string;\n  voucherclasslist_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLedgerforinventorylistListInsert {
-  id: number;\n  name?: string;\n  classrate?: number;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  dutyheaddetails_list?: string;\n  voucherclasslist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgerforinventorylistListUpdate {
-  id?: number;\n  name?: string;\n  classrate?: number;\n  ledgerfromitem?: boolean;\n  removezeroentries?: boolean;\n  dutyheaddetails_list?: string;\n  voucherclasslist_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgstregdetailsList {
-  id: number;\n  applicablefrom?: number;\n  gstregistrationtype?: string;\n  state?: string;\n  placeofsupply?: string;\n  gstin?: string;\n  isothterritoryassessee?: boolean;\n  considerpurchaseforexport?: boolean;\n  istransporter?: boolean;\n  iscommonparty?: boolean;\n  transporterid?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLedgstregdetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  gstregistrationtype?: string;\n  state?: string;\n  placeofsupply?: string;\n  gstin?: string;\n  isothterritoryassessee?: boolean;\n  considerpurchaseforexport?: boolean;\n  istransporter?: boolean;\n  iscommonparty?: boolean;\n  transporterid?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedgstregdetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  gstregistrationtype?: string;\n  state?: string;\n  placeofsupply?: string;\n  gstin?: string;\n  isothterritoryassessee?: boolean;\n  considerpurchaseforexport?: boolean;\n  istransporter?: boolean;\n  iscommonparty?: boolean;\n  transporterid?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedmailingdetailsList {
-  id: number;\n  address?: number;\n  applicablefrom?: number;\n  pincode?: number;\n  mailingname?: string;\n  state?: string;\n  country?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLedmailingdetailsListInsert {
-  id: number;\n  address?: number;\n  applicablefrom?: number;\n  pincode?: number;\n  mailingname?: string;\n  state?: string;\n  country?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedmailingdetailsListUpdate {
-  id?: number;\n  address?: number;\n  applicablefrom?: number;\n  pincode?: number;\n  mailingname?: string;\n  state?: string;\n  country?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedmultiaddresslistList {
-  id: number;\n  address?: number;\n  priorstatename?: string;\n  pincode?: number;\n  incometaxnumber?: string;\n  countryname?: string;\n  gstregistrationtype?: string;\n  vatdealertype?: string;\n  addressname?: string;\n  partygstin?: string;\n  state?: string;\n  isothterritoryassessee?: boolean;\n  isexcisemerchantexporter?: boolean;\n  ispartyexempted?: boolean;\n  issezparty?: boolean;\n  excisejurisdictiondetails_list?: string;\n  ledgstaddress_list?: string;\n  countryisdcode?: string;\n  placeofsupply?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLedmultiaddresslistListInsert {
-  id: number;\n  address?: number;\n  priorstatename?: string;\n  pincode?: number;\n  incometaxnumber?: string;\n  countryname?: string;\n  gstregistrationtype?: string;\n  vatdealertype?: string;\n  addressname?: string;\n  partygstin?: string;\n  state?: string;\n  isothterritoryassessee?: boolean;\n  isexcisemerchantexporter?: boolean;\n  ispartyexempted?: boolean;\n  issezparty?: boolean;\n  excisejurisdictiondetails_list?: string;\n  ledgstaddress_list?: string;\n  countryisdcode?: string;\n  placeofsupply?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLedmultiaddresslistListUpdate {
-  id?: number;\n  address?: number;\n  priorstatename?: string;\n  pincode?: number;\n  incometaxnumber?: string;\n  countryname?: string;\n  gstregistrationtype?: string;\n  vatdealertype?: string;\n  addressname?: string;\n  partygstin?: string;\n  state?: string;\n  isothterritoryassessee?: boolean;\n  isexcisemerchantexporter?: boolean;\n  ispartyexempted?: boolean;\n  issezparty?: boolean;\n  excisejurisdictiondetails_list?: string;\n  ledgstaddress_list?: string;\n  countryisdcode?: string;\n  placeofsupply?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLowerdeductionList {
-  id: number;\n  natureofpayment?: string;\n  lowerdeductiondetails_list?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtLowerdeductionListInsert {
-  id: number;\n  natureofpayment?: string;\n  lowerdeductiondetails_list?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtLowerdeductionListUpdate {
-  id?: number;\n  natureofpayment?: string;\n  lowerdeductiondetails_list?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtMrpratedetailsList {
-  id: number;\n  statename?: string;\n  oldmrpdetails_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtMrpratedetailsListInsert {
-  id: number;\n  statename?: string;\n  oldmrpdetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtMrpratedetailsListUpdate {
-  id?: number;\n  statename?: string;\n  oldmrpdetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtNameList {
-  id: number;\n  name?: string;\n  languagename_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtNameListInsert {
-  id: number;\n  name?: string;\n  languagename_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtNameListUpdate {
-  id?: number;\n  name?: string;\n  languagename_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldaddressList {
-  id: number;\n  oldaddress?: number;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtOldaddressListInsert {
-  id: number;\n  oldaddress?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldaddressListUpdate {
-  id?: number;\n  oldaddress?: number;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldauditentryidsList {
-  id: number;\n  oldauditentryids?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  requestdata_id?: number;\n  accountingallocations_list_id?: number;\n  ledgerentries_list_id?: number;\n  body_id?: number;\n  allledgerentries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtOldauditentryidsListInsert {
-  id: number;\n  oldauditentryids?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  requestdata_id?: number;\n  accountingallocations_list_id?: number;\n  ledgerentries_list_id?: number;\n  body_id?: number;\n  allledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldauditentryidsListUpdate {
-  id?: number;\n  oldauditentryids?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  requestdata_id?: number;\n  accountingallocations_list_id?: number;\n  ledgerentries_list_id?: number;\n  body_id?: number;\n  allledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldmailingnameList {
-  id: number;\n  oldmailingname?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtOldmailingnameListInsert {
-  id: number;\n  oldmailingname?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldmailingnameListUpdate {
-  id?: number;\n  oldmailingname?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldmrpdetailsList {
-  id: number;\n  stockitem_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtOldmrpdetailsListInsert {
-  id: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtOldmrpdetailsListUpdate {
-  id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtPaymentdetailsList {
-  id: number;\n  transactionname?: string;\n  setasdefault?: boolean;\n  beneficiarycodedetails_list?: string;\n  paymentfavouring?: string;\n  chequecrosscomment?: string;\n  defaulttransactiontype?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtPaymentdetailsListInsert {
-  id: number;\n  transactionname?: string;\n  setasdefault?: boolean;\n  beneficiarycodedetails_list?: string;\n  paymentfavouring?: string;\n  chequecrosscomment?: string;\n  defaulttransactiontype?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtPaymentdetailsListUpdate {
-  id?: number;\n  transactionname?: string;\n  setasdefault?: boolean;\n  beneficiarycodedetails_list?: string;\n  paymentfavouring?: string;\n  chequecrosscomment?: string;\n  defaulttransactiontype?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtPrefixlistList {
-  id: number;\n  date?: number;\n  name?: number;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtPrefixlistListInsert {
-  id: number;\n  date?: number;\n  name?: number;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtPrefixlistListUpdate {
-  id?: number;\n  date?: number;\n  name?: number;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtPreviousnameList {
-  id: number;\n  previousname?: string;\n  incometaxclassification_id?: number;\n  incometaxslab_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtPreviousnameListInsert {
-  id: number;\n  previousname?: string;\n  incometaxclassification_id?: number;\n  incometaxslab_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtPreviousnameListUpdate {
-  id?: number;\n  previousname?: string;\n  incometaxclassification_id?: number;\n  incometaxslab_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRatedetailsList {
-  id: number;\n  gstratedutyhead?: string;\n  gstratevaluationtype?: string;\n  gstrate?: number;\n  statewisedetails_list_id?: number;\n  allinventoryentries_list_id?: number;\n  allledgerentries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtRatedetailsListInsert {
-  id: number;\n  gstratedutyhead?: string;\n  gstratevaluationtype?: string;\n  gstrate?: number;\n  statewisedetails_list_id?: number;\n  allinventoryentries_list_id?: number;\n  allledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRatedetailsListUpdate {
-  id?: number;\n  gstratedutyhead?: string;\n  gstratevaluationtype?: string;\n  gstrate?: number;\n  statewisedetails_list_id?: number;\n  allinventoryentries_list_id?: number;\n  allledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRateofinvoicetaxList {
-  id: number;\n  rateofinvoicetax?: number;\n  ledgerentries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtRateofinvoicetaxListInsert {
-  id: number;\n  rateofinvoicetax?: number;\n  ledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRateofinvoicetaxListUpdate {
-  id?: number;\n  rateofinvoicetax?: number;\n  ledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRemotecmpinfoList {
-  id: number;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  name?: string;\n  remotecmpname?: string;\n  remotecmpstate?: string;\n    /** Multi-tenant company identifier */\n  company_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtRemotecmpinfoListInsert {
-  id: number;\n  guid?: string;\n  name?: string;\n  remotecmpname?: string;\n  remotecmpstate?: string;\n  company_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  division_id?: string;
-}\n\nexport interface VtRemotecmpinfoListUpdate {
-  id?: number;\n  guid?: string;\n  name?: string;\n  remotecmpname?: string;\n  remotecmpstate?: string;\n  company_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  division_id?: string;
-}\n\nexport interface VtReportinguomdetailsList {
-  id: number;\n  applicablefrom?: number;\n  reportinguomname?: string;\n  stockitem_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtReportinguomdetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  reportinguomname?: string;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtReportinguomdetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  reportinguomname?: string;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtReportinguqcdetailsList {
-  id: number;\n  applicablefrom?: number;\n  reportinguqcname?: string;\n  unit_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtReportinguqcdetailsListInsert {
-  id: number;\n  applicablefrom?: number;\n  reportinguqcname?: string;\n  unit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtReportinguqcdetailsListUpdate {
-  id?: number;\n  applicablefrom?: number;\n  reportinguqcname?: string;\n  unit_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRequestdesc {
-  id: number;\n  reportname?: string;\n  importdata_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtRequestdescInsert {
-  id: number;\n  reportname?: string;\n  importdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRequestdescUpdate {
-  id?: number;\n  reportname?: string;\n  importdata_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRestartfromlistList {
-  id: number;\n  date?: number;\n  restartfrom?: string;\n  periodbeginnignum?: number;\n  lastnumberlist_list?: string;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtRestartfromlistListInsert {
-  id: number;\n  date?: number;\n  restartfrom?: string;\n  periodbeginnignum?: number;\n  lastnumberlist_list?: string;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtRestartfromlistListUpdate {
-  id?: number;\n  date?: number;\n  restartfrom?: string;\n  periodbeginnignum?: number;\n  lastnumberlist_list?: string;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStatList {
-  id: number;\n  purposetype?: string;\n  statkey?: string;\n  isfetchedonly?: boolean;\n  isdeleted?: boolean;\n  tallycontentuser_list?: string;\n  gst_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtStatListInsert {
-  id: number;\n  purposetype?: string;\n  statkey?: string;\n  isfetchedonly?: boolean;\n  isdeleted?: boolean;\n  tallycontentuser_list?: string;\n  gst_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStatListUpdate {
-  id?: number;\n  purposetype?: string;\n  statkey?: string;\n  isfetchedonly?: boolean;\n  isdeleted?: boolean;\n  tallycontentuser_list?: string;\n  gst_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStatewisedetailsList {
-  id: number;\n  statename?: string;\n  gstslabrates_list?: string;\n  gstdetails_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtStatewisedetailsListInsert {
-  id: number;\n  statename?: string;\n  gstslabrates_list?: string;\n  gstdetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStatewisedetailsListUpdate {
-  id?: number;\n  statename?: string;\n  gstslabrates_list?: string;\n  gstdetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStaticvariables {
-  id: number;\n  svcurrentcompany?: string;\n  requestdesc_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtStaticvariablesInsert {
-  id: number;\n  svcurrentcompany?: string;\n  requestdesc_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStaticvariablesUpdate {
-  id?: number;\n  svcurrentcompany?: string;\n  requestdesc_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStockcategory {
-  id: number;\n  name?: string;\n  parent?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtStockcategoryInsert {
-  id: number;\n  name?: string;\n  parent?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStockcategoryUpdate {
-  id?: number;\n  name?: string;\n  parent?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStockgroup {
-  id: number;\n  name?: string;\n  parent?: string;\n  stockcategory_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtStockgroupInsert {
-  id: number;\n  name?: string;\n  parent?: string;\n  stockcategory_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStockgroupUpdate {
-  id?: number;\n  name?: string;\n  parent?: string;\n  stockcategory_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtStockitem {
-  id: number;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  name: string;\n  parent?: string;\n  parent_group_id?: number;\n  base_units?: string;\n  opening_balance?: number;\n  closing_balance?: number;\n  opening_rate?: number;\n  closing_rate?: number;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;
-}\n\nexport interface VtStockitemInsert {
-  id?: number;\n  guid?: string;\n  name: string;\n  parent?: string;\n  parent_group_id?: number;\n  base_units?: string;\n  opening_balance?: number;\n  closing_balance?: number;\n  opening_rate?: number;\n  closing_rate?: number;\n  company_id: string;\n  division_id: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtStockitemUpdate {
-  id?: number;\n  guid?: string;\n  name?: string;\n  parent?: string;\n  parent_group_id?: number;\n  base_units?: string;\n  opening_balance?: number;\n  closing_balance?: number;\n  opening_rate?: number;\n  closing_rate?: number;\n  company_id?: string;\n  division_id?: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtSubcategoryallocationList {
-  id: number;\n  subcategory?: string;\n  subcatzerorated?: boolean;\n  subcatexempted?: boolean;\n  subcatisspecialrate?: boolean;\n  assessableamount?: number;\n  taxobjectallocations_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtSubcategoryallocationListInsert {
-  id: number;\n  subcategory?: string;\n  subcatzerorated?: boolean;\n  subcatexempted?: boolean;\n  subcatisspecialrate?: boolean;\n  assessableamount?: number;\n  taxobjectallocations_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSubcategoryallocationListUpdate {
-  id?: number;\n  subcategory?: string;\n  subcatzerorated?: boolean;\n  subcatexempted?: boolean;\n  subcatisspecialrate?: boolean;\n  assessableamount?: number;\n  taxobjectallocations_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSuffixlistList {
-  id: number;\n  date?: number;\n  name?: number;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtSuffixlistListInsert {
-  id: number;\n  date?: number;\n  name?: number;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSuffixlistListUpdate {
-  id?: number;\n  date?: number;\n  name?: number;\n  vouchertype_id?: number;\n  vouchernumberseries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSupabaseChangeLog {
-  id: string;\n  table_name?: string;\n  record_id?: string;\n  operation?: string;\n  old_data?: any;\n  new_data?: any;\n  changed_fields?: any;\n  change_timestamp?: string;\n  processed?: boolean;\n  sync_status?: string;\n  error_message?: string;\n  created_by?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtSupabaseChangeLogInsert {
-  id: string;\n  table_name?: string;\n  record_id?: string;\n  operation?: string;\n  old_data?: any;\n  new_data?: any;\n  changed_fields?: any;\n  change_timestamp?: string;\n  processed?: boolean;\n  sync_status?: string;\n  error_message?: string;\n  created_by?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSupabaseChangeLogUpdate {
-  id?: string;\n  table_name?: string;\n  record_id?: string;\n  operation?: string;\n  old_data?: any;\n  new_data?: any;\n  changed_fields?: any;\n  change_timestamp?: string;\n  processed?: boolean;\n  sync_status?: string;\n  error_message?: string;\n  created_by?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSyncConfiguration {
-  id: string;\n  config_name?: string;\n  config_type?: string;\n  config_value?: any;\n  is_active?: boolean;\n  description?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n  created_by?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtSyncConfigurationInsert {
-  id: string;\n  config_name?: string;\n  config_type?: string;\n  config_value?: any;\n  is_active?: boolean;\n  description?: string;\n  created_at?: string;\n  updated_at?: string;\n  created_by?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSyncConfigurationUpdate {
-  id?: string;\n  config_name?: string;\n  config_type?: string;\n  config_value?: any;\n  is_active?: boolean;\n  description?: string;\n  created_at?: string;\n  updated_at?: string;\n  created_by?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSyncConflicts {
-  id: string;\n  sync_record_id?: string;\n  conflict_type?: string;\n  tally_data?: any;\n  supabase_data?: any;\n  conflict_fields?: any;\n  resolution_status?: string;\n  resolution_action?: string;\n  resolved_data?: any;\n  resolved_at?: string;\n  resolved_by?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n  notes?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtSyncConflictsInsert {
-  id: string;\n  sync_record_id?: string;\n  conflict_type?: string;\n  tally_data?: any;\n  supabase_data?: any;\n  conflict_fields?: any;\n  resolution_status?: string;\n  resolution_action?: string;\n  resolved_data?: any;\n  resolved_at?: string;\n  resolved_by?: string;\n  created_at?: string;\n  notes?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSyncConflictsUpdate {
-  id?: string;\n  sync_record_id?: string;\n  conflict_type?: string;\n  tally_data?: any;\n  supabase_data?: any;\n  conflict_fields?: any;\n  resolution_status?: string;\n  resolution_action?: string;\n  resolved_data?: any;\n  resolved_at?: string;\n  resolved_by?: string;\n  created_at?: string;\n  notes?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSyncExecutionLog {
-  id: string;\n  execution_id?: string;\n  sync_type?: string;\n  started_at?: string;\n  completed_at?: string;\n  status?: string;\n  records_processed?: number;\n  records_synced?: number;\n  records_failed?: number;\n  records_skipped?: number;\n  execution_summary?: any;\n  error_details?: string;\n  duration_seconds?: number;\n  config_snapshot?: any;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtSyncExecutionLogInsert {
-  id: string;\n  execution_id?: string;\n  sync_type?: string;\n  started_at?: string;\n  completed_at?: string;\n  status?: string;\n  records_processed?: number;\n  records_synced?: number;\n  records_failed?: number;\n  records_skipped?: number;\n  execution_summary?: any;\n  error_details?: string;\n  duration_seconds?: number;\n  config_snapshot?: any;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtSyncExecutionLogUpdate {
-  id?: string;\n  execution_id?: string;\n  sync_type?: string;\n  started_at?: string;\n  completed_at?: string;\n  status?: string;\n  records_processed?: number;\n  records_synced?: number;\n  records_failed?: number;\n  records_skipped?: number;\n  execution_summary?: any;\n  error_details?: string;\n  duration_seconds?: number;\n  config_snapshot?: any;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTallySupabaseSync {
-  id: string;\n  table_name?: string;\n  record_id?: string;\n  record_guid?: string;\n  source_system?: string;\n  target_system?: string;\n  sync_status?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n  last_sync_at?: string;\n  next_sync_at?: string;\n  source_checksum?: string;\n  target_checksum?: string;\n  data_snapshot?: any;\n  sync_attempt_count?: number;\n  last_error?: string;\n  sync_priority?: number;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTallySupabaseSyncInsert {
-  id: string;\n  table_name?: string;\n  record_id?: string;\n  record_guid?: string;\n  source_system?: string;\n  target_system?: string;\n  sync_status?: string;\n  created_at?: string;\n  updated_at?: string;\n  last_sync_at?: string;\n  next_sync_at?: string;\n  source_checksum?: string;\n  target_checksum?: string;\n  data_snapshot?: any;\n  sync_attempt_count?: number;\n  last_error?: string;\n  sync_priority?: number;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTallySupabaseSyncUpdate {
-  id?: string;\n  table_name?: string;\n  record_id?: string;\n  record_guid?: string;\n  source_system?: string;\n  target_system?: string;\n  sync_status?: string;\n  created_at?: string;\n  updated_at?: string;\n  last_sync_at?: string;\n  next_sync_at?: string;\n  source_checksum?: string;\n  target_checksum?: string;\n  data_snapshot?: any;\n  sync_attempt_count?: number;\n  last_error?: string;\n  sync_priority?: number;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTallyXmlSchemaDb {
-  id: number;\n  table_name?: string;\n  column_name?: string;\n  data_type?: string;\n  tally_field_expression?: string;\n  tally_collection_name?: string;\n  nature?: string;\n  is_foreign_key?: boolean;\n  foreign_table_name?: string;\n  description?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTallyXmlSchemaDbInsert {
-  id: number;\n  table_name?: string;\n  column_name?: string;\n  data_type?: string;\n  tally_field_expression?: string;\n  tally_collection_name?: string;\n  nature?: string;\n  is_foreign_key?: boolean;\n  foreign_table_name?: string;\n  description?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTallyXmlSchemaDbUpdate {
-  id?: number;\n  table_name?: string;\n  column_name?: string;\n  data_type?: string;\n  tally_field_expression?: string;\n  tally_collection_name?: string;\n  nature?: string;\n  is_foreign_key?: boolean;\n  foreign_table_name?: string;\n  description?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTaxobjectallocationsList {
-  id: number;\n  category?: string;\n  taxtype?: string;\n  taxname?: string;\n  partyledger?: string;\n  expenses?: string;\n  reftype?: string;\n  isoptional?: boolean;\n  isbasedonrealization?: boolean;\n  ispanvalid?: boolean;\n  zerorated?: boolean;\n  exempted?: boolean;\n  isspecialrate?: boolean;\n  isdeductnow?: boolean;\n  ispannotavailable?: boolean;\n  issupplementary?: boolean;\n  ispureagent?: boolean;\n  hasinputcredit?: boolean;\n  istdsdeducted?: boolean;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  ledgerentries_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTaxobjectallocationsListInsert {
-  id: number;\n  category?: string;\n  taxtype?: string;\n  taxname?: string;\n  partyledger?: string;\n  expenses?: string;\n  reftype?: string;\n  isoptional?: boolean;\n  isbasedonrealization?: boolean;\n  ispanvalid?: boolean;\n  zerorated?: boolean;\n  exempted?: boolean;\n  isspecialrate?: boolean;\n  isdeductnow?: boolean;\n  ispannotavailable?: boolean;\n  issupplementary?: boolean;\n  ispureagent?: boolean;\n  hasinputcredit?: boolean;\n  istdsdeducted?: boolean;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  ledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTaxobjectallocationsListUpdate {
-  id?: number;\n  category?: string;\n  taxtype?: string;\n  taxname?: string;\n  partyledger?: string;\n  expenses?: string;\n  reftype?: string;\n  isoptional?: boolean;\n  isbasedonrealization?: boolean;\n  ispanvalid?: boolean;\n  zerorated?: boolean;\n  exempted?: boolean;\n  isspecialrate?: boolean;\n  isdeductnow?: boolean;\n  ispannotavailable?: boolean;\n  issupplementary?: boolean;\n  ispureagent?: boolean;\n  hasinputcredit?: boolean;\n  istdsdeducted?: boolean;\n  oldauditentries_list?: string;\n  accountauditentries_list?: string;\n  auditentries_list?: string;\n  ledgerentries_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTaxunit {
-  id: number;\n  name?: string;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  ewaybillapplicabledateprev?: number;\n  gsteinvapplicabledateprev?: number;\n  priorstatename?: string;\n  ewaybillapplicabletype?: string;\n  statename?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  usedfor?: string;\n  gstregnumber?: string;\n  gsteinvbillfromplace?: string;\n  stisstlargetaxpayer?: boolean;\n  servicetaxissez?: boolean;\n  stisinputservdistributor?: boolean;\n  stismonthlyreturns?: boolean;\n  isgsteinvinclewaybill?: boolean;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  isothterritoryassessee?: boolean;\n  enableexport?: boolean;\n  isprimaryexciseunit?: boolean;\n  allowexportrebate?: boolean;\n  istraderrgnumberon?: boolean;\n  useforjewellery?: boolean;\n  isprimaryunit?: boolean;\n  isgstcesson?: boolean;\n  isgstadvrcpton?: boolean;\n  isgstrcon?: boolean;\n  isewaybillapplicableprev?: boolean;\n  isewaybillapplicableforintra?: boolean;\n  isstatecessapplicable?: boolean;\n  isgsteinvapplicableprev?: boolean;\n  isewaybillprintapplicable?: boolean;\n  isgstrdownloadapplicable?: boolean;\n  donotmarkreconciledimstransasaccepted?: boolean;\n  isgstonforpurc?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  servicetaxdetails_list?: string;\n  sttaxliabcomputedtls_list?: string;\n  gstdetails_list?: string;\n  hsndetails_list?: string;\n  gstturnoverratedetails_list?: string;\n  excisetariffdetails_list?: string;\n  serialnumberlist_list?: string;\n  excisemfgdetails_list?: string;\n  exciselutdetails_list?: string;\n  excisebonddetails_list?: string;\n  exciserangedetails_list?: string;\n  excisedivisiondetails_list?: string;\n  excisecommissioneratedetails_list?: string;\n  lutdetailsold_list?: string;\n  oldgstcompositiondetails_list?: string;\n  gstcompositiondetails_list?: string;\n  lutdetails_list?: string;\n  fetchdataholeinfo_list?: string;\n  gstclassfnigstrates_list?: string;\n  extariffdutyheaddetails_list?: string;\n  enteredby?: string;\n  gstr1periodicity?: string;\n  gsteinvreportperiod?: number;\n  ewaybillapplicableamount?: number;\n  ewaybillapplicableamountintra?: number;\n  gstregistrationdetails_list?: string;\n  gstreconconfigdetails_list?: string;\n  gstewaybilldetails_list?: string;\n  gsteinvoicedetails_list?: string;\n  lastexchangeinfo_list?: string;\n  requestdata_id?: number;\n  body_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTaxunitInsert {
-  id: number;\n  name?: string;\n  guid?: string;\n  ewaybillapplicabledateprev?: number;\n  gsteinvapplicabledateprev?: number;\n  priorstatename?: string;\n  ewaybillapplicabletype?: string;\n  statename?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  usedfor?: string;\n  gstregnumber?: string;\n  gsteinvbillfromplace?: string;\n  stisstlargetaxpayer?: boolean;\n  servicetaxissez?: boolean;\n  stisinputservdistributor?: boolean;\n  stismonthlyreturns?: boolean;\n  isgsteinvinclewaybill?: boolean;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  isothterritoryassessee?: boolean;\n  enableexport?: boolean;\n  isprimaryexciseunit?: boolean;\n  allowexportrebate?: boolean;\n  istraderrgnumberon?: boolean;\n  useforjewellery?: boolean;\n  isprimaryunit?: boolean;\n  isgstcesson?: boolean;\n  isgstadvrcpton?: boolean;\n  isgstrcon?: boolean;\n  isewaybillapplicableprev?: boolean;\n  isewaybillapplicableforintra?: boolean;\n  isstatecessapplicable?: boolean;\n  isgsteinvapplicableprev?: boolean;\n  isewaybillprintapplicable?: boolean;\n  isgstrdownloadapplicable?: boolean;\n  donotmarkreconciledimstransasaccepted?: boolean;\n  isgstonforpurc?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  servicetaxdetails_list?: string;\n  sttaxliabcomputedtls_list?: string;\n  gstdetails_list?: string;\n  hsndetails_list?: string;\n  gstturnoverratedetails_list?: string;\n  excisetariffdetails_list?: string;\n  serialnumberlist_list?: string;\n  excisemfgdetails_list?: string;\n  exciselutdetails_list?: string;\n  excisebonddetails_list?: string;\n  exciserangedetails_list?: string;\n  excisedivisiondetails_list?: string;\n  excisecommissioneratedetails_list?: string;\n  lutdetailsold_list?: string;\n  oldgstcompositiondetails_list?: string;\n  gstcompositiondetails_list?: string;\n  lutdetails_list?: string;\n  fetchdataholeinfo_list?: string;\n  gstclassfnigstrates_list?: string;\n  extariffdutyheaddetails_list?: string;\n  enteredby?: string;\n  gstr1periodicity?: string;\n  gsteinvreportperiod?: number;\n  ewaybillapplicableamount?: number;\n  ewaybillapplicableamountintra?: number;\n  gstregistrationdetails_list?: string;\n  gstreconconfigdetails_list?: string;\n  gstewaybilldetails_list?: string;\n  gsteinvoicedetails_list?: string;\n  lastexchangeinfo_list?: string;\n  requestdata_id?: number;\n  body_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTaxunitUpdate {
-  id?: number;\n  name?: string;\n  guid?: string;\n  ewaybillapplicabledateprev?: number;\n  gsteinvapplicabledateprev?: number;\n  priorstatename?: string;\n  ewaybillapplicabletype?: string;\n  statename?: string;\n  typeofupdateactivity?: string;\n  objectupdateaction?: string;\n  usedfor?: string;\n  gstregnumber?: string;\n  gsteinvbillfromplace?: string;\n  stisstlargetaxpayer?: boolean;\n  servicetaxissez?: boolean;\n  stisinputservdistributor?: boolean;\n  stismonthlyreturns?: boolean;\n  isgsteinvinclewaybill?: boolean;\n  isupdatingtargetid?: boolean;\n  isdeleted?: boolean;\n  issecurityonwhenentered?: boolean;\n  asoriginal?: boolean;\n  isothterritoryassessee?: boolean;\n  enableexport?: boolean;\n  isprimaryexciseunit?: boolean;\n  allowexportrebate?: boolean;\n  istraderrgnumberon?: boolean;\n  useforjewellery?: boolean;\n  isprimaryunit?: boolean;\n  isgstcesson?: boolean;\n  isgstadvrcpton?: boolean;\n  isgstrcon?: boolean;\n  isewaybillapplicableprev?: boolean;\n  isewaybillapplicableforintra?: boolean;\n  isstatecessapplicable?: boolean;\n  isgsteinvapplicableprev?: boolean;\n  isewaybillprintapplicable?: boolean;\n  isgstrdownloadapplicable?: boolean;\n  donotmarkreconciledimstransasaccepted?: boolean;\n  isgstonforpurc?: boolean;\n  alterid?: number;\n  updateddatetime?: number;\n  servicetaxdetails_list?: string;\n  sttaxliabcomputedtls_list?: string;\n  gstdetails_list?: string;\n  hsndetails_list?: string;\n  gstturnoverratedetails_list?: string;\n  excisetariffdetails_list?: string;\n  serialnumberlist_list?: string;\n  excisemfgdetails_list?: string;\n  exciselutdetails_list?: string;\n  excisebonddetails_list?: string;\n  exciserangedetails_list?: string;\n  excisedivisiondetails_list?: string;\n  excisecommissioneratedetails_list?: string;\n  lutdetailsold_list?: string;\n  oldgstcompositiondetails_list?: string;\n  gstcompositiondetails_list?: string;\n  lutdetails_list?: string;\n  fetchdataholeinfo_list?: string;\n  gstclassfnigstrates_list?: string;\n  extariffdutyheaddetails_list?: string;\n  enteredby?: string;\n  gstr1periodicity?: string;\n  gsteinvreportperiod?: number;\n  ewaybillapplicableamount?: number;\n  ewaybillapplicableamountintra?: number;\n  gstregistrationdetails_list?: string;\n  gstreconconfigdetails_list?: string;\n  gstewaybilldetails_list?: string;\n  gsteinvoicedetails_list?: string;\n  lastexchangeinfo_list?: string;\n  requestdata_id?: number;\n  body_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTcscategorydetailsList {
-  id: number;\n  categorydate?: number;\n  categoryname?: string;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTcscategorydetailsListInsert {
-  id: number;\n  categorydate?: number;\n  categoryname?: string;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTcscategorydetailsListUpdate {
-  id?: number;\n  categorydate?: number;\n  categoryname?: string;\n  stockgroup_id?: number;\n  ledger_id?: number;\n  stockitem_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTdscategorydetailsList {
-  id: number;\n  categorydate?: number;\n  categoryname?: string;\n  ledger_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTdscategorydetailsListInsert {
-  id: number;\n  categorydate?: number;\n  categoryname?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTdscategorydetailsListUpdate {
-  id?: number;\n  categorydate?: number;\n  categoryname?: string;\n  ledger_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTdsrate {
-  id: number;\n  name?: string;\n    /** Tally GUID for external system integration */\n  guid?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTdsrateInsert {
-  id: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTdsrateUpdate {
-  id?: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTransportdetailsList {
-  id: number;\n  documentdate?: number;\n  transporterid?: string;\n  documentnumber?: string;\n  transportername?: string;\n  transportmode?: string;\n  vehiclenumber?: string;\n  oldvehicletype?: string;\n  vehicletype?: string;\n  ignorevehiclenovalidation?: boolean;\n  istransidpending?: boolean;\n  istransidupdated?: boolean;\n  ignoretransidvalidation?: boolean;\n  isexportedfortransporterid?: boolean;\n  ispartbpending?: boolean;\n  ispartbupdated?: boolean;\n  ignorepartbvalidation?: boolean;\n  isexportedforpartb?: boolean;\n  distance?: number;\n  ewaybilldetails_list_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtTransportdetailsListInsert {
-  id: number;\n  documentdate?: number;\n  transporterid?: string;\n  documentnumber?: string;\n  transportername?: string;\n  transportmode?: string;\n  vehiclenumber?: string;\n  oldvehicletype?: string;\n  vehicletype?: string;\n  ignorevehiclenovalidation?: boolean;\n  istransidpending?: boolean;\n  istransidupdated?: boolean;\n  ignoretransidvalidation?: boolean;\n  isexportedfortransporterid?: boolean;\n  ispartbpending?: boolean;\n  ispartbupdated?: boolean;\n  ignorepartbvalidation?: boolean;\n  isexportedforpartb?: boolean;\n  distance?: number;\n  ewaybilldetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtTransportdetailsListUpdate {
-  id?: number;\n  documentdate?: number;\n  transporterid?: string;\n  documentnumber?: string;\n  transportername?: string;\n  transportmode?: string;\n  vehiclenumber?: string;\n  oldvehicletype?: string;\n  vehicletype?: string;\n  ignorevehiclenovalidation?: boolean;\n  istransidpending?: boolean;\n  istransidupdated?: boolean;\n  ignoretransidvalidation?: boolean;\n  isexportedfortransporterid?: boolean;\n  ispartbpending?: boolean;\n  ispartbupdated?: boolean;\n  ignorepartbvalidation?: boolean;\n  isexportedforpartb?: boolean;\n  distance?: number;\n  ewaybilldetails_list_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtUnit {
-  id: number;\n  name?: string;\n    /** Tally GUID for external system integration */\n  guid?: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtUnitInsert {
-  id: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtUnitUpdate {
-  id?: number;\n  name?: string;\n  guid?: string;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtVchnumseriesidList {
-  id: number;\n  vtypnumseriesid?: string;\n  isdefault?: boolean;\n  vouchertype_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtVchnumseriesidListInsert {
-  id: number;\n  vtypnumseriesid?: string;\n  isdefault?: boolean;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtVchnumseriesidListUpdate {
-  id?: number;\n  vtypnumseriesid?: string;\n  isdefault?: boolean;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtVoucher {
-  id: number;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  voucher_number?: string;\n  voucher_type?: string;\n  voucher_type_id?: number;\n  date: string;\n  effective_date?: string;\n  party_name?: string;\n  reference_number?: string;\n  reference_date?: string;\n  narration?: string;\n  amount?: number;\n  currency_id?: number;\n  place_of_supply?: string;\n  is_invoice?: boolean;\n  is_accounting_voucher?: boolean;\n  is_inventory_voucher?: boolean;\n  is_order_voucher?: boolean;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;
-}\n\nexport interface VtVoucherInsert {
-  id?: number;\n  guid?: string;\n  voucher_number?: string;\n  voucher_type?: string;\n  voucher_type_id?: number;\n  date: string;\n  effective_date?: string;\n  party_name?: string;\n  reference_number?: string;\n  reference_date?: string;\n  narration?: string;\n  amount?: number;\n  currency_id?: number;\n  place_of_supply?: string;\n  is_invoice?: boolean;\n  is_accounting_voucher?: boolean;\n  is_inventory_voucher?: boolean;\n  is_order_voucher?: boolean;\n  company_id: string;\n  division_id: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtVoucherUpdate {
-  id?: number;\n  guid?: string;\n  voucher_number?: string;\n  voucher_type?: string;\n  voucher_type_id?: number;\n  date?: string;\n  effective_date?: string;\n  party_name?: string;\n  reference_number?: string;\n  reference_date?: string;\n  narration?: string;\n  amount?: number;\n  currency_id?: number;\n  place_of_supply?: string;\n  is_invoice?: boolean;\n  is_accounting_voucher?: boolean;\n  is_inventory_voucher?: boolean;\n  is_order_voucher?: boolean;\n  company_id?: string;\n  division_id?: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtVoucherclasslistList {
-  id: number;\n  classname?: string;\n  forjobcosting?: boolean;\n  useforinterest?: boolean;\n  useforgainloss?: boolean;\n  useforgodowntransfer?: boolean;\n  useforcompound?: boolean;\n  classforvat?: boolean;\n  useforfbt?: boolean;\n  posenablecardledger?: boolean;\n  posenablecashledger?: boolean;\n  posenablegiftledger?: boolean;\n  posenablechequeledger?: boolean;\n  useforexcisecommercialinvoice?: boolean;\n  useforservicetax?: boolean;\n  classforexcise?: boolean;\n  classfordealerexciseshortage?: boolean;\n  posenableonaccountledger?: boolean;\n  usebankallocforcc?: boolean;\n  isdefaultclass?: boolean;\n  adjdiffinfirstledger?: boolean;\n  adjdiffinfirstledgeritem?: boolean;\n  productcodedetails_list?: string;\n  ledgerforinventorylist_list?: string;\n  ledgerentrieslist_list?: string;\n  defaultaccallocforitem_list?: string;\n  vouchertype_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtVoucherclasslistListInsert {
-  id: number;\n  classname?: string;\n  forjobcosting?: boolean;\n  useforinterest?: boolean;\n  useforgainloss?: boolean;\n  useforgodowntransfer?: boolean;\n  useforcompound?: boolean;\n  classforvat?: boolean;\n  useforfbt?: boolean;\n  posenablecardledger?: boolean;\n  posenablecashledger?: boolean;\n  posenablegiftledger?: boolean;\n  posenablechequeledger?: boolean;\n  useforexcisecommercialinvoice?: boolean;\n  useforservicetax?: boolean;\n  classforexcise?: boolean;\n  classfordealerexciseshortage?: boolean;\n  posenableonaccountledger?: boolean;\n  usebankallocforcc?: boolean;\n  isdefaultclass?: boolean;\n  adjdiffinfirstledger?: boolean;\n  adjdiffinfirstledgeritem?: boolean;\n  productcodedetails_list?: string;\n  ledgerforinventorylist_list?: string;\n  ledgerentrieslist_list?: string;\n  defaultaccallocforitem_list?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtVoucherclasslistListUpdate {
-  id?: number;\n  classname?: string;\n  forjobcosting?: boolean;\n  useforinterest?: boolean;\n  useforgainloss?: boolean;\n  useforgodowntransfer?: boolean;\n  useforcompound?: boolean;\n  classforvat?: boolean;\n  useforfbt?: boolean;\n  posenablecardledger?: boolean;\n  posenablecashledger?: boolean;\n  posenablegiftledger?: boolean;\n  posenablechequeledger?: boolean;\n  useforexcisecommercialinvoice?: boolean;\n  useforservicetax?: boolean;\n  classforexcise?: boolean;\n  classfordealerexciseshortage?: boolean;\n  posenableonaccountledger?: boolean;\n  usebankallocforcc?: boolean;\n  isdefaultclass?: boolean;\n  adjdiffinfirstledger?: boolean;\n  adjdiffinfirstledgeritem?: boolean;\n  productcodedetails_list?: string;\n  ledgerforinventorylist_list?: string;\n  ledgerentrieslist_list?: string;\n  defaultaccallocforitem_list?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtVouchernumberseriesList {
-  id: number;\n  name?: string;\n  numberingmethod?: string;\n  numberingsubmethod?: string;\n  preventduplicates?: boolean;\n  prefillzero?: boolean;\n  isdefault?: boolean;\n  usedeletedvchnum?: boolean;\n  beginningnumber?: number;\n  widthofnumber?: number;\n  prevmasterid?: number;\n  prefixlist_list?: string;\n  suffixlist_list?: string;\n  vouchertype_id?: number;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;
-}\n\nexport interface VtVouchernumberseriesListInsert {
-  id: number;\n  name?: string;\n  numberingmethod?: string;\n  numberingsubmethod?: string;\n  preventduplicates?: boolean;\n  prefillzero?: boolean;\n  isdefault?: boolean;\n  usedeletedvchnum?: boolean;\n  beginningnumber?: number;\n  widthofnumber?: number;\n  prevmasterid?: number;\n  prefixlist_list?: string;\n  suffixlist_list?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtVouchernumberseriesListUpdate {
-  id?: number;\n  name?: string;\n  numberingmethod?: string;\n  numberingsubmethod?: string;\n  preventduplicates?: boolean;\n  prefillzero?: boolean;\n  isdefault?: boolean;\n  usedeletedvchnum?: boolean;\n  beginningnumber?: number;\n  widthofnumber?: number;\n  prevmasterid?: number;\n  prefixlist_list?: string;\n  suffixlist_list?: string;\n  vouchertype_id?: number;\n  created_at?: string;\n  updated_at?: string;\n  company_id?: string;\n  division_id?: string;
-}\n\nexport interface VtVouchertype {
-  id: number;\n    /** Tally GUID for external system integration */\n  guid?: string;\n  name: string;\n  parent?: string;\n  numbering_method?: string;\n  is_invoice?: boolean;\n  is_accounting_voucher?: boolean;\n  is_inventory_voucher?: boolean;\n  is_order_voucher?: boolean;\n    /** Multi-tenant company identifier */\n  company_id: string;\n    /** Multi-tenant division identifier */\n  division_id: string;\n    /** Record creation timestamp */\n  created_at?: string;\n    /** Record last update timestamp */\n  updated_at?: string;
-}\n\nexport interface VtVouchertypeInsert {
-  id?: number;\n  guid?: string;\n  name: string;\n  parent?: string;\n  numbering_method?: string;\n  is_invoice?: boolean;\n  is_accounting_voucher?: boolean;\n  is_inventory_voucher?: boolean;\n  is_order_voucher?: boolean;\n  company_id: string;\n  division_id: string;\n  created_at?: string;\n  updated_at?: string;
-}\n\nexport interface VtVouchertypeUpdate {
-  id?: number;\n  guid?: string;\n  name?: string;\n  parent?: string;\n  numbering_method?: string;\n  is_invoice?: boolean;\n  is_accounting_voucher?: boolean;\n  is_inventory_voucher?: boolean;\n  is_order_voucher?: boolean;\n  company_id?: string;\n  division_id?: string;\n  created_at?: string;\n  updated_at?: string;
+  id: number;
+  oldauditentryids?: number;
+  ledgername?: string;
+  gstclass?: string;
+  isdeemedpositive?: boolean;
+  ledgerfromitem?: boolean;
+  removezeroentries?: boolean;
+  ispartyledger?: boolean;
+  gstoverridden?: boolean;
+  isgstassessablevalueoverridden?: boolean;
+  strdisgstapplicable?: boolean;
+  strdgstispartyledger?: boolean;
+  strdgstisdutyledger?: boolean;
+  contentnegispos?: boolean;
+  islastdeemedpositive?: boolean;
+  iscapvattaxaltered?: boolean;
+  iscapvatnotclaimed?: boolean;
+  amount?: number;
+  servicetaxdetails_list?: string;
+  bankallocations_list?: string;
+  billallocations_list?: string;
+  interestcollection_list?: string;
+  oldauditentries_list?: string;
+  accountauditentries_list?: string;
+  auditentries_list?: string;
+  inputcrallocs_list?: string;
+  dutyheaddetails_list?: string;
+  excisedutyheaddetails_list?: string;
+  ratedetails_list?: string;
+  summaryallocs_list?: string;
+  cenvatdutyallocations_list?: string;
+  stpymtdetails_list?: string;
+  excisepaymentallocations_list?: string;
+  taxbillallocations_list?: string;
+  taxobjectallocations_list?: string;
+  tdsexpenseallocations_list?: string;
+  vatstatutorydetails_list?: string;
+  costtrackallocations_list?: string;
+  refvoucherdetails_list?: string;
+  invoicewisedetails_list?: string;
+  vatitcdetails_list?: string;
+  advancetaxdetails_list?: string;
+  taxtypeallocations_list?: string;
+  allinventoryentries_list_id?: number;
+  /** Record creation timestamp */
+  created_at?: string;
+  /** Record last update timestamp */
+  updated_at?: string;
+  /** Multi-tenant company identifier */
+  company_id: string;
+  /** Multi-tenant division identifier */
+  division_id: string;
 }
+
+export interface VtAccountingallocationsListInsert {
+  id: number;
+  oldauditentryids?: number;
+  ledgername?: string;
+  gstclass?: string;
+  isdeemedpositive?: boolean;
+  ledgerfromitem?: boolean;
+  removezeroentries?: boolean;
+  ispartyledger?: boolean;
+  gstoverridden?: boolean;
+  isgstassessablevalueoverridden?: boolean;
+  strdisgstapplicable?: boolean;
+  strdgstispartyledger?: boolean;
+  strdgstisdutyledger?: boolean;
+  contentnegispos?: boolean;
+  islastdeemedpositive?: boolean;
+  iscapvattaxaltered?: boolean;
+  iscapvatnotclaimed?: boolean;
+  amount?: number;
+  servicetaxdetails_list?: string;
+  bankallocations_list?: string;
+  billallocations_list?: string;
+  interestcollection_list?: string;
+  oldauditentries_list?: string;
+  accountauditentries_list?: string;
+  auditentries_list?: string;
+  inputcrallocs_list?: string;
+  dutyheaddetails_list?: string;
+  excisedutyheaddetails_list?: string;
+  ratedetails_list?: string;
+  summaryallocs_list?: string;
+  cenvatdutyallocations_list?: string;
+  stpymtdetails_list?: string;
+  excisepaymentallocations_list?: string;
+  taxbillallocations_list?: string;
+  taxobjectallocations_list?: string;
+  tdsexpenseallocations_list?: string;
+  vatstatutorydetails_list?: string;
+  costtrackallocations_list?: string;
+  refvoucherdetails_list?: string;
+  invoicewisedetails_list?: string;
+  vatitcdetails_list?: string;
+  advancetaxdetails_list?: string;
+  taxtypeallocations_list?: string;
+  allinventoryentries_list_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
+export interface VtAccountingallocationsListUpdate {
+  id?: number;
+  oldauditentryids?: number;
+  ledgername?: string;
+  gstclass?: string;
+  isdeemedpositive?: boolean;
+  ledgerfromitem?: boolean;
+  removezeroentries?: boolean;
+  ispartyledger?: boolean;
+  gstoverridden?: boolean;
+  isgstassessablevalueoverridden?: boolean;
+  strdisgstapplicable?: boolean;
+  strdgstispartyledger?: boolean;
+  strdgstisdutyledger?: boolean;
+  contentnegispos?: boolean;
+  islastdeemedpositive?: boolean;
+  iscapvattaxaltered?: boolean;
+  iscapvatnotclaimed?: boolean;
+  amount?: number;
+  servicetaxdetails_list?: string;
+  bankallocations_list?: string;
+  billallocations_list?: string;
+  interestcollection_list?: string;
+  oldauditentries_list?: string;
+  accountauditentries_list?: string;
+  auditentries_list?: string;
+  inputcrallocs_list?: string;
+  dutyheaddetails_list?: string;
+  excisedutyheaddetails_list?: string;
+  ratedetails_list?: string;
+  summaryallocs_list?: string;
+  cenvatdutyallocations_list?: string;
+  stpymtdetails_list?: string;
+  excisepaymentallocations_list?: string;
+  taxbillallocations_list?: string;
+  taxobjectallocations_list?: string;
+  tdsexpenseallocations_list?: string;
+  vatstatutorydetails_list?: string;
+  costtrackallocations_list?: string;
+  refvoucherdetails_list?: string;
+  invoicewisedetails_list?: string;
+  vatitcdetails_list?: string;
+  advancetaxdetails_list?: string;
+  taxtypeallocations_list?: string;
+  allinventoryentries_list_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
+// Core VT interfaces for the main tables we use
+
+export interface VtCompany {
+  id: number;
+  name?: string;
+  maillocaladdress?: string;
+  partygstin?: string;
+  partyname?: string;
+  guid?: string;
+  created_at?: string;
+  updated_at?: string;
+  company_id: string;
+  division_id: string;
+}
+
+export interface VtLedger {
+  id: number;
+  name?: string;
+  parent?: string;
+  alias?: string;
+  guid?: string;
+  isbillwiseon?: boolean;
+  iscostcentreson?: boolean;
+  isintereston?: boolean;
+  allowinmobile?: boolean;
+  iscosttrackingon?: boolean;
+  isbeneficiarycodeon?: boolean;
+  isupdatingtargetid?: boolean;
+  asoriginal?: boolean;
+  iscondensed?: boolean;
+  affectsstock?: boolean;
+  useforinterest?: boolean;
+  useforpayroll?: boolean;
+  useforcost?: boolean;
+  useforvatcollection?: boolean;
+  isrevenue?: boolean;
+  sortposition?: number;
+  oldauditentryids?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id: string;
+  division_id: string;
+}
+
+export interface VtVoucher {
+  id: number;
+  vouchertypename?: string;
+  vouchernumber?: string;
+  date?: string;
+  guid?: string;
+  narration?: string;
+  basicbuyername?: string;
+  basicbasepartyname?: string;
+  partyname?: string;
+  partyledgername?: string;
+  paymtmode?: string;
+  reference?: string;
+  amount?: number;
+  alterid?: number;
+  masterid?: number;
+  voucherkey?: number;
+  vouchernumberseries?: string;
+  isdaywisepayroll?: boolean;
+  iscancelled?: boolean;
+  isoptional?: boolean;
+  classname?: string;
+  persistedview?: number;
+  oldauditentryids?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id: string;
+  division_id: string;
+}
+
+export interface VtLedgerentries {
+  id: number;
+  ledgername?: string;
+  amount?: number;
+  isdeemedpositive?: boolean;
+  ledgerfromitem?: boolean;
+  removezeroentries?: boolean;
+  ispartyledger?: boolean;
+  voucher_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id: string;
+  division_id: string;
+}
+
+export interface VtInventoryentries {
+  id: number;
+  stockitemname?: string;
+  actualqty?: string;
+  billedqty?: string;
+  rate?: string;
+  amount?: number;
+  isdeemedpositive?: boolean;
+  voucher_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id: string;
+  division_id: string;
+}
+
+// Export common types
+export type VtTableRecord = {
+  id: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id: string;
+  division_id: string;
+};
+
+export type VtCompanyRecord = VtTableRecord & {
+  name?: string;
+};
+
+export type VtLedgerRecord = VtTableRecord & {
+  name?: string;
+  parent?: string;
+};
+
+export type VtVoucherRecord = VtTableRecord & {
+  vouchertypename?: string;
+  vouchernumber?: string;
+  date?: string;
+  amount?: number;
+};
