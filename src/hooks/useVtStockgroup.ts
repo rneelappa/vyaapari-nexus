@@ -32,7 +32,7 @@ export const useVtStockgroup = (
     queryKey: ['vtStockgroup', companyId, divisionId, filters, options],
     queryFn: () => service.getStockgroup(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtStockgroup = () => {
       queryClient.invalidateQueries({ queryKey: ['vtStockgroup', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Stock group created successfully." 
       });
     },
     onError: (error: any) => {

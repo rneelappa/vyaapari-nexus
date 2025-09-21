@@ -32,7 +32,7 @@ export const useVtIncometaxclassification = (
     queryKey: ['vtIncometaxclassification', companyId, divisionId, filters, options],
     queryFn: () => service.getIncometaxclassification(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtIncometaxclassification = () => {
       queryClient.invalidateQueries({ queryKey: ['vtIncometaxclassification', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Income tax classification created successfully." 
       });
     },
     onError: (error: any) => {

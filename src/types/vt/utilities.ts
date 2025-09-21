@@ -75,3 +75,14 @@ export interface VtApiResponse<T> {
   message?: string;
 }
 
+/**
+ * Query options for VT operations
+ */
+export interface VtQueryOptions {
+  limit?: number;
+  offset?: number;
+  order_by?: string;
+  order_direction?: 'asc' | 'desc';
+  search?: string;
+}
+

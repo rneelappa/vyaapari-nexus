@@ -32,7 +32,7 @@ export const useVtTaxunit = (
     queryKey: ['vtTaxunit', companyId, divisionId, filters, options],
     queryFn: () => service.getTaxunit(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtTaxunit = () => {
       queryClient.invalidateQueries({ queryKey: ['vtTaxunit', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Tax unit created successfully." 
       });
     },
     onError: (error: any) => {

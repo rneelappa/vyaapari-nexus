@@ -32,7 +32,7 @@ export const useVtStockcategory = (
     queryKey: ['vtStockcategory', companyId, divisionId, filters, options],
     queryFn: () => service.getStockcategory(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtStockcategory = () => {
       queryClient.invalidateQueries({ queryKey: ['vtStockcategory', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Stock category created successfully." 
       });
     },
     onError: (error: any) => {

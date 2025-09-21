@@ -10,10 +10,10 @@ export default function DirectTallyTest() {
   const [error, setError] = useState(null);
 
   const generateTestXML = () => {
-    const voucherNumber = \TEST-\\;
+    const voucherNumber = `TEST-${Date.now()}`;
     const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
     
-    return \<ENVELOPE>
+    return `<ENVELOPE>
 <HEADER>
 <VERSION>1</VERSION>
 <TALLYREQUEST>Import</TALLYREQUEST>
@@ -25,10 +25,10 @@ export default function DirectTallyTest() {
 <DATA>
 <TALLYMESSAGE>
 <VOUCHER>
-<DATE>\</DATE>
+<DATE>${date}</DATE>
 <NARRATION>Direct test payment from vyaapari-nexus</NARRATION>
 <VOUCHERTYPENAME>Payment</VOUCHERTYPENAME>
-<VOUCHERNUMBER>\</VOUCHERNUMBER>
+<VOUCHERNUMBER>${voucherNumber}</VOUCHERNUMBER>
 <ALLLEDGERENTRIES.LIST>
 <LEDGERNAME>Cash</LEDGERNAME>
 <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
@@ -43,7 +43,7 @@ export default function DirectTallyTest() {
 </TALLYMESSAGE>
 </DATA>
 </BODY>
-</ENVELOPE>\;
+</ENVELOPE>`;
   };
 
   const handlePostToTally = async () => {
@@ -64,7 +64,7 @@ export default function DirectTallyTest() {
       if (response.ok) {
         setResult({ success: true, status: response.status, response: responseText, xml });
       } else {
-        setError(\HTTP \: \\);
+        setError(`HTTP ${response.status}: ${responseText}`);
       }
     } catch (err) {
       setError(err.message);

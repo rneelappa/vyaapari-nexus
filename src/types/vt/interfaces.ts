@@ -177,6 +177,32 @@ export interface VtCompany {
   division_id: string;
 }
 
+export interface VtCompanyInsert {
+  id?: number;
+  name?: string;
+  maillocaladdress?: string;
+  partygstin?: string;
+  partyname?: string;
+  guid?: string;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
+export interface VtCompanyUpdate {
+  id?: number;
+  name?: string;
+  maillocaladdress?: string;
+  partygstin?: string;
+  partyname?: string;
+  guid?: string;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
 export interface VtLedger {
   id: number;
   name?: string;
@@ -206,11 +232,71 @@ export interface VtLedger {
   division_id: string;
 }
 
+export interface VtLedgerInsert {
+  id?: number;
+  name?: string;
+  parent?: string;
+  alias?: string;
+  guid?: string;
+  isbillwiseon?: boolean;
+  iscostcentreson?: boolean;
+  isintereston?: boolean;
+  allowinmobile?: boolean;
+  iscosttrackingon?: boolean;
+  isbeneficiarycodeon?: boolean;
+  isupdatingtargetid?: boolean;
+  asoriginal?: boolean;
+  iscondensed?: boolean;
+  affectsstock?: boolean;
+  useforinterest?: boolean;
+  useforpayroll?: boolean;
+  useforcost?: boolean;
+  useforvatcollection?: boolean;
+  isrevenue?: boolean;
+  sortposition?: number;
+  oldauditentryids?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
+export interface VtLedgerUpdate {
+  id?: number;
+  name?: string;
+  parent?: string;
+  alias?: string;
+  guid?: string;
+  isbillwiseon?: boolean;
+  iscostcentreson?: boolean;
+  isintereston?: boolean;
+  allowinmobile?: boolean;
+  iscosttrackingon?: boolean;
+  isbeneficiarycodeon?: boolean;
+  isupdatingtargetid?: boolean;
+  asoriginal?: boolean;
+  iscondensed?: boolean;
+  affectsstock?: boolean;
+  useforinterest?: boolean;
+  useforpayroll?: boolean;
+  useforcost?: boolean;
+  useforvatcollection?: boolean;
+  isrevenue?: boolean;
+  sortposition?: number;
+  oldauditentryids?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
 export interface VtVoucher {
   id: number;
   vouchertypename?: string;
+  voucher_type?: string;
   vouchernumber?: string;
   date?: string;
+  voucher_date?: string;
   guid?: string;
   narration?: string;
   basicbuyername?: string;
@@ -236,14 +322,82 @@ export interface VtVoucher {
   division_id: string;
 }
 
+export interface VtVoucherInsert {
+  id?: number;
+  vouchertypename?: string;
+  voucher_type?: string;
+  vouchernumber?: string;
+  date?: string;
+  voucher_date?: string;
+  guid?: string;
+  narration?: string;
+  basicbuyername?: string;
+  basicbasepartyname?: string;
+  partyname?: string;
+  partyledgername?: string;
+  paymtmode?: string;
+  reference?: string;
+  amount?: number;
+  alterid?: number;
+  masterid?: number;
+  voucherkey?: number;
+  vouchernumberseries?: string;
+  isdaywisepayroll?: boolean;
+  iscancelled?: boolean;
+  isoptional?: boolean;
+  classname?: string;
+  persistedview?: number;
+  oldauditentryids?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
+export interface VtVoucherUpdate {
+  id?: number;
+  vouchertypename?: string;
+  voucher_type?: string;
+  vouchernumber?: string;
+  date?: string;
+  voucher_date?: string;
+  guid?: string;
+  narration?: string;
+  basicbuyername?: string;
+  basicbasepartyname?: string;
+  partyname?: string;
+  partyledgername?: string;
+  paymtmode?: string;
+  reference?: string;
+  amount?: number;
+  alterid?: number;
+  masterid?: number;
+  voucherkey?: number;
+  vouchernumberseries?: string;
+  isdaywisepayroll?: boolean;
+  iscancelled?: boolean;
+  isoptional?: boolean;
+  classname?: string;
+  persistedview?: number;
+  oldauditentryids?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
 export interface VtLedgerentries {
   id: number;
   ledgername?: string;
+  ledger?: string;
   amount?: number;
   isdeemedpositive?: boolean;
+  is_party_ledger?: boolean;
+  ispartyledger?: boolean;
   ledgerfromitem?: boolean;
   removezeroentries?: boolean;
-  ispartyledger?: boolean;
+  cost_centre?: string;
+  cost_category?: string;
   voucher_id?: number;
   created_at?: string;
   updated_at?: string;
@@ -251,19 +405,96 @@ export interface VtLedgerentries {
   division_id: string;
 }
 
+export interface VtLedgerentriesInsert {
+  id?: number;
+  ledgername?: string;
+  ledger?: string;
+  amount?: number;
+  isdeemedpositive?: boolean;
+  is_party_ledger?: boolean;
+  ispartyledger?: boolean;
+  ledgerfromitem?: boolean;
+  removezeroentries?: boolean;
+  cost_centre?: string;
+  cost_category?: string;
+  voucher_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
+export interface VtLedgerentriesUpdate {
+  id?: number;
+  ledgername?: string;
+  ledger?: string;
+  amount?: number;
+  isdeemedpositive?: boolean;
+  is_party_ledger?: boolean;
+  ispartyledger?: boolean;
+  ledgerfromitem?: boolean;
+  removezeroentries?: boolean;
+  cost_centre?: string;
+  cost_category?: string;
+  voucher_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
 export interface VtInventoryentries {
   id: number;
   stockitemname?: string;
+  stock_item_name?: string;
   actualqty?: string;
+  actual_quantity?: number;
   billedqty?: string;
   rate?: string;
   amount?: number;
   isdeemedpositive?: boolean;
+  godown?: string;
   voucher_id?: number;
   created_at?: string;
   updated_at?: string;
   company_id: string;
   division_id: string;
+}
+
+export interface VtInventoryentriesInsert {
+  id?: number;
+  stockitemname?: string;
+  stock_item_name?: string;
+  actualqty?: string;
+  actual_quantity?: number;
+  billedqty?: string;
+  rate?: string;
+  amount?: number;
+  isdeemedpositive?: boolean;
+  godown?: string;
+  voucher_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
+}
+
+export interface VtInventoryentriesUpdate {
+  id?: number;
+  stockitemname?: string;
+  stock_item_name?: string;
+  actualqty?: string;
+  actual_quantity?: number;
+  billedqty?: string;
+  rate?: string;
+  amount?: number;
+  isdeemedpositive?: boolean;
+  godown?: string;
+  voucher_id?: number;
+  created_at?: string;
+  updated_at?: string;
+  company_id?: string;
+  division_id?: string;
 }
 
 // Export common types

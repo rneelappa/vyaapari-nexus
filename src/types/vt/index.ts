@@ -8,6 +8,9 @@
 // Core interfaces
 export * from './interfaces';
 
+// Additional interfaces
+export * from './additional-interfaces';
+
 // Utility types
 export * from './utilities';
 

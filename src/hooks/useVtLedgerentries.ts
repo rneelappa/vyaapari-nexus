@@ -32,7 +32,7 @@ export const useVtLedgerentries = (
     queryKey: ['vtLedgerentries', companyId, divisionId, filters, options],
     queryFn: () => service.getLedgerentries(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtLedgerentries = () => {
       queryClient.invalidateQueries({ queryKey: ['vtLedgerentries', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Ledger entry created successfully." 
       });
     },
     onError: (error: any) => {

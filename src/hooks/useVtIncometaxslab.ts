@@ -32,7 +32,7 @@ export const useVtIncometaxslab = (
     queryKey: ['vtIncometaxslab', companyId, divisionId, filters, options],
     queryFn: () => service.getIncometaxslab(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtIncometaxslab = () => {
       queryClient.invalidateQueries({ queryKey: ['vtIncometaxslab', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Income tax slab created successfully." 
       });
     },
     onError: (error: any) => {

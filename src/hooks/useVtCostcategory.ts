@@ -32,7 +32,7 @@ export const useVtCostcategory = (
     queryKey: ['vtCostcategory', companyId, divisionId, filters, options],
     queryFn: () => service.getCostcategory(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtCostcategory = () => {
       queryClient.invalidateQueries({ queryKey: ['vtCostcategory', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Cost category created successfully." 
       });
     },
     onError: (error: any) => {

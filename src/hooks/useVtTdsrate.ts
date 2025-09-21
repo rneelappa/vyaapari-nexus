@@ -32,7 +32,7 @@ export const useVtTdsrate = (
     queryKey: ['vtTdsrate', companyId, divisionId, filters, options],
     queryFn: () => service.getTdsrate(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtTdsrate = () => {
       queryClient.invalidateQueries({ queryKey: ['vtTdsrate', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "TDS rate created successfully." 
       });
     },
     onError: (error: any) => {

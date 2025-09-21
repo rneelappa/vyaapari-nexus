@@ -32,7 +32,7 @@ export const useVtCompany = (
     queryKey: ['vtCompany', companyId, divisionId, filters, options],
     queryFn: () => service.getCompany(filters, options),
     staleTime: STALE_TIME,
-    cacheTime: CACHE_TIME,
+    gcTime: CACHE_TIME,
     enabled: !!companyId && !!divisionId && (queryOptions?.enabled ?? true),
   });
 };
@@ -55,7 +55,7 @@ export const useCreateVtCompany = () => {
       queryClient.invalidateQueries({ queryKey: ['vtCompany', companyId, divisionId] });
       toast({ 
         title: "Success", 
-        description: `${serviceName} created successfully.` 
+        description: "Company created successfully." 
       });
     },
     onError: (error: any) => {
