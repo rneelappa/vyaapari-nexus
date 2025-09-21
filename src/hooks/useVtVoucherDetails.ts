@@ -7,7 +7,7 @@ export const useVtVoucherDetails = (voucherGuid: string) => {
     queryKey: ['vtVoucherDetails', voucherGuid],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('vt_vouchers')
+        .from('bkp_tally_trn_voucher')
         .select('*')
         .eq('guid', voucherGuid)
         .single();

@@ -19,7 +19,7 @@ import {
   Clock,
   MoreHorizontal
 } from 'lucide-react';
-import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
+// import { EnhancedVoucherDetails } from './EnhancedVoucherDetails';
 import { VoucherOverview } from './VoucherOverview';
 import { VoucherAccountingEntries } from './VoucherAccountingEntries';
 import { VoucherAssociatedLedgers } from './VoucherAssociatedLedgers';
@@ -222,15 +222,16 @@ export function VoucherViewRenderer({
     );
   }
 
-  // If should use master view, render EnhancedVoucherDetails
+  // If should use master view, render placeholder for now
   if (useMasterView || !viewConfig) {
     return (
-      <EnhancedVoucherDetails
-        voucherGuid={voucherGuid}
-        companyId={companyId}
-        divisionId={divisionId}
-        onClose={onClose}
-      />
+      <div className="p-6">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold">Voucher Details</h3>
+          <p className="text-muted-foreground">Voucher GUID: {voucherGuid}</p>
+          <Button onClick={onClose} className="mt-4">Close</Button>
+        </div>
+      </div>
     );
   }
 

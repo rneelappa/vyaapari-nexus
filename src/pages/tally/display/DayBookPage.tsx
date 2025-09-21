@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Download, Filter, Calendar, RefreshCw, FileText, Eye, Edit, Trash2, ArrowLeft, Calculator, TrendingUp, TrendingDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { VtMigrationTrigger } from "@/components/vt/VtMigrationTrigger";
+import { useDayBook } from "@/hooks/useDayBook";
 
 interface DayBookEntry {
   guid: string;
@@ -36,9 +36,6 @@ export default function DayBookPage() {
   }>();
   const navigate = useNavigate();
 
-  const [entries, setEntries] = useState<DayBookEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLedger, setSelectedLedger] = useState<string>("all");
   const [selectedVoucherType, setSelectedVoucherType] = useState<string>("all");
@@ -47,171 +44,36 @@ export default function DayBookPage() {
   const [sortBy, setSortBy] = useState<string>("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   
-  // Pagination & totals
+  // Pagination
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(200);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [aggregatedAmount, setAggregatedAmount] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchEntries();
-  }, [companyId, divisionId, selectedLedger, selectedVoucherType, dateFrom, dateTo, searchTerm, sortBy, sortOrder, page, pageSize]);
-
-  useEffect(() => {
-    fetchTotals();
-  }, [companyId, divisionId, selectedLedger, selectedVoucherType, dateFrom, dateTo, searchTerm]);
-
-  const applyCommonFilters = (query: any) => {
-    // Apply company and division filters if available
-    if (companyId && companyId !== 'undefined') {
-      query = query.eq('company_id', companyId);
-    }
-    if (divisionId && divisionId !== 'undefined') {
-      query = query.eq('division_id', divisionId);
-    }
-
-    // Ledger filter
-    if (selectedLedger !== 'all') {
-      query = query.eq('ledger', selectedLedger);
-    }
-
-    // Voucher type filter
-    if (selectedVoucherType !== 'all') {
-      query = query.eq('voucher_type', selectedVoucherType);
-    }
-
-    // Date range filter
-    if (dateFrom) query = query.gte('date', dateFrom);
-    if (dateTo) query = query.lte('date', dateTo);
-
-    // Search filter across key fields
-    if (searchTerm) {
-      const term = `%${searchTerm}%`;
-      query = query.or(
-        `ledger.ilike.${term},voucher_number.ilike.${term},cost_centre.ilike.${term},cost_category.ilike.${term}`
-      );
-    }
-
-    return query;
-  };
-
-  const fetchEntries = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-
-      let query = supabase
-        .from('bkp_trn_accounting')
-        .select('*', { count: 'exact' });
-
-      query = applyCommonFilters(query);
-
-      // Sorting
-      const sortColumn = ['date', 'ledger', 'amount', 'voucher_type'].includes(sortBy)
-        ? sortBy
-        : 'date';
-      query = query.order(sortColumn, { ascending: sortOrder === 'asc', nullsFirst: false });
-
-      // Pagination
-      query = query.range(from, to);
-
-      const { data, error: fetchError, count } = await query;
-      if (fetchError) throw fetchError;
-
-      setEntries((data as any) || []);
-      setTotalCount(count || 0);
-    } catch (err) {
-      console.error('Error fetching accounting entries:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch accounting entries');
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch day book entries. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTotals = async () => {
-    try {
-      let totalQuery = supabase
-        .from('bkp_trn_accounting')
-        .select('amount.sum()');
-
-      totalQuery = applyCommonFilters(totalQuery);
-
-      const { data, error } = await totalQuery;
-      if (error) throw error;
-
-      const sum = (data && data[0] && (data[0] as any).sum) ? Number((data[0] as any).sum) : 0;
-      setAggregatedAmount(sum);
-    } catch (e) {
-      console.warn('Failed to fetch totals, falling back to page sum');
-      setAggregatedAmount(null);
-    }
-  };
+  // Use the Day Book hook
+  const {
+    entries,
+    loading,
+    error,
+    totalCount,
+    aggregatedAmount,
+    refresh
+  } = useDayBook(companyId || '', divisionId || '', {
+    searchTerm,
+    selectedLedger,
+    selectedVoucherType,
+    dateFrom,
+    dateTo,
+    sortBy,
+    sortOrder,
+    page,
+    pageSize
+  });
 
   // Get unique ledgers and voucher types for filter dropdowns
   const uniqueLedgers = Array.from(new Set(entries.map(e => e.ledger).filter(Boolean)));
   const uniqueVoucherTypes = Array.from(new Set(entries.map(e => e.voucher_type).filter(Boolean)));
 
-  // Filter and sort entries
-  const filteredEntries = entries
-    .filter(entry => {
-      // Search filter
-      const searchMatch = !searchTerm || 
-        (entry.ledger && entry.ledger.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (entry.voucher_number && entry.voucher_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (entry.cost_centre && entry.cost_centre.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (entry.cost_category && entry.cost_category.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      // Ledger filter
-      const ledgerMatch = selectedLedger === "all" || entry.ledger === selectedLedger;
-
-      // Voucher type filter
-      const typeMatch = selectedVoucherType === "all" || entry.voucher_type === selectedVoucherType;
-
-      // Date range filter
-      const dateMatch = (!dateFrom || !entry.date || entry.date >= dateFrom) &&
-                       (!dateTo || !entry.date || entry.date <= dateTo);
-
-      return searchMatch && ledgerMatch && typeMatch && dateMatch;
-    })
-    .sort((a, b) => {
-      let aValue, bValue;
-      
-      switch (sortBy) {
-        case "date":
-          aValue = a.date || "";
-          bValue = b.date || "";
-          break;
-        case "ledger":
-          aValue = a.ledger || "";
-          bValue = b.ledger || "";
-          break;
-        case "amount":
-          aValue = a.amount || 0;
-          bValue = b.amount || 0;
-          break;
-        case "voucher_type":
-          aValue = a.voucher_type || "";
-          bValue = b.voucher_type || "";
-          break;
-        default:
-          aValue = a.date || "";
-          bValue = b.date || "";
-      }
-
-      if (sortOrder === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
+  // Filter entries for display (simplified since hook handles most filtering)
+  const filteredEntries = entries;
 
   // Calculate summary statistics
   const totalEntries = totalCount;
@@ -253,7 +115,7 @@ export default function DayBookPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchEntries} disabled={loading}>
+          <Button variant="outline" onClick={refresh} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -418,7 +280,7 @@ export default function DayBookPage() {
           {error ? (
             <div className="text-center py-8">
               <div className="text-destructive mb-2">Error: {error}</div>
-              <Button onClick={fetchEntries} variant="outline">
+              <Button onClick={refresh} variant="outline">
                 Try Again
               </Button>
             </div>

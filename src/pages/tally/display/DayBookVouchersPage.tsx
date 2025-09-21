@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Download, Filter, Calendar, RefreshCw, FileText, Eye, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { EnhancedVoucherDetails } from "@/components/tally/EnhancedVoucherDetails";
+// import { EnhancedVoucherDetails } from '@/components/tally/EnhancedVoucherDetails';
 import { VtMigrationTrigger } from "@/components/vt/VtMigrationTrigger";
 
 interface VoucherEntry {
@@ -292,12 +292,12 @@ export default function DayBookVouchersPage() {
             Back to Vouchers List
           </Button>
         </div>
-        <EnhancedVoucherDetails
-          voucherGuid={selectedVoucherGuid}
-          companyId={companyId}
-          divisionId={divisionId}
-          onClose={handleBackToList}
-        />
+        <div className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold">Voucher Details</h3>
+            <p className="text-muted-foreground">Voucher GUID: {selectedVoucherGuid}</p>
+          </div>
+        </div>
       </div>
     );
   }
